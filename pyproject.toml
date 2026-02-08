@@ -1,0 +1,66 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "agent-vitals"
+version = "1.0.0"
+description = "Standalone agent health monitor — detect loops, stuck states, thrash, and runaway costs in any AI agent workflow."
+readme = "README.md"
+license = {text = "MIT"}
+requires-python = ">=3.10"
+authors = [
+    {name = "Agent Vitals Contributors"},
+]
+keywords = ["agent", "vitals", "monitoring", "llm", "health", "loop-detection"]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
+dependencies = [
+    "pydantic>=2.0",
+    "pyyaml>=6.0",
+]
+
+[project.optional-dependencies]
+langchain = ["langchain>=0.3"]
+langgraph = ["langgraph>=0.2"]
+otlp = ["opentelemetry-sdk"]
+langfuse = ["langfuse>=2.0"]
+langsmith = ["langsmith>=0.1"]
+all = [
+    "langchain>=0.3",
+    "langgraph>=0.2",
+    "opentelemetry-sdk",
+    "langfuse>=2.0",
+    "langsmith>=0.1",
+]
+dev = [
+    "pytest>=8.0",
+    "pytest-asyncio>=0.24",
+    "ruff>=0.7",
+    "mypy>=1.13",
+]
+
+[project.urls]
+Homepage = "https://github.com/kneelinghorse/agent-vitals"
+Documentation = "https://github.com/kneelinghorse/agent-vitals#readme"
+Repository = "https://github.com/kneelinghorse/agent-vitals"
+Issues = "https://github.com/kneelinghorse/agent-vitals/issues"
+
+[tool.setuptools.packages.find]
+include = ["agent_vitals*"]
+
+[tool.ruff]
+target-version = "py310"
+line-length = 100
+
+[tool.mypy]
+python_version = "3.10"
+strict = true

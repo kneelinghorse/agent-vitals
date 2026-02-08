@@ -1,0 +1,31 @@
+# Agent Vitals Threshold Configuration
+#
+# This file externalizes all detection thresholds used by the vitals
+# loop/stuck detection engine. Changes here are picked up by VitalsConfig
+# when loading from YAML (see config.py).
+#
+# Environment variables override these values when set.
+
+# --- Loop Detection ---
+loop_similarity_threshold: 0.8
+loop_consecutive_count: 6
+
+# --- Stuck Detection ---
+stuck_dm_threshold: 0.15
+stuck_cv_threshold: 0.5
+burn_rate_multiplier: 3.0
+
+# Token normalization scale factor for models with different tokenization.
+# Set < 1.0 for large models that produce more tokens per step (e.g. 0.5 for 120B models).
+# Default 1.0 = no scaling (identity for cloud models).
+token_scale_factor: 1.0
+
+# Workflow scope for stuck detection.
+# Options: research-only | build-only | all | none
+workflow_stuck_enabled: research-only
+
+# --- Temporal Hysteresis ---
+th_enter_warning: 0.4
+th_exit_warning: 0.6
+th_enter_critical: 0.2
+th_exit_critical: 0.35
