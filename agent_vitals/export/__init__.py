@@ -1,8 +1,9 @@
 """Export integrations for Agent Vitals.
 
 Provides the ``VitalsExporter`` protocol and concrete exporters.
-v1.0.0 ships with ``JSONLExporter``; observability exporters
-(OTLP, Langfuse, LangSmith) are planned for v1.2.0.
+Built-in exporters:
+- ``JSONLExporter`` for local JSONL logs
+- ``OTLPExporter`` for OpenTelemetry OTLP HTTP metrics
 """
 
 from __future__ import annotations
@@ -35,8 +36,10 @@ class VitalsExporter(Protocol):
 
 # Re-export concrete implementations
 from .jsonl import JSONLExporter  # noqa: E402
+from .otlp import OTLPExporter  # noqa: E402
 
 __all__ = [
     "JSONLExporter",
+    "OTLPExporter",
     "VitalsExporter",
 ]

@@ -5,7 +5,9 @@ from __future__ import annotations
 from typing import Any, Mapping
 
 from ..schema import RawSignals
+from .autogen import AutoGenAdapter
 from .base import BaseAdapter, SignalAdapter
+from .crewai import CrewAIAdapter
 from .langchain import LangChainAdapter
 from .langgraph import LangGraphAdapter
 
@@ -38,7 +40,9 @@ class TelemetryAdapter(BaseAdapter):
 
 
 __all__ = [
+    "AutoGenAdapter",
     "BaseAdapter",
+    "CrewAIAdapter",
     "LangChainAdapter",
     "LangGraphAdapter",
     "SignalAdapter",

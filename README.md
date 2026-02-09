@@ -20,6 +20,16 @@ pip install agent-vitals
 pip install "agent-vitals[langchain,langgraph]"
 ```
 
+```bash
+# Optional observability export (OTLP)
+pip install "agent-vitals[otlp]"
+```
+
+```bash
+# Development and CI tooling (tests, coverage, lint/type checks)
+pip install "agent-vitals[dev]"
+```
+
 ## Quick Start
 
 ```python
@@ -49,8 +59,10 @@ for step in range(max_steps):
 - **4-field minimum**: Only `findings_count`, `coverage_score`, `total_tokens`, `error_count` required
 - **Zero-config defaults**: `AgentVitals()` works out of the box with tuned thresholds
 - **Framework-agnostic**: No dependency on LangChain, LangGraph, or any agent framework
+- **Built-in adapters**: LangChain, LangGraph, CrewAI, and AutoGen/AG2 signal extraction
 - **Immutable snapshots**: Every `step()` returns a `VitalsSnapshot` with signals, metrics, and detection results
 - **JSONL export**: Auto-log every snapshot to structured JSONL files
+- **OTLP export**: Send metrics to Datadog, Grafana Cloud, or any OTLP backend
 - **Backtest harness**: Offline evaluation of recorded trajectories with P/R/F1 metrics
 - **Context manager**: `with AgentVitals(...) as monitor:` for clean resource management
 
@@ -131,6 +143,39 @@ snapshot = monitor.step_from_state({
 })
 ```
 
+### CrewAI Adapter Integration
+
+```python
+from agent_vitals import AgentVitals
+from agent_vitals.adapters import CrewAIAdapter
+
+monitor = AgentVitals(mission_id="crewai-agent", adapter=CrewAIAdapter())
+snapshot = monitor.step_from_state({
+    "crew": {
+        "usage_metrics": {"prompt_tokens": 300, "completion_tokens": 120, "total_tokens": 420},
+        "tasks": [{"status": "completed"}, {"status": "failed"}, {"status": "completed"}],
+    },
+    "task_outputs": [{"result": "finding-a"}, {"result": "finding-b"}],
+})
+```
+
+### AutoGen / AG2 Adapter Integration
+
+```python
+from agent_vitals import AgentVitals
+from agent_vitals.adapters import AutoGenAdapter
+
+monitor = AgentVitals(mission_id="autogen-agent", adapter=AutoGenAdapter())
+snapshot = monitor.step_from_state({
+    "usage_summary": {
+        "agent_a": {"prompt_tokens": 90, "completion_tokens": 40, "total_tokens": 130},
+        "agent_b": {"prompt_tokens": 70, "completion_tokens": 35, "total_tokens": 105},
+    },
+    "chat_messages": [{"role": "user"}, {"role": "assistant"}, {"role": "assistant"}],
+    "total_turns": 6,
+})
+```
+
 ### LangChain Callback Integration
 
 ```python
@@ -191,6 +236,55 @@ with AgentVitals(mission_id="my-task", exporters=[exporter]) as monitor:
 - `per_run`: `{directory}/{mission_id}/{run_id}.jsonl` — one file per run
 - `append`: `{directory}/{mission_id}.jsonl` — all runs in one file, with rotation
 
+### OTLP Export (Datadog / Grafana / OTLP-compatible)
+
+```python
+from agent_vitals import AgentVitals, OTLPExporter
+
+otlp = OTLPExporter(
+    endpoint="http://localhost:4318/v1/metrics",
+    service_name="deepsearch-agent",
+    mission_id="DRM.0.5",
+    run_id="run-2026-02-09",
+    workflow_type="research",
+    export_interval_ms=5000,
+)
+
+with AgentVitals(mission_id="DRM.0.5", exporters=[otlp]) as monitor:
+    monitor.step(findings_count=1, coverage_score=0.2, total_tokens=300, error_count=0)
+```
+
+Datadog example (delta temporality enabled):
+
+```python
+from agent_vitals import OTLPExporter
+
+datadog = OTLPExporter(
+    endpoint="https://otlp.datadoghq.com/v1/metrics",
+    headers={"DD-API-KEY": "<datadog_api_key>"},
+    service_name="agent-vitals",
+    mission_id="DRM.0.5",
+    run_id="run-42",
+    workflow_type="research",
+    delta_temporality=True,
+)
+```
+
+Grafana Cloud example:
+
+```python
+from agent_vitals import OTLPExporter
+
+grafana = OTLPExporter(
+    endpoint="https://otlp-gateway-<region>.grafana.net/otlp/v1/metrics",
+    headers={"Authorization": "Basic <base64(instance_id:api_key)>"},
+    service_name="agent-vitals",
+    mission_id="DRM.0.5",
+    run_id="run-42",
+    workflow_type="research",
+)
+```
+
 ## Configuration
 
 ```python
@@ -236,6 +330,14 @@ print(f"vitals.any: P={report.composite_any.precision:.3f} "
 for name, detector in report.detectors.items():
     print(f"  {name}: P={detector.precision:.3f} R={detector.recall:.3f}")
 ```
+
+## CI Coverage Gate
+
+CI enforces coverage with `pytest-cov`:
+
+- Command: `pytest --cov=agent_vitals --cov-report=xml --cov-fail-under=85`
+- Baseline measured on 2026-02-09: **85% total coverage**
+- Coverage XML artifact is uploaded in GitHub Actions (`coverage.xml`)
 
 ## Session Summary
 

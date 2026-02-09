@@ -31,7 +31,19 @@ jobs:
           pip install build twine
 
       - name: Run tests
-        run: pytest -q
+        run: |
+          pytest -q \
+            --cov=agent_vitals \
+            --cov-report=term-missing \
+            --cov-report=xml \
+            --cov-fail-under=85
+
+      - name: Upload coverage report
+        if: matrix.python-version == '3.11'
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-xml-py${{ matrix.python-version }}
+          path: coverage.xml
 
       - name: Lint
         run: ruff check .

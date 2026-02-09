@@ -5,7 +5,14 @@ from __future__ import annotations
 import importlib
 from typing import Any, Mapping
 
-from agent_vitals.adapters import BaseAdapter, LangChainAdapter, LangGraphAdapter, SignalAdapter
+from agent_vitals.adapters import (
+    AutoGenAdapter,
+    BaseAdapter,
+    CrewAIAdapter,
+    LangChainAdapter,
+    LangGraphAdapter,
+    SignalAdapter,
+)
 from agent_vitals.schema import RawSignals
 
 
@@ -31,6 +38,8 @@ def test_base_adapter_normalize_and_validate() -> None:
 
 
 def test_built_in_adapters_conform_signal_protocol() -> None:
+    assert isinstance(AutoGenAdapter(), SignalAdapter)
+    assert isinstance(CrewAIAdapter(), SignalAdapter)
     assert isinstance(LangChainAdapter(), SignalAdapter)
     assert isinstance(LangGraphAdapter(), SignalAdapter)
 
@@ -132,7 +141,11 @@ def test_langgraph_adapter_prefers_explicit_coverage_score() -> None:
 
 
 def test_adapter_modules_import_without_optional_framework_deps() -> None:
+    module_autogen = importlib.import_module("agent_vitals.adapters.autogen")
+    module_crewai = importlib.import_module("agent_vitals.adapters.crewai")
     module_langchain = importlib.import_module("agent_vitals.adapters.langchain")
     module_langgraph = importlib.import_module("agent_vitals.adapters.langgraph")
+    assert hasattr(module_autogen, "AutoGenAdapter")
+    assert hasattr(module_crewai, "CrewAIAdapter")
     assert hasattr(module_langchain, "LangChainAdapter")
     assert hasattr(module_langgraph, "LangGraphAdapter")

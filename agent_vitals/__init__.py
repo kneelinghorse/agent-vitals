@@ -19,7 +19,7 @@ from .config import VitalsConfig, get_vitals_config
 from .detection.loop import LoopDetectionResult, detect_loop
 from .detection.stop_rule import StopRuleSignals, derive_stop_signals
 from .exceptions import AdapterError, BacktestError, ConfigurationError, ExportError, VitalsError
-from .export import JSONLExporter, VitalsExporter
+from .export import JSONLExporter, OTLPExporter, VitalsExporter
 from .monitor import AgentVitals
 from .schema import (
     HealthState,
@@ -29,7 +29,7 @@ from .schema import (
     VitalsSnapshot,
 )
 
-__version__ = "1.1.0"
+__version__ = "1.2.0"
 
 __all__ = [
     "AdapterError",
@@ -41,6 +41,7 @@ __all__ = [
     "InterventionRecord",
     "JSONLExporter",
     "LoopDetectionResult",
+    "OTLPExporter",
     "RawSignals",
     "StopRuleSignals",
     "TemporalMetricsResult",
