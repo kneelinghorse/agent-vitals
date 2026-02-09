@@ -334,6 +334,12 @@ def _replay_trace(
 
         history.append(snapshot)
 
+    # Trace-level mutual exclusivity: stuck is suppressed when loop or thrash
+    # is the primary diagnosis.  Coverage stagnation / findings plateau on a
+    # loop or thrash trace is a symptom, not an independent stuck condition.
+    if stuck_fired and (loop_fired or thrash_fired):
+        stuck_fired = False
+
     any_fired = loop_fired or stuck_fired or thrash_fired or runaway_fired
     return {
         "loop": loop_fired,

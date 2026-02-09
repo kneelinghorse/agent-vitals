@@ -6,7 +6,14 @@ from typing import Any
 
 import pytest
 
-from agent_vitals.adapters import AutoGenAdapter, CrewAIAdapter, LangChainAdapter, LangGraphAdapter
+from agent_vitals.adapters import (
+    AutoGenAdapter,
+    CrewAIAdapter,
+    DSPyAdapter,
+    HaystackAdapter,
+    LangChainAdapter,
+    LangGraphAdapter,
+)
 
 
 class _Crew:
@@ -192,6 +199,134 @@ class _Agent:
                 "chat_messages": [{"failed": True}, {"error": "network"}],
                 "outputs": [{"status": "error"}],
                 "coverage_score": 0.2,
+            },
+        ),
+        # --- DSPy scenarios ---
+        (
+            DSPyAdapter(),
+            "healthy",
+            {
+                "lm_usage": {
+                    "openai/gpt-4o-mini": {
+                        "prompt_tokens": 800,
+                        "completion_tokens": 300,
+                        "total_tokens": 1100,
+                    },
+                },
+                "predictions": ["summary A", "analysis B", "synthesis C"],
+                "modules_completed": 3,
+                "modules_total": 4,
+                "errors": [],
+            },
+        ),
+        (
+            DSPyAdapter(),
+            "loop",
+            {
+                "lm_usage": {
+                    "openai/gpt-4o-mini": {"total_tokens": 600},
+                },
+                "predictions": ["same output", "same output"],
+                "modules_completed": 1,
+                "modules_total": 5,
+                "coverage_score": 0.2,
+            },
+        ),
+        (
+            DSPyAdapter(),
+            "stuck",
+            {
+                "lm_usage": {
+                    "openai/gpt-4o-mini": {"total_tokens": 400},
+                },
+                "predictions": [],
+                "modules_completed": 0,
+                "modules_total": 4,
+            },
+        ),
+        (
+            DSPyAdapter(),
+            "thrash",
+            {
+                "lm_usage": {
+                    "openai/gpt-4o-mini": {"total_tokens": 700},
+                },
+                "predictions": ["partial result"],
+                "modules_completed": 1,
+                "modules_total": 4,
+                "coverage_score": 0.25,
+                "errors": ["rate_limit", "timeout", "parse_error"],
+            },
+        ),
+        # --- Haystack scenarios ---
+        (
+            HaystackAdapter(),
+            "healthy",
+            {
+                "messages": [
+                    {"role": "user", "content": "Research topic"},
+                    {
+                        "role": "assistant",
+                        "content": "Finding A about the topic.",
+                        "_meta": {"usage": {"prompt_tokens": 200, "completion_tokens": 80, "total_tokens": 280}},
+                    },
+                    {
+                        "role": "assistant",
+                        "content": "Finding B with more detail.",
+                        "_meta": {"usage": {"prompt_tokens": 250, "completion_tokens": 100, "total_tokens": 350}},
+                    },
+                ],
+                "state": {"coverage_score": 0.75},
+                "sources": [
+                    {"url": "https://example.com/page1"},
+                    {"url": "https://other.org/doc"},
+                ],
+                "errors": [],
+            },
+        ),
+        (
+            HaystackAdapter(),
+            "loop",
+            {
+                "messages": [
+                    {
+                        "role": "assistant",
+                        "content": "Repeated answer",
+                        "_meta": {"usage": {"prompt_tokens": 100, "completion_tokens": 40, "total_tokens": 140}},
+                    },
+                    {
+                        "role": "assistant",
+                        "content": "Repeated answer",
+                        "_meta": {"usage": {"prompt_tokens": 100, "completion_tokens": 40, "total_tokens": 140}},
+                    },
+                ],
+                "state": {"coverage_score": 0.15},
+            },
+        ),
+        (
+            HaystackAdapter(),
+            "stuck",
+            {
+                "messages": [
+                    {"role": "user", "content": "Do research"},
+                ],
+                "state": {"coverage_score": 0.05},
+                "total_tokens": 80,
+            },
+        ),
+        (
+            HaystackAdapter(),
+            "thrash",
+            {
+                "messages": [
+                    {
+                        "role": "assistant",
+                        "content": "Partial result before error",
+                        "_meta": {"usage": {"prompt_tokens": 150, "completion_tokens": 50, "total_tokens": 200}},
+                    },
+                ],
+                "state": {"coverage_score": 0.2},
+                "errors": ["connection_timeout", "api_error"],
             },
         ),
     ],

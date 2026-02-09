@@ -8,6 +8,8 @@ from ..schema import RawSignals
 from .autogen import AutoGenAdapter
 from .base import BaseAdapter, SignalAdapter
 from .crewai import CrewAIAdapter
+from .dspy import DSPyAdapter
+from .haystack import HaystackAdapter
 from .langchain import LangChainAdapter
 from .langgraph import LangGraphAdapter
 
@@ -43,6 +45,8 @@ __all__ = [
     "AutoGenAdapter",
     "BaseAdapter",
     "CrewAIAdapter",
+    "DSPyAdapter",
+    "HaystackAdapter",
     "LangChainAdapter",
     "LangGraphAdapter",
     "SignalAdapter",

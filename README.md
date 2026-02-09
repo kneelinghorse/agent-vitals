@@ -59,7 +59,7 @@ for step in range(max_steps):
 - **4-field minimum**: Only `findings_count`, `coverage_score`, `total_tokens`, `error_count` required
 - **Zero-config defaults**: `AgentVitals()` works out of the box with tuned thresholds
 - **Framework-agnostic**: No dependency on LangChain, LangGraph, or any agent framework
-- **Built-in adapters**: LangChain, LangGraph, CrewAI, and AutoGen/AG2 signal extraction
+- **Built-in adapters**: LangChain, LangGraph, CrewAI, AutoGen/AG2, DSPy, and Haystack signal extraction
 - **Immutable snapshots**: Every `step()` returns a `VitalsSnapshot` with signals, metrics, and detection results
 - **JSONL export**: Auto-log every snapshot to structured JSONL files
 - **OTLP export**: Send metrics to Datadog, Grafana Cloud, or any OTLP backend
@@ -175,6 +175,60 @@ snapshot = monitor.step_from_state({
     "total_turns": 6,
 })
 ```
+
+### DSPy Adapter Integration
+
+```python
+from agent_vitals import AgentVitals
+from agent_vitals.adapters import DSPyAdapter
+
+monitor = AgentVitals(mission_id="dspy-program", adapter=DSPyAdapter())
+snapshot = monitor.step_from_state({
+    "lm_usage": {
+        "openai/gpt-4o-mini": {
+            "prompt_tokens": 1200,
+            "completion_tokens": 400,
+            "total_tokens": 1600,
+        },
+    },
+    "predictions": [{"answer": "Summary A"}, {"answer": "Analysis B"}],
+    "modules_completed": 2,
+    "modules_total": 3,
+    "errors": [],
+})
+```
+
+The DSPy adapter extracts tokens from `lm_usage` (preferred) or `lm.history` (fallback),
+findings from `predictions` or history outputs, and coverage from module completion state.
+No `dspy` dependency required.
+
+### Haystack Adapter Integration
+
+```python
+from agent_vitals import AgentVitals
+from agent_vitals.adapters import HaystackAdapter
+
+monitor = AgentVitals(mission_id="haystack-agent", adapter=HaystackAdapter())
+snapshot = monitor.step_from_state({
+    "messages": [
+        {"role": "user", "content": "Research quantum computing"},
+        {
+            "role": "assistant",
+            "content": "Quantum error correction advances...",
+            "_meta": {"usage": {"prompt_tokens": 200, "completion_tokens": 80, "total_tokens": 280}},
+        },
+    ],
+    "state": {"coverage_score": 0.6},
+    "sources": [
+        {"url": "https://arxiv.org/paper1"},
+        {"url": "https://nature.com/article1"},
+    ],
+})
+```
+
+The Haystack adapter handles both Agent state (`messages` with `_meta.usage`) and
+Pipeline state (`component_outputs` with `replies`). Extracts source URLs for domain
+counting. No `haystack-ai` dependency required.
 
 ### LangChain Callback Integration
 
@@ -350,6 +404,26 @@ summary = monitor.summary()
 
 monitor.reset()  # Clear history for next run (also flushes exporters)
 ```
+
+## Detection Precision
+
+Agent Vitals v1.3.0 has been validated against a 54-trace combined corpus spanning
+DeepSearch (LangGraph/Ollama) and cross-agent (LangChain, raw OpenAI, with GPT-4o-mini,
+DeepSeek-chat, and local OSS models) trajectories.
+
+| Detector | Precision | Recall | F1 |
+|---|---|---|---|
+| **vitals.any** | **1.000** | **1.000** | **1.000** |
+| loop | 0.750 | 1.000 | 0.857 |
+| stuck | 1.000 | 0.667 | 0.800 |
+| thrash | 1.000 | 1.000 | 1.000 |
+
+The composite `vitals.any` signal — used for enforcement decisions — maintains perfect
+precision and recall across all frameworks and models. Per-detector metrics are
+informational; the system correctly identifies failures even in the 2 edge cases where
+loop and stuck signals overlap.
+
+See `docs/vitals/av23-backtest-report.md` for the full backtest report.
 
 ## License
 

@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "agent-vitals"
-version = "1.2.0"
+version = "1.3.0"
 description = "Standalone agent health monitor — detect loops, stuck states, thrash, and runaway costs in any AI agent workflow."
 readme = "README.md"
 license = {text = "MIT"}

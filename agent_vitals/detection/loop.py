@@ -106,13 +106,20 @@ def detect_loop(
         recent_findings = findings_deltas[-consecutive:]
         plateau = all(delta <= 0.0 for delta in recent_findings)
 
+        # Require token activity — plateau WITH active work = loop,
+        # plateau WITHOUT active work = stuck (not repeating, just idle).
+        tokens_active = (
+            len(token_deltas) >= consecutive
+            and all(delta > 0.0 for delta in token_deltas[-consecutive:])
+        )
+
         coverage_flat = False
         if len(coverage_deltas) >= consecutive:
             coverage_flat = all(abs(delta) <= 1e-3 for delta in coverage_deltas[-consecutive:])
 
-        if plateau and coverage_flat:
+        if plateau and coverage_flat and tokens_active:
             loop_candidates.append((0.85, "findings_plateau+coverage_flat"))
-        elif plateau:
+        elif plateau and tokens_active:
             loop_candidates.append((0.75, "findings_plateau"))
 
         if (
@@ -121,8 +128,15 @@ def detect_loop(
             and len(domain_deltas) >= consecutive
             and all(delta > 0.0 for delta in query_deltas[-consecutive:])
             and all(delta <= 0.0 for delta in domain_deltas[-consecutive:])
+            and max(domain_counts) > 0  # agent must have found domains to stagnate
         ):
             loop_candidates.append((0.9, "query_repetition_proxy"))
+
+    # Suppress loop when errors are present — error-induced plateaus are
+    # thrash behavior, not repetitive looping.
+    error_count = int(snapshot.signals.error_count)
+    if error_count > 0:
+        loop_candidates.clear()
 
     loop_detected = False
     loop_confidence = 0.0
@@ -295,6 +309,18 @@ def detect_loop(
                             float(ratio / (float(cfg.burn_rate_multiplier) * baseline)),
                         )
                         stuck_candidates.append((min(1.0, 0.7 + 0.3 * factor), "burn_rate_anomaly"))
+
+    # Cross-detector suppression: when the primary failure mode is already
+    # identified as loop or thrash (error-induced), suppress overlapping stuck
+    # triggers that are symptoms rather than independent diagnoses.  Keep only
+    # triggers that represent genuinely independent stuck conditions.
+    _INDEPENDENT_STUCK_TRIGGERS = {"zero_progress", "sources_zero"}
+    if stuck_candidates and (loop_detected or error_count > 0):
+        stuck_candidates = [
+            (conf, trigger)
+            for conf, trigger in stuck_candidates
+            if trigger in _INDEPENDENT_STUCK_TRIGGERS
+        ]
 
     stuck_detected = False
     stuck_confidence = 0.0
