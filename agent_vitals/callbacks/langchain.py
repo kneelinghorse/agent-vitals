@@ -5,23 +5,30 @@ from __future__ import annotations
 import logging
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Callable, Literal, Mapping
+from typing import TYPE_CHECKING, Any, Callable, Literal, Mapping
 
 from ..export import JSONLExporter
 from ..monitor import AgentVitals
 from ..schema import VitalsSnapshot
 
-try:
-    from langchain_core.callbacks import BaseCallbackHandler
+_HAS_LANGCHAIN = False
+if TYPE_CHECKING:
+    class BaseCallbackHandler:
+        """Typing-only fallback for optional LangChain dependency."""
 
-    _HAS_LANGCHAIN = True
-except Exception:  # pragma: no cover - exercised via unit tests with monkeypatch
-    _HAS_LANGCHAIN = False
+        def __init__(self, *args: Any, **kwargs: Any) -> None:  # noqa: D401
+            pass
+else:
+    try:
+        from langchain_core.callbacks import BaseCallbackHandler as _BaseCallbackHandler
 
-    class BaseCallbackHandler:  # type: ignore[no-redef]
-        """Fallback shim when langchain_core is unavailable."""
+        BaseCallbackHandler = _BaseCallbackHandler
+        _HAS_LANGCHAIN = True
+    except Exception:  # pragma: no cover - exercised via unit tests with monkeypatch
+        class BaseCallbackHandler:
+            """Fallback shim when langchain_core is unavailable."""
 
-        pass
+            pass
 
 
 logger = logging.getLogger(__name__)
