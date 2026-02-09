@@ -59,7 +59,7 @@ for step in range(max_steps):
 - **4-field minimum**: Only `findings_count`, `coverage_score`, `total_tokens`, `error_count` required
 - **Zero-config defaults**: `AgentVitals()` works out of the box with tuned thresholds
 - **Framework-agnostic**: No dependency on LangChain, LangGraph, or any agent framework
-- **Built-in adapters**: LangChain, LangGraph, CrewAI, AutoGen/AG2, DSPy, and Haystack signal extraction
+- **Built-in adapters**: LangChain, LangGraph, CrewAI, AutoGen/AG2, DSPy, Haystack, Langfuse, and LangSmith signal extraction
 - **Immutable snapshots**: Every `step()` returns a `VitalsSnapshot` with signals, metrics, and detection results
 - **JSONL export**: Auto-log every snapshot to structured JSONL files
 - **OTLP export**: Send metrics to Datadog, Grafana Cloud, or any OTLP backend
@@ -229,6 +229,77 @@ snapshot = monitor.step_from_state({
 The Haystack adapter handles both Agent state (`messages` with `_meta.usage`) and
 Pipeline state (`component_outputs` with `replies`). Extracts source URLs for domain
 counting. No `haystack-ai` dependency required.
+
+### Langfuse Adapter Integration
+
+```python
+from agent_vitals import AgentVitals
+from agent_vitals.adapters import LangfuseAdapter
+
+monitor = AgentVitals(mission_id="langfuse-agent", adapter=LangfuseAdapter())
+snapshot = monitor.step_from_state({
+    "observations": [
+        {
+            "type": "GENERATION",
+            "model": "gpt-4o",
+            "output": "Analysis of market trends in Q4.",
+            "usage": {"prompt_tokens": 500, "completion_tokens": 200, "total_tokens": 700},
+            "level": "DEFAULT",
+        },
+        {
+            "type": "SPAN",
+            "name": "web_search",
+            "output": {"results": ["result1", "result2"]},
+        },
+    ],
+    "scores": [{"name": "coverage", "value": 0.65}],
+    "sources": [
+        {"url": "https://example.com/report"},
+        {"url": "https://other.org/data"},
+    ],
+})
+```
+
+The Langfuse adapter extracts tokens from GENERATION observations (`usage` or
+`usage_details`), findings from unique generation outputs, errors from observation
+`level` ("ERROR") and `status_message`, and coverage from `scores` or trace metadata.
+Also accepts flat `generations` lists. No `langfuse` dependency required.
+
+### LangSmith Adapter Integration
+
+```python
+from agent_vitals import AgentVitals
+from agent_vitals.adapters import LangSmithAdapter
+
+monitor = AgentVitals(mission_id="langsmith-agent", adapter=LangSmithAdapter())
+snapshot = monitor.step_from_state({
+    "run_type": "chain",
+    "usage_metadata": {"input_tokens": 500, "output_tokens": 200, "total_tokens": 700},
+    "outputs": {"output": "Analysis of market trends in Q4."},
+    "child_runs": [
+        {
+            "run_type": "llm",
+            "usage_metadata": {"input_tokens": 500, "output_tokens": 200, "total_tokens": 700},
+            "outputs": {"output": "Generated analysis."},
+        },
+        {
+            "run_type": "retriever",
+            "outputs": {
+                "documents": [
+                    {"metadata": {"source": "https://example.com/report"}},
+                ],
+            },
+        },
+    ],
+    "feedback_stats": {"coverage": {"mean": 0.65}},
+    "status": "success",
+})
+```
+
+The LangSmith adapter extracts tokens from `usage_metadata` (preferred) or LLM
+`child_runs` (fallback), findings from run `outputs`, errors from the `error` field
+and `status`, and coverage from `feedback_stats` or `extra.metadata`. Retriever
+child runs provide source/domain counts. No `langsmith` dependency required.
 
 ### LangChain Callback Integration
 
@@ -407,23 +478,24 @@ monitor.reset()  # Clear history for next run (also flushes exporters)
 
 ## Detection Precision
 
-Agent Vitals v1.3.0 has been validated against a 54-trace combined corpus spanning
-DeepSearch (LangGraph/Ollama) and cross-agent (LangChain, raw OpenAI, with GPT-4o-mini,
-DeepSeek-chat, and local OSS models) trajectories.
+Agent Vitals has been validated against a 70-trace combined corpus spanning
+DeepSearch (LangGraph/Ollama) and cross-agent (LangChain, raw OpenAI, CrewAI, AutoGen,
+DSPy, Haystack — with GPT-4o-mini, DeepSeek-chat, Gemini, Llama, Mixtral, Claude, and
+local OSS models) trajectories.
 
 | Detector | Precision | Recall | F1 |
 |---|---|---|---|
 | **vitals.any** | **1.000** | **1.000** | **1.000** |
-| loop | 0.750 | 1.000 | 0.857 |
-| stuck | 1.000 | 0.667 | 0.800 |
+| loop | 0.875 | 1.000 | 0.933 |
+| stuck | 1.000 | 0.800 | 0.889 |
 | thrash | 1.000 | 1.000 | 1.000 |
 
 The composite `vitals.any` signal — used for enforcement decisions — maintains perfect
-precision and recall across all frameworks and models. Per-detector metrics are
+precision and recall across all 7 frameworks and 7 models. Per-detector metrics are
 informational; the system correctly identifies failures even in the 2 edge cases where
 loop and stuck signals overlap.
 
-See `docs/vitals/av23-backtest-report.md` for the full backtest report.
+See `docs/vitals/av24-corpus-expansion.md` for the latest backtest analysis.
 
 ## License
 

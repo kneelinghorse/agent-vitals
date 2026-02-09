@@ -10,7 +10,9 @@ from agent_vitals.adapters import (
     BaseAdapter,
     CrewAIAdapter,
     LangChainAdapter,
+    LangfuseAdapter,
     LangGraphAdapter,
+    LangSmithAdapter,
     SignalAdapter,
 )
 from agent_vitals.schema import RawSignals
@@ -41,7 +43,9 @@ def test_built_in_adapters_conform_signal_protocol() -> None:
     assert isinstance(AutoGenAdapter(), SignalAdapter)
     assert isinstance(CrewAIAdapter(), SignalAdapter)
     assert isinstance(LangChainAdapter(), SignalAdapter)
+    assert isinstance(LangfuseAdapter(), SignalAdapter)
     assert isinstance(LangGraphAdapter(), SignalAdapter)
+    assert isinstance(LangSmithAdapter(), SignalAdapter)
 
 
 def test_langchain_adapter_extracts_agentexecutor_like_state() -> None:

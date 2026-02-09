@@ -11,7 +11,9 @@ from .crewai import CrewAIAdapter
 from .dspy import DSPyAdapter
 from .haystack import HaystackAdapter
 from .langchain import LangChainAdapter
+from .langfuse import LangfuseAdapter
 from .langgraph import LangGraphAdapter
+from .langsmith import LangSmithAdapter
 
 
 class TelemetryAdapter(BaseAdapter):
@@ -48,7 +50,9 @@ __all__ = [
     "DSPyAdapter",
     "HaystackAdapter",
     "LangChainAdapter",
+    "LangfuseAdapter",
     "LangGraphAdapter",
+    "LangSmithAdapter",
     "SignalAdapter",
     "TelemetryAdapter",
 ]

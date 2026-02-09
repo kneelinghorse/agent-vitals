@@ -12,7 +12,9 @@ from agent_vitals.adapters import (
     DSPyAdapter,
     HaystackAdapter,
     LangChainAdapter,
+    LangfuseAdapter,
     LangGraphAdapter,
+    LangSmithAdapter,
 )
 
 
@@ -327,6 +329,141 @@ class _Agent:
                 ],
                 "state": {"coverage_score": 0.2},
                 "errors": ["connection_timeout", "api_error"],
+            },
+        ),
+        # --- Langfuse scenarios ---
+        (
+            LangfuseAdapter(),
+            "healthy",
+            {
+                "observations": [
+                    {
+                        "type": "GENERATION",
+                        "model": "gpt-4o",
+                        "output": "Finding A: WASM adoption is growing.",
+                        "usage": {"prompt_tokens": 400, "completion_tokens": 150, "total_tokens": 550},
+                        "level": "DEFAULT",
+                    },
+                    {
+                        "type": "GENERATION",
+                        "model": "gpt-4o",
+                        "output": "Finding B: Cloudflare Workers leads adoption.",
+                        "usage": {"prompt_tokens": 500, "completion_tokens": 200, "total_tokens": 700},
+                        "level": "DEFAULT",
+                    },
+                ],
+                "scores": [{"name": "coverage", "value": 0.75}],
+                "sources": [
+                    {"url": "https://fermyon.com/spin"},
+                    {"url": "https://developers.cloudflare.com/workers/"},
+                ],
+            },
+        ),
+        (
+            LangfuseAdapter(),
+            "loop",
+            {
+                "observations": [
+                    {
+                        "type": "GENERATION",
+                        "model": "gpt-4o-mini",
+                        "output": "Repeated analysis",
+                        "usage": {"prompt_tokens": 100, "completion_tokens": 40, "total_tokens": 140},
+                        "level": "DEFAULT",
+                    },
+                    {
+                        "type": "GENERATION",
+                        "model": "gpt-4o-mini",
+                        "output": "Repeated analysis",
+                        "usage": {"prompt_tokens": 100, "completion_tokens": 40, "total_tokens": 140},
+                        "level": "DEFAULT",
+                    },
+                ],
+                "scores": [{"name": "coverage", "value": 0.15}],
+            },
+        ),
+        (
+            LangfuseAdapter(),
+            "stuck",
+            {
+                "observations": [
+                    {
+                        "type": "GENERATION",
+                        "model": "gpt-4o-mini",
+                        "output": "",
+                        "usage": {"prompt_tokens": 50, "completion_tokens": 5, "total_tokens": 55},
+                        "level": "DEFAULT",
+                    },
+                ],
+                "scores": [{"name": "coverage", "value": 0.05}],
+            },
+        ),
+        (
+            LangfuseAdapter(),
+            "thrash",
+            {
+                "observations": [
+                    {
+                        "type": "GENERATION",
+                        "model": "gpt-4o",
+                        "output": "Partial result",
+                        "usage": {"prompt_tokens": 200, "completion_tokens": 50, "total_tokens": 250},
+                        "level": "DEFAULT",
+                    },
+                    {
+                        "type": "GENERATION",
+                        "model": "gpt-4o",
+                        "output": "",
+                        "usage": {"prompt_tokens": 180, "completion_tokens": 10, "total_tokens": 190},
+                        "level": "ERROR",
+                        "status_message": "Model timeout",
+                    },
+                ],
+                "scores": [{"name": "coverage", "value": 0.2}],
+            },
+        ),
+        # --- LangSmith scenarios ---
+        (
+            LangSmithAdapter(),
+            "healthy",
+            {
+                "run_type": "chain",
+                "usage_metadata": {"input_tokens": 500, "output_tokens": 200, "total_tokens": 700},
+                "outputs": {"outputs": ["Finding A", "Finding B", "Finding C"]},
+                "feedback_stats": {"coverage": {"mean": 0.75}},
+                "status": "success",
+            },
+        ),
+        (
+            LangSmithAdapter(),
+            "loop",
+            {
+                "run_type": "chain",
+                "usage_metadata": {"input_tokens": 100, "output_tokens": 40, "total_tokens": 140},
+                "outputs": {"outputs": ["Same result", "Same result"]},
+                "coverage_score": 0.15,
+            },
+        ),
+        (
+            LangSmithAdapter(),
+            "stuck",
+            {
+                "run_type": "chain",
+                "usage_metadata": {"input_tokens": 50, "output_tokens": 5, "total_tokens": 55},
+                "outputs": {"output": ""},
+                "coverage_score": 0.05,
+            },
+        ),
+        (
+            LangSmithAdapter(),
+            "thrash",
+            {
+                "run_type": "chain",
+                "error": "Chain execution failed after retries",
+                "status": "error",
+                "usage_metadata": {"input_tokens": 200, "output_tokens": 50, "total_tokens": 250},
+                "outputs": {"output": "Partial result"},
+                "coverage_score": 0.2,
             },
         ),
     ],
