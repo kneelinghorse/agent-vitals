@@ -17,7 +17,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Mapping, Optional
 
-import yaml
+import yaml  # type: ignore[import-untyped]
 
 from .schema import HysteresisConfig
 
@@ -225,7 +225,7 @@ class VitalsConfig:
             text = str(value).strip()
             return text if text else default
 
-        yaml_kwargs = dict(
+        yaml_kwargs: dict[str, Any] = dict(
             loop_similarity_threshold=_yaml_float(
                 "loop_similarity_threshold", DEFAULT_LOOP_SIMILARITY_THRESHOLD
             ),

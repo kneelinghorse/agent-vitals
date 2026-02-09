@@ -1,5 +1,6 @@
 # Agent Vitals
 
+[![CI](https://github.com/kneelinghorse/agent-vitals/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/kneelinghorse/agent-vitals/actions/workflows/ci.yml)
 [![PyPI version](https://img.shields.io/pypi/v/agent-vitals)](https://pypi.org/project/agent-vitals/)
 [![Python](https://img.shields.io/pypi/pyversions/agent-vitals)](https://pypi.org/project/agent-vitals/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
@@ -12,6 +13,11 @@ Agent Vitals watches your LLM agent's vital signs in real time. Feed it four num
 
 ```bash
 pip install agent-vitals
+```
+
+```bash
+# Optional framework integrations
+pip install "agent-vitals[langchain,langgraph]"
 ```
 
 ## Quick Start
@@ -90,6 +96,66 @@ snapshot = monitor.step_from_state({
     "cumulative_tokens": 12000,
     "cumulative_errors": 0,
 })
+```
+
+### LangChain Adapter Integration
+
+```python
+from agent_vitals import AgentVitals
+from agent_vitals.adapters import LangChainAdapter
+
+monitor = AgentVitals(mission_id="lc-agent", adapter=LangChainAdapter())
+snapshot = monitor.step_from_state({
+    "cumulative_outputs": 7,
+    "coverage_score": 0.72,
+    "llm_output": {"token_usage": {"prompt_tokens": 1200, "completion_tokens": 600, "total_tokens": 1800}},
+    "cumulative_errors": 1,
+    "intermediate_steps": [("search", "..."), ("summarize", "...")],
+})
+```
+
+### LangGraph Adapter Integration
+
+```python
+from agent_vitals import AgentVitals
+from agent_vitals.adapters import LangGraphAdapter
+
+monitor = AgentVitals(mission_id="lg-agent", adapter=LangGraphAdapter())
+snapshot = monitor.step_from_state({
+    "findings": ["f1", "f2"],
+    "sources_found": [{"url": "https://example.com/a"}],
+    "mission_objectives": ["o1", "o2", "o3"],
+    "covered_objectives": ["o1", "o2"],
+    "total_tokens": 4200,
+    "errors": [],
+})
+```
+
+### LangChain Callback Integration
+
+```python
+from agent_vitals.callbacks import LangChainVitalsCallback
+
+callback = LangChainVitalsCallback(
+    mission_id="lc-callback",
+    on_failure="log",            # "log" | "raise" | "callback"
+    export_jsonl_dir="./vitals_logs",
+)
+
+# Pass callback into your LangChain runnable/agent callback list.
+```
+
+### LangGraph Node Integration
+
+```python
+from agent_vitals.callbacks import LangGraphVitalsNode
+
+vitals_node = LangGraphVitalsNode(on_failure="force_finalize")
+
+# Add `vitals_node` to your StateGraph as a normal callable node.
+# Returned update includes:
+#   - agent_vitals: snapshot payload
+#   - force_finalize: True (when failure detected and mode is force_finalize)
 ```
 
 ### Pre-built Signals

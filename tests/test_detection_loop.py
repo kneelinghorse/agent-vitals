@@ -9,7 +9,6 @@ from __future__ import annotations
 
 import copy
 
-import pytest
 
 from agent_vitals.config import VitalsConfig
 from agent_vitals.detection.loop import detect_loop

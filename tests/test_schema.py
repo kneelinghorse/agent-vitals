@@ -1,12 +1,10 @@
 """Tests for agent_vitals.schema module."""
 
-from datetime import datetime, timezone
 
 import pytest
 from pydantic import ValidationError
 
 from agent_vitals.schema import (
-    HealthState,
     RawSignals,
     TemporalMetricsResult,
     VitalsSnapshot,

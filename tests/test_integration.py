@@ -13,7 +13,6 @@ from typing import Any, Mapping
 import pytest
 
 from agent_vitals import AgentVitals, JSONLExporter, VitalsSnapshot
-from agent_vitals.adapters import SignalAdapter
 from agent_vitals.schema import RawSignals
 
 

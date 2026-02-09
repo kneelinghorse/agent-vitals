@@ -17,7 +17,6 @@ from .adapters import SignalAdapter
 from .config import VitalsConfig, get_vitals_config
 from .detection.loop import LoopDetectionResult, detect_loop
 from .detection.metrics import TemporalMetrics
-from .detection.stop_rule import StopRuleSignals, derive_stop_signals
 from .exceptions import AdapterError
 from .schema import (
     HealthState,

@@ -12,16 +12,13 @@ from pathlib import Path
 import pytest
 
 from agent_vitals.backtest import (
-    BacktestReport,
     ConfusionCounts,
-    Dataset,
     DetectorResult,
     Labels,
     load_dataset,
     load_labels,
     run_backtest,
 )
-from agent_vitals.config import VitalsConfig
 from agent_vitals.schema import RawSignals, TemporalMetricsResult, VitalsSnapshot
 
 
