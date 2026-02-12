@@ -13,7 +13,7 @@ from __future__ import annotations
 import logging
 import math
 import os
-from dataclasses import dataclass
+from dataclasses import dataclass, fields
 from pathlib import Path
 from typing import Any, Mapping, Optional
 
@@ -70,6 +70,86 @@ DEFAULT_TH_EXIT_WARNING = 0.6
 DEFAULT_TH_ENTER_CRITICAL = 0.2
 DEFAULT_TH_EXIT_CRITICAL = 0.35
 
+# Threshold fields that can be overridden per framework profile.
+_PROFILE_OVERRIDABLE_FLOAT_FIELDS = (
+    "loop_similarity_threshold",
+    "stuck_dm_threshold",
+    "stuck_cv_threshold",
+    "burn_rate_multiplier",
+    "token_scale_factor",
+    "th_enter_warning",
+    "th_exit_warning",
+    "th_enter_critical",
+    "th_exit_critical",
+)
+_PROFILE_OVERRIDABLE_INT_FIELDS = ("loop_consecutive_count",)
+_PROFILE_OVERRIDABLE_STR_FIELDS = ("workflow_stuck_enabled",)
+
+# Mapping from adapter class names to framework profile keys.
+ADAPTER_FRAMEWORK_MAP: dict[str, str] = {
+    "LangChainAdapter": "langchain",
+    "LangGraphAdapter": "langgraph",
+    "CrewAIAdapter": "crewai",
+    "AutoGenAdapter": "autogen",
+    "DSPyAdapter": "dspy",
+    "HaystackAdapter": "haystack",
+    "LangfuseAdapter": "langfuse",
+    "LangSmithAdapter": "langsmith",
+    "TelemetryAdapter": "telemetry",
+}
+
+
+@dataclass(frozen=True, slots=True)
+class ThresholdProfile:
+    """Per-framework threshold overrides.
+
+    Fields set to ``None`` inherit the VitalsConfig default value.
+    Only detection-related thresholds can be overridden per framework.
+    """
+
+    framework: str
+
+    loop_similarity_threshold: Optional[float] = None
+    loop_consecutive_count: Optional[int] = None
+    stuck_dm_threshold: Optional[float] = None
+    stuck_cv_threshold: Optional[float] = None
+    burn_rate_multiplier: Optional[float] = None
+    token_scale_factor: Optional[float] = None
+    workflow_stuck_enabled: Optional[str] = None
+    th_enter_warning: Optional[float] = None
+    th_exit_warning: Optional[float] = None
+    th_enter_critical: Optional[float] = None
+    th_exit_critical: Optional[float] = None
+
+    @classmethod
+    def from_dict(cls, framework: str, data: Mapping[str, Any]) -> "ThresholdProfile":
+        """Build a ThresholdProfile from a plain dictionary.
+
+        Unknown keys are silently ignored. Only override fields present
+        in the dictionary are set; everything else stays ``None``.
+        """
+        kwargs: dict[str, Any] = {"framework": framework.strip().lower()}
+        for key in _PROFILE_OVERRIDABLE_FLOAT_FIELDS:
+            if key in data:
+                try:
+                    value = float(data[key])
+                    if math.isfinite(value):
+                        kwargs[key] = value
+                except (TypeError, ValueError):
+                    pass
+        for key in _PROFILE_OVERRIDABLE_INT_FIELDS:
+            if key in data:
+                try:
+                    kwargs[key] = int(data[key])
+                except (TypeError, ValueError):
+                    pass
+        for key in _PROFILE_OVERRIDABLE_STR_FIELDS:
+            if key in data:
+                text = str(data[key]).strip()
+                if text:
+                    kwargs[key] = text
+        return cls(**kwargs)
+
 
 @dataclass(frozen=True, slots=True)
 class VitalsConfig:
@@ -101,6 +181,47 @@ class VitalsConfig:
     otlp_endpoint: str = "http://localhost:4318"
     export_langfuse: bool = False
     export_langsmith: bool = False
+
+    framework_profiles: tuple[ThresholdProfile, ...] = ()
+
+    def for_framework(self, framework: str) -> "VitalsConfig":
+        """Return a new VitalsConfig with framework-specific overrides applied.
+
+        If no profile matches the given framework name, returns ``self``
+        unchanged (default fallback behavior).
+
+        Args:
+            framework: Framework identifier (e.g., "langgraph", "crewai").
+
+        Returns:
+            VitalsConfig with profile overrides applied.
+        """
+        normalized = framework.strip().lower()
+        profile: Optional[ThresholdProfile] = None
+        for p in self.framework_profiles:
+            if p.framework == normalized:
+                profile = p
+                break
+        if profile is None:
+            return self
+
+        overrides: dict[str, Any] = {}
+        for f in fields(profile):
+            if f.name == "framework":
+                continue
+            value = getattr(profile, f.name)
+            if value is not None:
+                overrides[f.name] = value
+
+        if not overrides:
+            return self
+
+        # Build kwargs from current config, then apply overrides
+        kwargs: dict[str, Any] = {}
+        for f in fields(self):
+            kwargs[f.name] = getattr(self, f.name)
+        kwargs.update(overrides)
+        return VitalsConfig(**kwargs)
 
     @classmethod
     def from_dict(cls, data: Mapping[str, Any]) -> "VitalsConfig":
@@ -163,6 +284,16 @@ class VitalsConfig:
 
         if "jsonl_dir" in data:
             kwargs["jsonl_dir"] = Path(str(data["jsonl_dir"]))
+
+        # Parse framework profiles
+        profiles_data = data.get("profiles")
+        if isinstance(profiles_data, Mapping):
+            profiles = []
+            for fw_name, fw_data in profiles_data.items():
+                if isinstance(fw_data, Mapping):
+                    profiles.append(ThresholdProfile.from_dict(str(fw_name).strip().lower(), fw_data))
+            if profiles:
+                kwargs["framework_profiles"] = tuple(profiles)
 
         return cls(**kwargs)
 
@@ -260,6 +391,18 @@ class VitalsConfig:
                 "th_exit_critical", DEFAULT_TH_EXIT_CRITICAL
             ),
         )
+
+        # Parse framework-specific threshold profiles
+        profiles_raw = data.get("profiles")
+        if isinstance(profiles_raw, Mapping):
+            profiles = []
+            for fw_name, fw_data in profiles_raw.items():
+                if isinstance(fw_data, Mapping):
+                    profiles.append(
+                        ThresholdProfile.from_dict(str(fw_name).strip().lower(), fw_data)
+                    )
+            if profiles:
+                yaml_kwargs["framework_profiles"] = tuple(profiles)
 
         if allow_env_override:
             env_instance = cls.from_env()
@@ -557,11 +700,13 @@ def _parse_jsonl_layout(env_name: str, *, default: str) -> str:
 
 
 __all__ = [
+    "ADAPTER_FRAMEWORK_MAP",
     "DEFAULT_VITALS_HISTORY_SIZE",
     "DEFAULT_VITALS_JSONL_DIR",
     "DEFAULT_VITALS_JSONL_MAX_BYTES",
     "DEFAULT_VITALS_JSONL_LAYOUT",
     "THRESHOLDS_YAML_PATH",
+    "ThresholdProfile",
     "VITALS_JSONL_LAYOUT_ENV",
     "VitalsConfig",
     "get_vitals_config",

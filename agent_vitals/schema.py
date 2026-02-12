@@ -121,6 +121,9 @@ class VitalsSnapshot(BaseModel):
     stuck_confidence: float = Field(default=0.0, ge=0.0, le=1.0)
     stuck_trigger: Optional[str] = Field(default=None)
 
+    output_similarity: Optional[float] = Field(default=None, ge=0.0, le=1.0)
+    output_fingerprint: Optional[str] = Field(default=None)
+
     intervention: Optional[InterventionRecord] = Field(default=None)
 
     @property

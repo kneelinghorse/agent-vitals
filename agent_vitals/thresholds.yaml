@@ -7,6 +7,9 @@
 # Environment variables override these values when set.
 
 # --- Loop Detection ---
+# Content similarity threshold for output-based loop detection.
+# When output_text is provided to step(), consecutive outputs with
+# Jaccard similarity >= this threshold trigger the content_similarity signal.
 loop_similarity_threshold: 0.8
 loop_consecutive_count: 6
 
@@ -29,3 +32,30 @@ th_enter_warning: 0.4
 th_exit_warning: 0.6
 th_enter_critical: 0.2
 th_exit_critical: 0.35
+
+# --- Framework-Specific Threshold Profiles ---
+#
+# Per-adapter overrides for detection thresholds. When an adapter is used
+# (or framework= is passed explicitly), matching profile overrides are
+# applied on top of the defaults above. Only specified fields are overridden;
+# omitted fields inherit the default values.
+profiles:
+  # LangGraph: stateful graph execution, shorter loops, tighter burn rate.
+  langgraph:
+    loop_consecutive_count: 5
+    burn_rate_multiplier: 2.5
+
+  # CrewAI: multi-agent orchestration, higher token counts, longer runs.
+  # More lenient loop detection — agent handoffs look like repetition.
+  crewai:
+    loop_consecutive_count: 8
+    burn_rate_multiplier: 4.0
+    token_scale_factor: 0.7
+
+  # DSPy: optimization loops are naturally repetitive. Very lenient loop
+  # detection, tighter stuck threshold, disable stuck detection entirely
+  # (DSPy has its own termination logic).
+  dspy:
+    loop_consecutive_count: 10
+    stuck_dm_threshold: 0.1
+    workflow_stuck_enabled: none

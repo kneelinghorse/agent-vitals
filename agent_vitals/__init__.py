@@ -15,7 +15,7 @@ Usage::
     )
 """
 
-from .config import VitalsConfig, get_vitals_config
+from .config import ThresholdProfile, VitalsConfig, get_vitals_config
 from .detection.loop import LoopDetectionResult, detect_loop
 from .detection.stop_rule import StopRuleSignals, derive_stop_signals
 from .exceptions import AdapterError, BacktestError, ConfigurationError, ExportError, VitalsError
@@ -29,7 +29,7 @@ from .schema import (
     VitalsSnapshot,
 )
 
-__version__ = "1.4.0"
+__version__ = "1.5.0"
 
 __all__ = [
     "AdapterError",
@@ -45,6 +45,7 @@ __all__ = [
     "RawSignals",
     "StopRuleSignals",
     "TemporalMetricsResult",
+    "ThresholdProfile",
     "VitalsConfig",
     "VitalsError",
     "VitalsExporter",

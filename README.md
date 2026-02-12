@@ -75,6 +75,29 @@ for step in range(max_steps):
 | **Thrash** | Excessive errors indicating instability | Error count above threshold |
 | **Runaway Cost** | Token burn with no output | Token spike with flat findings |
 
+### Content-Based Loop Detection (v1.5.0)
+
+When you pass `output_text` to `monitor.step()`, Agent Vitals computes content-level
+similarity to distinguish loops from stuck states:
+
+```python
+snapshot = monitor.step(
+    findings_count=5,
+    coverage_score=0.6,
+    total_tokens=12000,
+    error_count=0,
+    output_text="The agent's latest output text here...",
+)
+
+# New fields on VitalsSnapshot:
+print(snapshot.output_similarity)    # 0.0–1.0 Jaccard similarity vs previous output
+print(snapshot.output_fingerprint)   # SHA-256 hash for exact-match detection
+```
+
+- **High similarity** (≥0.85): Confirms loop — agent is producing repetitive outputs
+- **Low similarity** with stagnant coverage: Confirms stuck — agent is producing varied but unproductive outputs
+- **No output_text**: Detection falls back to signal-level heuristics (fully backward-compatible)
+
 ## API Overview
 
 ### Manual Integration (Recommended)
@@ -437,6 +460,52 @@ monitor = AgentVitals()  # auto-reads VITALS_LOOP_CONSECUTIVE_COUNT, etc.
 | `stuck_cv_threshold` | 0.5 | CV below this → low variation |
 | `burn_rate_multiplier` | 2.0 | Token spike ratio for burn rate anomaly |
 
+### Framework-Specific Threshold Profiles (v1.5.0)
+
+Different agent frameworks have different normal operating patterns. Framework profiles
+automatically tune detection thresholds when you use a built-in adapter:
+
+```python
+from agent_vitals import AgentVitals
+from agent_vitals.adapters import CrewAIAdapter
+
+# Profile auto-detected from adapter type
+monitor = AgentVitals(mission_id="crew-task", adapter=CrewAIAdapter())
+# → Uses crewai profile: loop_consecutive_count=8, burn_rate_multiplier=4.0
+```
+
+Built-in profiles:
+
+| Framework | `loop_consecutive_count` | `burn_rate_multiplier` | Notes |
+|---|---|---|---|
+| langgraph | 5 | 2.5 | Tighter loop detection for graph-based workflows |
+| crewai | 8 | 4.0 | Higher burn rate tolerance for multi-agent crews |
+| dspy | 10 | — | Higher consecutive count for optimization loops |
+
+Override auto-detection with the `framework` parameter:
+
+```python
+monitor = AgentVitals(
+    mission_id="task",
+    adapter=LangGraphAdapter(),
+    framework="crewai",  # Override: use crewai profile instead
+)
+```
+
+Define custom profiles in `thresholds.yaml`:
+
+```yaml
+loop_consecutive_count: 6
+profiles:
+  langgraph:
+    loop_consecutive_count: 5
+    burn_rate_multiplier: 2.5
+  crewai:
+    loop_consecutive_count: 8
+    burn_rate_multiplier: 4.0
+    token_scale_factor: 0.7
+```
+
 ## Backtest
 
 Evaluate detection accuracy against labeled trajectory corpora.
@@ -483,6 +552,8 @@ DeepSearch (LangGraph/Ollama) and cross-agent (LangChain, raw OpenAI, CrewAI, Au
 DSPy, Haystack — with GPT-4o-mini, DeepSeek-chat, Gemini, Llama, Mixtral, Claude, and
 local OSS models) trajectories.
 
+### Cross-Agent Corpus (40 traces, 7 frameworks, 7 models)
+
 | Detector | Precision | Recall | F1 |
 |---|---|---|---|
 | **vitals.any** | **1.000** | **1.000** | **1.000** |
@@ -490,12 +561,22 @@ local OSS models) trajectories.
 | stuck | 1.000 | 0.800 | 0.889 |
 | thrash | 1.000 | 1.000 | 1.000 |
 
-The composite `vitals.any` signal — used for enforcement decisions — maintains perfect
-precision and recall across all 7 frameworks and 7 models. Per-detector metrics are
-informational; the system correctly identifies failures even in the 2 edge cases where
-loop and stuck signals overlap.
+### Combined Corpus (70 traces)
 
-See `docs/vitals/av24-corpus-expansion.md` for the latest backtest analysis.
+| Detector | Precision | Recall | F1 |
+|---|---|---|---|
+| **vitals.any** | **1.000** | **0.982** | **0.991** |
+| loop | 0.909 | 0.870 | 0.889 |
+| stuck | 0.824 | 0.737 | 0.778 |
+| thrash | 1.000 | 1.000 | 1.000 |
+
+The composite `vitals.any` signal — used for enforcement decisions — maintains perfect
+precision across both corpora. Per-detector metrics are informational; the system
+correctly identifies failures even in the 2 edge cases where loop and stuck signals
+overlap. Content-based similarity (v1.5.0) addresses these edge cases for new traces
+that provide `output_text`.
+
+See `docs/vitals/av25-backtest-report.md` for the latest backtest analysis.
 
 ## License
 

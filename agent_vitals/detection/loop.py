@@ -132,6 +132,17 @@ def detect_loop(
         ):
             loop_candidates.append((0.9, "query_repetition_proxy"))
 
+    # Content similarity gate: high output similarity is an independent
+    # loop signal (agent producing near-identical outputs across iterations).
+    sim_threshold = float(cfg.loop_similarity_threshold)
+    output_similarity = getattr(snapshot, "output_similarity", None)
+    if output_similarity is not None:
+        similarity = float(output_similarity)
+        if similarity >= sim_threshold:
+            # Exact or near-exact repeat — strong loop signal
+            confidence = 0.80 + 0.15 * min(1.0, (similarity - sim_threshold) / max(1e-9, 1.0 - sim_threshold))
+            loop_candidates.append((confidence, "content_similarity"))
+
     # Suppress loop when errors are present — error-induced plateaus are
     # thrash behavior, not repetitive looping.
     error_count = int(snapshot.signals.error_count)
@@ -309,6 +320,20 @@ def detect_loop(
                             float(ratio / (float(cfg.burn_rate_multiplier) * baseline)),
                         )
                         stuck_candidates.append((min(1.0, 0.7 + 0.3 * factor), "burn_rate_anomaly"))
+
+    # Low output similarity confirms stuck: the agent is producing varied
+    # outputs (not repeating) but still making no progress — flailing.
+    if output_similarity is not None and stuck_candidates:
+        similarity = float(output_similarity)
+        low_sim_threshold = 1.0 - sim_threshold  # e.g., 0.2 when threshold is 0.8
+        if similarity <= low_sim_threshold:
+            # Boost the best stuck candidate confidence by up to 0.10
+            boost = 0.10 * min(1.0, (low_sim_threshold - similarity) / max(1e-9, low_sim_threshold))
+            stuck_candidates = [
+                (_clip01(conf + boost), trigger) if (conf, trigger) == max(stuck_candidates, key=lambda x: x[0])
+                else (conf, trigger)
+                for conf, trigger in stuck_candidates
+            ]
 
     # Cross-detector suppression: when the primary failure mode is already
     # identified as loop or thrash (error-induced), suppress overlapping stuck

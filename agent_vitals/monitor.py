@@ -14,9 +14,10 @@ if TYPE_CHECKING:
     from .export import VitalsExporter
 
 from .adapters import SignalAdapter
-from .config import VitalsConfig, get_vitals_config
+from .config import ADAPTER_FRAMEWORK_MAP, VitalsConfig, get_vitals_config
 from .detection.loop import LoopDetectionResult, detect_loop
 from .detection.metrics import TemporalMetrics
+from .detection.similarity import compute_output_fingerprint, compute_similarity_scores
 from .exceptions import AdapterError
 from .schema import (
     HealthState,
@@ -52,8 +53,22 @@ class AgentVitals:
         run_id: Optional[str] = None,
         adapter: Optional[SignalAdapter] = None,
         exporters: Optional[Sequence["VitalsExporter"]] = None,
+        framework: Optional[str] = None,
     ) -> None:
-        self._config = config or get_vitals_config()
+        base_config = config or get_vitals_config()
+
+        # Resolve framework: explicit > auto-detect from adapter
+        resolved_framework = framework
+        if resolved_framework is None and adapter is not None:
+            resolved_framework = ADAPTER_FRAMEWORK_MAP.get(type(adapter).__name__)
+
+        # Apply framework-specific threshold profile overrides
+        if resolved_framework:
+            self._config = base_config.for_framework(resolved_framework)
+        else:
+            self._config = base_config
+
+        self._framework = resolved_framework
         self._workflow_type = workflow_type
         self._mission_id = mission_id
         self._run_id = run_id or str(uuid.uuid4())
@@ -63,6 +78,7 @@ class AgentVitals:
         self._loop_index = 0
         self._health_state: HealthState = "healthy"
         self._metrics_engine = TemporalMetrics()
+        self._recent_output_texts: list[str] = []
 
     @classmethod
     def from_yaml(
@@ -74,6 +90,7 @@ class AgentVitals:
         run_id: Optional[str] = None,
         adapter: Optional[SignalAdapter] = None,
         exporters: Optional[Sequence["VitalsExporter"]] = None,
+        framework: Optional[str] = None,
     ) -> "AgentVitals":
         """Create an AgentVitals instance from a YAML config file."""
         config = VitalsConfig.from_yaml(Path(yaml_path))
@@ -84,6 +101,7 @@ class AgentVitals:
             run_id=run_id,
             adapter=adapter,
             exporters=exporters,
+            framework=framework,
         )
 
     def step(
@@ -105,6 +123,8 @@ class AgentVitals:
         refinement_count: int = 0,
         convergence_delta: float = 0.0,
         confidence_score: float = 0.0,
+        # Content-based similarity detection
+        output_text: Optional[str] = None,
     ) -> VitalsSnapshot:
         """Record a step and return the health snapshot.
 
@@ -123,6 +143,9 @@ class AgentVitals:
             refinement_count: Number of refinement iterations.
             convergence_delta: Change in convergence metric.
             confidence_score: Confidence level (0.0-1.0).
+            output_text: Optional agent output text for content-based
+                similarity detection. When provided, outputs are compared
+                across iterations to detect repetitive looping.
 
         Returns:
             VitalsSnapshot with detection results and health state.
@@ -143,13 +166,19 @@ class AgentVitals:
             convergence_delta=convergence_delta,
             error_count=error_count,
         )
-        return self._process_signals(signals)
+        return self._process_signals(signals, output_text=output_text)
 
-    def step_from_state(self, state: Mapping[str, Any]) -> VitalsSnapshot:
+    def step_from_state(
+        self,
+        state: Mapping[str, Any],
+        *,
+        output_text: Optional[str] = None,
+    ) -> VitalsSnapshot:
         """Use the configured adapter to extract signals from framework state.
 
         Args:
             state: Framework-specific state mapping.
+            output_text: Optional agent output text for similarity detection.
 
         Returns:
             VitalsSnapshot with detection results.
@@ -163,18 +192,24 @@ class AgentVitals:
             signals = self._adapter.extract(state)
         except Exception as exc:
             raise AdapterError(f"Adapter extraction failed: {exc}") from exc
-        return self._process_signals(signals)
+        return self._process_signals(signals, output_text=output_text)
 
-    def step_from_signals(self, signals: RawSignals) -> VitalsSnapshot:
+    def step_from_signals(
+        self,
+        signals: RawSignals,
+        *,
+        output_text: Optional[str] = None,
+    ) -> VitalsSnapshot:
         """Step with a pre-built RawSignals object.
 
         Args:
             signals: Pre-constructed RawSignals instance.
+            output_text: Optional agent output text for similarity detection.
 
         Returns:
             VitalsSnapshot with detection results.
         """
-        return self._process_signals(signals)
+        return self._process_signals(signals, output_text=output_text)
 
     @property
     def history(self) -> list[VitalsSnapshot]:
@@ -223,6 +258,7 @@ class AgentVitals:
         """
         self._flush_and_close_exporters()
         self._history.clear()
+        self._recent_output_texts.clear()
         self._loop_index = 0
         self._health_state = "healthy"
         self._run_id = str(uuid.uuid4())
@@ -247,7 +283,12 @@ class AgentVitals:
             except Exception as exc:
                 _logger.warning("Exporter close failed: %s", exc)
 
-    def _process_signals(self, signals: RawSignals) -> VitalsSnapshot:
+    def _process_signals(
+        self,
+        signals: RawSignals,
+        *,
+        output_text: Optional[str] = None,
+    ) -> VitalsSnapshot:
         """Core processing: compute metrics, run detection, build snapshot."""
         # Compute temporal metrics from history
         coverage_series = [float(s.signals.coverage_score) for s in self._history] + [
@@ -295,7 +336,20 @@ class AgentVitals:
         )
         previous_health = self._health_state if health_changed else None
 
-        # Build snapshot (without detection results yet)
+        # Compute output similarity if text provided
+        output_fingerprint: Optional[str] = None
+        output_similarity: Optional[float] = None
+        if output_text is not None:
+            output_fingerprint = compute_output_fingerprint(output_text)
+            if self._recent_output_texts:
+                sim_result = compute_similarity_scores(
+                    output_text,
+                    self._recent_output_texts,
+                    threshold=float(self._config.loop_similarity_threshold),
+                )
+                output_similarity = sim_result.max_similarity
+
+        # Build snapshot (without detection results yet, but WITH similarity)
         snapshot = VitalsSnapshot(
             mission_id=self._mission_id,
             run_id=self._run_id,
@@ -305,6 +359,8 @@ class AgentVitals:
             health_state=new_health,
             health_state_changed=health_changed,
             previous_health_state=previous_health,
+            output_similarity=output_similarity,
+            output_fingerprint=output_fingerprint,
         )
 
         # Run loop/stuck detection
@@ -325,6 +381,8 @@ class AgentVitals:
             health_state=new_health,
             health_state_changed=health_changed,
             previous_health_state=previous_health,
+            output_similarity=output_similarity,
+            output_fingerprint=output_fingerprint,
             loop_detected=detection.loop_detected,
             loop_confidence=detection.loop_confidence,
             loop_trigger=detection.loop_trigger,
@@ -337,6 +395,13 @@ class AgentVitals:
         self._health_state = new_health
         self._history.append(snapshot)
         self._loop_index += 1
+
+        # Update output text sliding window (keep bounded)
+        if output_text is not None:
+            self._recent_output_texts.append(output_text)
+            max_window = max(1, self._config.history_size)
+            if len(self._recent_output_texts) > max_window:
+                self._recent_output_texts = self._recent_output_texts[-max_window:]
 
         # Export snapshot to all configured exporters
         for exporter in self._exporters:
