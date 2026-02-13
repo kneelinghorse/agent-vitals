@@ -13,7 +13,7 @@ from typing import Optional, Sequence
 
 from ..config import VitalsConfig, get_vitals_config
 from ..schema import VitalsSnapshot
-from .adaptive_threshold import AdaptiveThreshold
+from .adaptive_threshold import AdaptiveDirection, AdaptiveThreshold
 
 SHORT_RUN_MAX_STEPS = 4
 SHORT_RUN_MIN_FINDINGS = 3
@@ -329,9 +329,9 @@ def detect_loop(
     if output_similarity is not None:
         similarity = float(output_similarity)
         similarity_series = [
-            float(item.output_similarity)
+            float(similarity_value)
             for item in series
-            if getattr(item, "output_similarity", None) is not None
+            if (similarity_value := item.output_similarity) is not None
         ]
         similarity_alarm, similarity_threshold, _, _ = _adaptive_alarm_from_series(
             values=similarity_series,
@@ -667,7 +667,7 @@ def detect_loop(
         stuck_detected = False
         stuck_confidence = 0.0
 
-    detector_priority: Optional[str] = None
+    detector_priority = None
     if confabulation_detected:
         loop_detected = False
         loop_confidence = 0.0
@@ -773,13 +773,15 @@ def _consecutive_ratio_declines(
 def _adaptive_alarm_from_series(
     *,
     values: Sequence[float],
-    direction: str,
+    direction: AdaptiveDirection,
     fallback_threshold: Optional[float],
     config: VitalsConfig,
 ) -> tuple[bool, float, bool, bool]:
     """Replay a scalar series through AdaptiveThreshold and return last alarm state."""
 
-    normalized_direction = "decrease" if direction == "decrease" else "increase"
+    normalized_direction: AdaptiveDirection = (
+        "decrease" if direction == "decrease" else "increase"
+    )
     tracker = AdaptiveThreshold(
         direction=normalized_direction,
         k_sigma=max(0.1, float(config.spc_k_sigma)),
