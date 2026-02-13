@@ -215,15 +215,27 @@ class TestLoopDetectorContentSimilarity:
                 unique_domains=1,
                 dm_coverage=0.3,
                 cv_coverage=0.2,
-            )
+            ),
+            _make_snapshot(
+                vitals_snapshot_healthy,
+                loop_index=1,
+                findings_count=4,
+                coverage_score=0.55,
+                total_tokens=1500,
+                query_count=2,
+                unique_domains=1,
+                dm_coverage=0.3,
+                cv_coverage=0.2,
+                output_similarity=0.8,  # exactly at threshold
+            ),
         ]
         current = _make_snapshot(
             vitals_snapshot_healthy,
-            loop_index=1,
-            findings_count=4,
-            coverage_score=0.55,
+            loop_index=2,
+            findings_count=5,
+            coverage_score=0.6,
             total_tokens=2000,
-            query_count=2,
+            query_count=3,
             unique_domains=2,
             dm_coverage=0.3,
             cv_coverage=0.2,

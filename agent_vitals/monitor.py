@@ -15,12 +15,14 @@ if TYPE_CHECKING:
 
 from .adapters import SignalAdapter
 from .config import ADAPTER_FRAMEWORK_MAP, VitalsConfig, get_vitals_config
+from .detection.cusum import CUSUMTracker
 from .detection.loop import LoopDetectionResult, detect_loop
 from .detection.metrics import TemporalMetrics
 from .detection.similarity import compute_output_fingerprint, compute_similarity_scores
 from .exceptions import AdapterError
 from .schema import (
     HealthState,
+    RatioTrend,
     RawSignals,
     TemporalMetricsResult,
     VitalsSnapshot,
@@ -79,6 +81,30 @@ class AgentVitals:
         self._health_state: HealthState = "healthy"
         self._metrics_engine = TemporalMetrics()
         self._recent_output_texts: list[str] = []
+        # AV-28 CUSUM defaults: standard SPC initialization
+        # (k=0.5*sigma, H=4*sigma) from warmup baseline. Metric-specific
+        # min_sigma floors reduce false alarms on low-variance streams.
+        self._cusum_output_similarity = CUSUMTracker(
+            direction="increase",
+            k_sigma=0.5,
+            h_sigma=4.0,
+            warmup_steps=2,
+            min_sigma=0.05,
+        )
+        self._cusum_token_usage_delta = CUSUMTracker(
+            direction="decrease",
+            k_sigma=0.5,
+            h_sigma=4.0,
+            warmup_steps=2,
+            min_sigma=25.0,
+        )
+        self._cusum_findings_count_delta = CUSUMTracker(
+            direction="increase",
+            k_sigma=0.5,
+            h_sigma=4.0,
+            warmup_steps=2,
+            min_sigma=0.5,
+        )
 
     @classmethod
     def from_yaml(
@@ -234,10 +260,11 @@ class AgentVitals:
     def summary(self) -> dict[str, Any]:
         """Return a JSON-serializable summary of the monitoring session."""
         any_loop = any(s.loop_detected for s in self._history)
+        any_confab = any(s.confabulation_detected for s in self._history)
         any_stuck = any(s.stuck_detected for s in self._history)
         first_detection: Optional[int] = None
         for s in self._history:
-            if s.loop_detected or s.stuck_detected:
+            if s.loop_detected or s.confabulation_detected or s.stuck_detected:
                 first_detection = s.loop_index
                 break
 
@@ -247,6 +274,7 @@ class AgentVitals:
             "total_steps": len(self._history),
             "health_state": self._health_state,
             "any_loop_detected": any_loop,
+            "any_confabulation_detected": any_confab,
             "any_stuck_detected": any_stuck,
             "first_detection_at": first_detection,
         }
@@ -262,6 +290,9 @@ class AgentVitals:
         self._loop_index = 0
         self._health_state = "healthy"
         self._run_id = str(uuid.uuid4())
+        self._cusum_output_similarity.reset()
+        self._cusum_token_usage_delta.reset()
+        self._cusum_findings_count_delta.reset()
 
     def __enter__(self) -> "AgentVitals":
         return self
@@ -349,6 +380,45 @@ class AgentVitals:
                 )
                 output_similarity = sim_result.max_similarity
 
+        previous_tokens = (
+            float(self._history[-1].signals.total_tokens) if self._history else float(signals.total_tokens)
+        )
+        previous_findings = (
+            float(self._history[-1].signals.findings_count)
+            if self._history
+            else float(signals.findings_count)
+        )
+        token_usage_delta = float(signals.total_tokens) - previous_tokens
+        findings_count_delta = float(signals.findings_count) - previous_findings
+
+        cusum_scores: dict[str, float] = {}
+        cusum_alarm_metrics: list[str] = []
+
+        if output_similarity is not None:
+            similarity_update = self._cusum_output_similarity.update(float(output_similarity))
+            cusum_scores["output_similarity"] = similarity_update.score
+            if similarity_update.alarm:
+                cusum_alarm_metrics.append("output_similarity")
+
+        token_update = self._cusum_token_usage_delta.update(token_usage_delta)
+        cusum_scores["token_usage_delta"] = token_update.score
+        if token_update.alarm:
+            cusum_alarm_metrics.append("token_usage_delta")
+
+        findings_update = self._cusum_findings_count_delta.update(findings_count_delta)
+        cusum_scores["findings_count_delta"] = findings_update.score
+        if findings_update.alarm:
+            cusum_alarm_metrics.append("findings_count_delta")
+
+        cusum_alarm = bool(cusum_alarm_metrics)
+        source_finding_ratio = self._compute_source_finding_ratio(
+            sources_count=int(signals.sources_count),
+            findings_count=int(signals.findings_count),
+        )
+        ratio_trend, ratio_declining_steps = self._compute_ratio_trend(
+            source_finding_ratio=source_finding_ratio
+        )
+
         # Build snapshot (without detection results yet, but WITH similarity)
         snapshot = VitalsSnapshot(
             mission_id=self._mission_id,
@@ -359,6 +429,12 @@ class AgentVitals:
             health_state=new_health,
             health_state_changed=health_changed,
             previous_health_state=previous_health,
+            cusum_alarm=cusum_alarm,
+            cusum_alarm_metrics=cusum_alarm_metrics,
+            cusum_scores=cusum_scores,
+            source_finding_ratio=source_finding_ratio,
+            ratio_trend=ratio_trend,
+            ratio_declining_steps=ratio_declining_steps,
             output_similarity=output_similarity,
             output_fingerprint=output_fingerprint,
         )
@@ -381,14 +457,25 @@ class AgentVitals:
             health_state=new_health,
             health_state_changed=health_changed,
             previous_health_state=previous_health,
+            cusum_alarm=cusum_alarm,
+            cusum_alarm_metrics=cusum_alarm_metrics,
+            cusum_scores=cusum_scores,
+            source_finding_ratio=source_finding_ratio,
+            ratio_trend=ratio_trend,
+            ratio_declining_steps=ratio_declining_steps,
             output_similarity=output_similarity,
             output_fingerprint=output_fingerprint,
             loop_detected=detection.loop_detected,
             loop_confidence=detection.loop_confidence,
             loop_trigger=detection.loop_trigger,
+            confabulation_detected=detection.confabulation_detected,
+            confabulation_confidence=detection.confabulation_confidence,
+            confabulation_trigger=detection.confabulation_trigger,
+            confabulation_signals=list(detection.confabulation_signals),
             stuck_detected=detection.stuck_detected,
             stuck_confidence=detection.stuck_confidence,
             stuck_trigger=detection.stuck_trigger,
+            detector_priority=detection.detector_priority,
         )
 
         # Update state
@@ -414,6 +501,41 @@ class AgentVitals:
                 )
 
         return snapshot
+
+    @staticmethod
+    def _compute_source_finding_ratio(
+        *,
+        sources_count: int,
+        findings_count: int,
+    ) -> Optional[float]:
+        """Return sources/findings ratio, or None when findings are unavailable."""
+        findings = int(findings_count)
+        if findings <= 0:
+            return None
+        return max(0.0, float(int(sources_count)) / float(findings))
+
+    def _compute_ratio_trend(
+        self,
+        *,
+        source_finding_ratio: Optional[float],
+    ) -> tuple[RatioTrend, int]:
+        """Compute ratio trend and consecutive decline count from snapshot history."""
+        if source_finding_ratio is None or not self._history:
+            return "insufficient_data", 0
+
+        previous = self._history[-1]
+        previous_ratio = previous.source_finding_ratio
+        if previous_ratio is None:
+            return "insufficient_data", 0
+
+        epsilon = 1e-9
+        current_ratio = float(source_finding_ratio)
+        prior_ratio = float(previous_ratio)
+        if current_ratio < (prior_ratio - epsilon):
+            return "declining", int(previous.ratio_declining_steps) + 1
+        if current_ratio > (prior_ratio + epsilon):
+            return "increasing", 0
+        return "stable", 0
 
 
 __all__ = ["AgentVitals"]

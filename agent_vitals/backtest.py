@@ -140,7 +140,7 @@ def load_labels(path: Path) -> Labels:
 
     1. **Onset format** (original)::
 
-        {"MISSION_ID": {"loop_at": [3, 5], "stuck_at": [7], ...}}
+        {"MISSION_ID": {"loop_at": [3, 5], "confabulation_at": [4], "stuck_at": [7], ...}}
 
     2. **Cross-agent format** (label string)::
 
@@ -172,9 +172,19 @@ def load_labels(path: Path) -> Labels:
             entry = {}
 
         # Format 1: onset sets present
-        if any(key in entry for key in ("loop_at", "stuck_at", "thrash_at", "runaway_cost_at")):
+        if any(
+            key in entry
+            for key in (
+                "loop_at",
+                "confabulation_at",
+                "stuck_at",
+                "thrash_at",
+                "runaway_cost_at",
+            )
+        ):
             labels[mission_id.strip()] = {
                 "loop_at": _coerce_int_set(entry.get("loop_at")),
+                "confabulation_at": _coerce_int_set(entry.get("confabulation_at")),
                 "stuck_at": _coerce_int_set(entry.get("stuck_at")),
                 "thrash_at": _coerce_int_set(entry.get("thrash_at")),
                 "runaway_cost_at": _coerce_int_set(entry.get("runaway_cost_at")),
@@ -198,12 +208,15 @@ def load_labels(path: Path) -> Labels:
         # Map mode names to detector keys (synthetic onset at step 0)
         result: dict[str, set[int]] = {
             "loop_at": set(),
+            "confabulation_at": set(),
             "stuck_at": set(),
             "thrash_at": set(),
             "runaway_cost_at": set(),
         }
         mode_to_key = {
             "loop": "loop_at",
+            "confabulation": "confabulation_at",
+            "confab": "confabulation_at",
             "stuck": "stuck_at",
             "thrash": "thrash_at",
             "runaway_cost": "runaway_cost_at",
@@ -296,11 +309,12 @@ def _replay_trace(
     """Replay a trace and return per-detector fired flags.
 
     Returns:
-        Dict with keys ``loop``, ``stuck``, ``thrash``, ``runaway_cost``,
-        ``any`` — each True if the detector fired at any snapshot.
+        Dict with keys ``loop``, ``confabulation``, ``stuck``, ``thrash``,
+        ``runaway_cost``, ``any`` — each True if the detector fired at any snapshot.
     """
 
     loop_fired = False
+    confabulation_fired = False
     stuck_fired = False
     thrash_fired = False
     runaway_fired = False
@@ -325,6 +339,8 @@ def _replay_trace(
 
         if detection.loop_detected:
             loop_fired = True
+        if detection.confabulation_detected:
+            confabulation_fired = True
         if detection.stuck_detected:
             stuck_fired = True
         if stop_signals.thrash_detected:
@@ -334,15 +350,15 @@ def _replay_trace(
 
         history.append(snapshot)
 
-    # Trace-level mutual exclusivity: stuck is suppressed when loop or thrash
-    # is the primary diagnosis.  Coverage stagnation / findings plateau on a
-    # loop or thrash trace is a symptom, not an independent stuck condition.
-    if stuck_fired and (loop_fired or thrash_fired):
+    # Trace-level overlap handling: suppress stuck on pure loop-style traces,
+    # but keep stuck when mixed failure modes include thrash/runaway.
+    if stuck_fired and loop_fired and not (thrash_fired or runaway_fired):
         stuck_fired = False
 
-    any_fired = loop_fired or stuck_fired or thrash_fired or runaway_fired
+    any_fired = loop_fired or confabulation_fired or stuck_fired or thrash_fired or runaway_fired
     return {
         "loop": loop_fired,
+        "confabulation": confabulation_fired,
         "stuck": stuck_fired,
         "thrash": thrash_fired,
         "runaway_cost": runaway_fired,
@@ -377,6 +393,7 @@ def run_backtest(
     cfg = config or VitalsConfig.from_yaml(allow_env_override=False)
 
     loop_counts = ConfusionCounts()
+    confabulation_counts = ConfusionCounts()
     stuck_counts = ConfusionCounts()
     thrash_counts = ConfusionCounts()
     runaway_counts = ConfusionCounts()
@@ -385,19 +402,31 @@ def run_backtest(
     for mission_id, snapshots in dataset.traces.items():
         expected = labels.get(mission_id) or {
             "loop_at": set(),
+            "confabulation_at": set(),
             "stuck_at": set(),
             "thrash_at": set(),
             "runaway_cost_at": set(),
         }
         loop_expected = bool(expected.get("loop_at"))
+        confabulation_expected = bool(expected.get("confabulation_at"))
         stuck_expected = bool(expected.get("stuck_at"))
         thrash_expected = bool(expected.get("thrash_at"))
         runaway_expected = bool(expected.get("runaway_cost_at"))
-        any_expected = loop_expected or stuck_expected or thrash_expected or runaway_expected
+        any_expected = (
+            loop_expected
+            or confabulation_expected
+            or stuck_expected
+            or thrash_expected
+            or runaway_expected
+        )
 
         fired = _replay_trace(snapshots, config=cfg, workflow_type=workflow_type)
 
         loop_counts.record(predicted=fired["loop"], expected=loop_expected)
+        confabulation_counts.record(
+            predicted=fired["confabulation"],
+            expected=confabulation_expected,
+        )
         stuck_counts.record(predicted=fired["stuck"], expected=stuck_expected)
         thrash_counts.record(predicted=fired["thrash"], expected=thrash_expected)
         runaway_counts.record(predicted=fired["runaway_cost"], expected=runaway_expected)
@@ -405,6 +434,10 @@ def run_backtest(
 
     detectors = {
         "loop": DetectorResult(name="loop", confusion=loop_counts),
+        "confabulation": DetectorResult(
+            name="confabulation",
+            confusion=confabulation_counts,
+        ),
         "stuck": DetectorResult(name="stuck", confusion=stuck_counts),
         "thrash": DetectorResult(name="thrash", confusion=thrash_counts),
         "runaway_cost": DetectorResult(name="runaway_cost", confusion=runaway_counts),
@@ -412,6 +445,11 @@ def run_backtest(
     composite = DetectorResult(name="vitals.any", confusion=any_counts)
 
     config_summary = {
+        "loop_consecutive_pct": cfg.loop_consecutive_pct,
+        "findings_plateau_pct": cfg.findings_plateau_pct,
+        "min_evidence_steps": cfg.min_evidence_steps,
+        "source_finding_ratio_floor": cfg.source_finding_ratio_floor,
+        "source_finding_ratio_declining_steps": cfg.source_finding_ratio_declining_steps,
         "loop_consecutive_count": cfg.loop_consecutive_count,
         "loop_similarity_threshold": cfg.loop_similarity_threshold,
         "stuck_dm_threshold": cfg.stuck_dm_threshold,

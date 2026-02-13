@@ -36,10 +36,20 @@ VITALS_JSONL_LAYOUT_ENV = "VITALS_JSONL_LAYOUT"
 
 VITALS_LOOP_SIMILARITY_THRESHOLD_ENV = "VITALS_LOOP_SIMILARITY_THRESHOLD"
 VITALS_LOOP_CONSECUTIVE_COUNT_ENV = "VITALS_LOOP_CONSECUTIVE_COUNT"
+VITALS_LOOP_CONSECUTIVE_PCT_ENV = "VITALS_LOOP_CONSECUTIVE_PCT"
+VITALS_FINDINGS_PLATEAU_PCT_ENV = "VITALS_FINDINGS_PLATEAU_PCT"
+VITALS_MIN_EVIDENCE_STEPS_ENV = "VITALS_MIN_EVIDENCE_STEPS"
+VITALS_SOURCE_FINDING_RATIO_FLOOR_ENV = "VITALS_SOURCE_FINDING_RATIO_FLOOR"
+VITALS_SOURCE_FINDING_RATIO_DECLINING_STEPS_ENV = "VITALS_SOURCE_FINDING_RATIO_DECLINING_STEPS"
 VITALS_STUCK_DM_THRESHOLD_ENV = "VITALS_STUCK_DM_THRESHOLD"
 VITALS_STUCK_CV_THRESHOLD_ENV = "VITALS_STUCK_CV_THRESHOLD"
 VITALS_BURN_RATE_MULTIPLIER_ENV = "VITALS_BURN_RATE_MULTIPLIER"
 VITALS_TOKEN_SCALE_FACTOR_ENV = "VITALS_TOKEN_SCALE_FACTOR"
+VITALS_SPC_K_SIGMA_ENV = "VITALS_SPC_K_SIGMA"
+VITALS_SPC_WINDOW_SIZE_ENV = "VITALS_SPC_WINDOW_SIZE"
+VITALS_SPC_WARMUP_STEPS_ENV = "VITALS_SPC_WARMUP_STEPS"
+VITALS_SPC_COOLDOWN_STEPS_ENV = "VITALS_SPC_COOLDOWN_STEPS"
+VITALS_SPC_WMA_DECAY_ENV = "VITALS_SPC_WMA_DECAY"
 WORKFLOW_STUCK_ENABLED_ENV = "WORKFLOW_STUCK_ENABLED"
 
 VITALS_TH_ENTER_WARNING_ENV = "VITALS_TH_ENTER_WARNING"
@@ -58,11 +68,23 @@ DEFAULT_VITALS_HISTORY_SIZE = 20
 DEFAULT_VITALS_JSONL_LAYOUT = "append"  # "append" | "per_run"
 
 DEFAULT_LOOP_SIMILARITY_THRESHOLD = 0.8
-DEFAULT_LOOP_CONSECUTIVE_COUNT = 6
+# AV-28 adaptive defaults: thresholds scale to trace length.
+DEFAULT_LOOP_CONSECUTIVE_PCT = 0.5
+DEFAULT_FINDINGS_PLATEAU_PCT = 0.4
+DEFAULT_MIN_EVIDENCE_STEPS = 3
+DEFAULT_SOURCE_FINDING_RATIO_FLOOR = 0.3
+DEFAULT_SOURCE_FINDING_RATIO_DECLINING_STEPS = 3
+# Backwards-compatible legacy absolute threshold (deprecated).
+DEFAULT_LOOP_CONSECUTIVE_COUNT = 3
 DEFAULT_STUCK_DM_THRESHOLD = 0.15
-DEFAULT_STUCK_CV_THRESHOLD = 0.5
+DEFAULT_STUCK_CV_THRESHOLD = 0.3
 DEFAULT_BURN_RATE_MULTIPLIER = 3.0
 DEFAULT_TOKEN_SCALE_FACTOR = 1.0
+DEFAULT_SPC_K_SIGMA = 3.0
+DEFAULT_SPC_WINDOW_SIZE = 5
+DEFAULT_SPC_WARMUP_STEPS = 2
+DEFAULT_SPC_COOLDOWN_STEPS = 1
+DEFAULT_SPC_WMA_DECAY = 0.7
 DEFAULT_WORKFLOW_STUCK_ENABLED = "research-only"
 
 DEFAULT_TH_ENTER_WARNING = 0.4
@@ -73,16 +95,27 @@ DEFAULT_TH_EXIT_CRITICAL = 0.35
 # Threshold fields that can be overridden per framework profile.
 _PROFILE_OVERRIDABLE_FLOAT_FIELDS = (
     "loop_similarity_threshold",
+    "loop_consecutive_pct",
+    "findings_plateau_pct",
+    "source_finding_ratio_floor",
     "stuck_dm_threshold",
     "stuck_cv_threshold",
     "burn_rate_multiplier",
     "token_scale_factor",
+    "spc_k_sigma",
+    "spc_wma_decay",
     "th_enter_warning",
     "th_exit_warning",
     "th_enter_critical",
     "th_exit_critical",
 )
-_PROFILE_OVERRIDABLE_INT_FIELDS = ("loop_consecutive_count",)
+_PROFILE_OVERRIDABLE_INT_FIELDS = (
+    "loop_consecutive_count",
+    "source_finding_ratio_declining_steps",
+    "spc_window_size",
+    "spc_warmup_steps",
+    "spc_cooldown_steps",
+)
 _PROFILE_OVERRIDABLE_STR_FIELDS = ("workflow_stuck_enabled",)
 
 # Mapping from adapter class names to framework profile keys.
@@ -110,11 +143,20 @@ class ThresholdProfile:
     framework: str
 
     loop_similarity_threshold: Optional[float] = None
+    loop_consecutive_pct: Optional[float] = None
+    findings_plateau_pct: Optional[float] = None
+    source_finding_ratio_floor: Optional[float] = None
     loop_consecutive_count: Optional[int] = None
+    source_finding_ratio_declining_steps: Optional[int] = None
     stuck_dm_threshold: Optional[float] = None
     stuck_cv_threshold: Optional[float] = None
     burn_rate_multiplier: Optional[float] = None
     token_scale_factor: Optional[float] = None
+    spc_k_sigma: Optional[float] = None
+    spc_wma_decay: Optional[float] = None
+    spc_window_size: Optional[int] = None
+    spc_warmup_steps: Optional[int] = None
+    spc_cooldown_steps: Optional[int] = None
     workflow_stuck_enabled: Optional[str] = None
     th_enter_warning: Optional[float] = None
     th_exit_warning: Optional[float] = None
@@ -165,11 +207,22 @@ class VitalsConfig:
     jsonl_layout: str = DEFAULT_VITALS_JSONL_LAYOUT
 
     loop_similarity_threshold: float = DEFAULT_LOOP_SIMILARITY_THRESHOLD
+    loop_consecutive_pct: float = DEFAULT_LOOP_CONSECUTIVE_PCT
+    findings_plateau_pct: float = DEFAULT_FINDINGS_PLATEAU_PCT
+    min_evidence_steps: int = DEFAULT_MIN_EVIDENCE_STEPS
+    source_finding_ratio_floor: float = DEFAULT_SOURCE_FINDING_RATIO_FLOOR
+    source_finding_ratio_declining_steps: int = DEFAULT_SOURCE_FINDING_RATIO_DECLINING_STEPS
+    # Legacy absolute threshold retained for backwards compatibility.
     loop_consecutive_count: int = DEFAULT_LOOP_CONSECUTIVE_COUNT
     stuck_dm_threshold: float = DEFAULT_STUCK_DM_THRESHOLD
     stuck_cv_threshold: float = DEFAULT_STUCK_CV_THRESHOLD
     burn_rate_multiplier: float = DEFAULT_BURN_RATE_MULTIPLIER
     token_scale_factor: float = DEFAULT_TOKEN_SCALE_FACTOR
+    spc_k_sigma: float = DEFAULT_SPC_K_SIGMA
+    spc_window_size: int = DEFAULT_SPC_WINDOW_SIZE
+    spc_warmup_steps: int = DEFAULT_SPC_WARMUP_STEPS
+    spc_cooldown_steps: int = DEFAULT_SPC_COOLDOWN_STEPS
+    spc_wma_decay: float = DEFAULT_SPC_WMA_DECAY
     workflow_stuck_enabled: str = DEFAULT_WORKFLOW_STUCK_ENABLED
 
     th_enter_warning: float = DEFAULT_TH_ENTER_WARNING
@@ -252,10 +305,15 @@ class VitalsConfig:
 
         for key in (
             "loop_similarity_threshold",
+            "loop_consecutive_pct",
+            "findings_plateau_pct",
+            "source_finding_ratio_floor",
             "stuck_dm_threshold",
             "stuck_cv_threshold",
             "burn_rate_multiplier",
             "token_scale_factor",
+            "spc_k_sigma",
+            "spc_wma_decay",
             "th_enter_warning",
             "th_exit_warning",
             "th_enter_critical",
@@ -269,7 +327,16 @@ class VitalsConfig:
                 except (TypeError, ValueError):
                     pass
 
-        for key in ("loop_consecutive_count", "jsonl_max_bytes", "history_size"):
+        for key in (
+            "loop_consecutive_count",
+            "min_evidence_steps",
+            "source_finding_ratio_declining_steps",
+            "spc_window_size",
+            "spc_warmup_steps",
+            "spc_cooldown_steps",
+            "jsonl_max_bytes",
+            "history_size",
+        ):
             if key in data:
                 try:
                     kwargs[key] = int(data[key])
@@ -360,6 +427,22 @@ class VitalsConfig:
             loop_similarity_threshold=_yaml_float(
                 "loop_similarity_threshold", DEFAULT_LOOP_SIMILARITY_THRESHOLD
             ),
+            loop_consecutive_pct=_yaml_float(
+                "loop_consecutive_pct", DEFAULT_LOOP_CONSECUTIVE_PCT
+            ),
+            findings_plateau_pct=_yaml_float(
+                "findings_plateau_pct", DEFAULT_FINDINGS_PLATEAU_PCT
+            ),
+            min_evidence_steps=_yaml_int(
+                "min_evidence_steps", DEFAULT_MIN_EVIDENCE_STEPS
+            ),
+            source_finding_ratio_floor=_yaml_float(
+                "source_finding_ratio_floor", DEFAULT_SOURCE_FINDING_RATIO_FLOOR
+            ),
+            source_finding_ratio_declining_steps=_yaml_int(
+                "source_finding_ratio_declining_steps",
+                DEFAULT_SOURCE_FINDING_RATIO_DECLINING_STEPS,
+            ),
             loop_consecutive_count=_yaml_int(
                 "loop_consecutive_count", DEFAULT_LOOP_CONSECUTIVE_COUNT
             ),
@@ -374,6 +457,21 @@ class VitalsConfig:
             ),
             token_scale_factor=_yaml_float(
                 "token_scale_factor", DEFAULT_TOKEN_SCALE_FACTOR
+            ),
+            spc_k_sigma=_yaml_float(
+                "spc_k_sigma", DEFAULT_SPC_K_SIGMA
+            ),
+            spc_wma_decay=_yaml_float(
+                "spc_wma_decay", DEFAULT_SPC_WMA_DECAY
+            ),
+            spc_window_size=_yaml_int(
+                "spc_window_size", DEFAULT_SPC_WINDOW_SIZE
+            ),
+            spc_warmup_steps=_yaml_int(
+                "spc_warmup_steps", DEFAULT_SPC_WARMUP_STEPS
+            ),
+            spc_cooldown_steps=_yaml_int(
+                "spc_cooldown_steps", DEFAULT_SPC_COOLDOWN_STEPS
             ),
             workflow_stuck_enabled=_yaml_str(
                 "workflow_stuck_enabled", DEFAULT_WORKFLOW_STUCK_ENABLED
@@ -408,11 +506,24 @@ class VitalsConfig:
             env_instance = cls.from_env()
             for field_name, env_var in (
                 ("loop_similarity_threshold", VITALS_LOOP_SIMILARITY_THRESHOLD_ENV),
+                ("loop_consecutive_pct", VITALS_LOOP_CONSECUTIVE_PCT_ENV),
+                ("findings_plateau_pct", VITALS_FINDINGS_PLATEAU_PCT_ENV),
+                ("min_evidence_steps", VITALS_MIN_EVIDENCE_STEPS_ENV),
+                ("source_finding_ratio_floor", VITALS_SOURCE_FINDING_RATIO_FLOOR_ENV),
+                (
+                    "source_finding_ratio_declining_steps",
+                    VITALS_SOURCE_FINDING_RATIO_DECLINING_STEPS_ENV,
+                ),
                 ("loop_consecutive_count", VITALS_LOOP_CONSECUTIVE_COUNT_ENV),
                 ("stuck_dm_threshold", VITALS_STUCK_DM_THRESHOLD_ENV),
                 ("stuck_cv_threshold", VITALS_STUCK_CV_THRESHOLD_ENV),
                 ("burn_rate_multiplier", VITALS_BURN_RATE_MULTIPLIER_ENV),
                 ("token_scale_factor", VITALS_TOKEN_SCALE_FACTOR_ENV),
+                ("spc_k_sigma", VITALS_SPC_K_SIGMA_ENV),
+                ("spc_window_size", VITALS_SPC_WINDOW_SIZE_ENV),
+                ("spc_warmup_steps", VITALS_SPC_WARMUP_STEPS_ENV),
+                ("spc_cooldown_steps", VITALS_SPC_COOLDOWN_STEPS_ENV),
+                ("spc_wma_decay", VITALS_SPC_WMA_DECAY_ENV),
                 ("workflow_stuck_enabled", WORKFLOW_STUCK_ENABLED_ENV),
                 ("th_enter_warning", VITALS_TH_ENTER_WARNING_ENV),
                 ("th_exit_warning", VITALS_TH_EXIT_WARNING_ENV),
@@ -469,6 +580,34 @@ class VitalsConfig:
             min_value=0.0,
             max_value=1.0,
         )
+        loop_consecutive_pct = _parse_float(
+            VITALS_LOOP_CONSECUTIVE_PCT_ENV,
+            default=DEFAULT_LOOP_CONSECUTIVE_PCT,
+            min_value=0.0,
+            max_value=1.0,
+        )
+        findings_plateau_pct = _parse_float(
+            VITALS_FINDINGS_PLATEAU_PCT_ENV,
+            default=DEFAULT_FINDINGS_PLATEAU_PCT,
+            min_value=0.0,
+            max_value=1.0,
+        )
+        min_evidence_steps = _parse_int(
+            VITALS_MIN_EVIDENCE_STEPS_ENV,
+            default=DEFAULT_MIN_EVIDENCE_STEPS,
+            min_value=1,
+        )
+        source_finding_ratio_floor = _parse_float(
+            VITALS_SOURCE_FINDING_RATIO_FLOOR_ENV,
+            default=DEFAULT_SOURCE_FINDING_RATIO_FLOOR,
+            min_value=0.0,
+            max_value=10.0,
+        )
+        source_finding_ratio_declining_steps = _parse_int(
+            VITALS_SOURCE_FINDING_RATIO_DECLINING_STEPS_ENV,
+            default=DEFAULT_SOURCE_FINDING_RATIO_DECLINING_STEPS,
+            min_value=1,
+        )
         loop_consecutive_count = _parse_int(
             VITALS_LOOP_CONSECUTIVE_COUNT_ENV,
             default=DEFAULT_LOOP_CONSECUTIVE_COUNT,
@@ -494,6 +633,32 @@ class VitalsConfig:
             VITALS_TOKEN_SCALE_FACTOR_ENV,
             default=DEFAULT_TOKEN_SCALE_FACTOR,
             min_value=0.01,
+        )
+        spc_k_sigma = _parse_float(
+            VITALS_SPC_K_SIGMA_ENV,
+            default=DEFAULT_SPC_K_SIGMA,
+            min_value=0.1,
+        )
+        spc_window_size = _parse_int(
+            VITALS_SPC_WINDOW_SIZE_ENV,
+            default=DEFAULT_SPC_WINDOW_SIZE,
+            min_value=2,
+        )
+        spc_warmup_steps = _parse_int(
+            VITALS_SPC_WARMUP_STEPS_ENV,
+            default=DEFAULT_SPC_WARMUP_STEPS,
+            min_value=1,
+        )
+        spc_cooldown_steps = _parse_int(
+            VITALS_SPC_COOLDOWN_STEPS_ENV,
+            default=DEFAULT_SPC_COOLDOWN_STEPS,
+            min_value=0,
+        )
+        spc_wma_decay = _parse_float(
+            VITALS_SPC_WMA_DECAY_ENV,
+            default=DEFAULT_SPC_WMA_DECAY,
+            min_value=0.01,
+            max_value=1.0,
         )
         workflow_stuck_enabled = _parse_workflow_stuck_enabled(
             WORKFLOW_STUCK_ENABLED_ENV,
@@ -541,11 +706,21 @@ class VitalsConfig:
             history_size=history_size,
             jsonl_layout=jsonl_layout,
             loop_similarity_threshold=loop_similarity_threshold,
+            loop_consecutive_pct=loop_consecutive_pct,
+            findings_plateau_pct=findings_plateau_pct,
+            min_evidence_steps=min_evidence_steps,
+            source_finding_ratio_floor=source_finding_ratio_floor,
+            source_finding_ratio_declining_steps=source_finding_ratio_declining_steps,
             loop_consecutive_count=loop_consecutive_count,
             stuck_dm_threshold=stuck_dm_threshold,
             stuck_cv_threshold=stuck_cv_threshold,
             burn_rate_multiplier=burn_rate_multiplier,
             token_scale_factor=token_scale_factor,
+            spc_k_sigma=spc_k_sigma,
+            spc_window_size=spc_window_size,
+            spc_warmup_steps=spc_warmup_steps,
+            spc_cooldown_steps=spc_cooldown_steps,
+            spc_wma_decay=spc_wma_decay,
             workflow_stuck_enabled=workflow_stuck_enabled,
             th_enter_warning=th_enter_warning,
             th_exit_warning=th_exit_warning,
@@ -701,13 +876,32 @@ def _parse_jsonl_layout(env_name: str, *, default: str) -> str:
 
 __all__ = [
     "ADAPTER_FRAMEWORK_MAP",
+    "DEFAULT_BURN_RATE_MULTIPLIER",
+    "DEFAULT_FINDINGS_PLATEAU_PCT",
+    "DEFAULT_LOOP_CONSECUTIVE_COUNT",
     "DEFAULT_VITALS_HISTORY_SIZE",
+    "DEFAULT_LOOP_CONSECUTIVE_PCT",
+    "DEFAULT_LOOP_SIMILARITY_THRESHOLD",
+    "DEFAULT_MIN_EVIDENCE_STEPS",
+    "DEFAULT_SOURCE_FINDING_RATIO_FLOOR",
+    "DEFAULT_SOURCE_FINDING_RATIO_DECLINING_STEPS",
+    "DEFAULT_SPC_COOLDOWN_STEPS",
+    "DEFAULT_SPC_K_SIGMA",
+    "DEFAULT_SPC_WARMUP_STEPS",
+    "DEFAULT_SPC_WINDOW_SIZE",
+    "DEFAULT_SPC_WMA_DECAY",
+    "DEFAULT_STUCK_CV_THRESHOLD",
+    "DEFAULT_STUCK_DM_THRESHOLD",
+    "DEFAULT_TOKEN_SCALE_FACTOR",
+    "DEFAULT_WORKFLOW_STUCK_ENABLED",
     "DEFAULT_VITALS_JSONL_DIR",
     "DEFAULT_VITALS_JSONL_MAX_BYTES",
     "DEFAULT_VITALS_JSONL_LAYOUT",
     "THRESHOLDS_YAML_PATH",
     "ThresholdProfile",
+    "VITALS_JSONL_DIR_ENV",
     "VITALS_JSONL_LAYOUT_ENV",
+    "VITALS_JSONL_MAX_BYTES_ENV",
     "VitalsConfig",
     "get_vitals_config",
 ]

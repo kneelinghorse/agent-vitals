@@ -1,0 +1,341 @@
+{
+  "build": {
+    "enabled": false,
+    "include_enforcement": false,
+    "scenarios_dir": "cmos/missions/vitals-scenarios/build",
+    "workers": 1
+  },
+  "mode": "synthetic",
+  "outputs": {
+    "labels": "labels.json",
+    "traces_dir": "traces"
+  },
+  "runs": [
+    {
+      "mission_id": "AV04.SYNTH.s0.burn_rate_anomaly.0000",
+      "run_id": "AV04.SYNTH.s0.burn_rate_anomaly.0000:seg0",
+      "scenario": "burn_rate_anomaly",
+      "seed": 0,
+      "segment_index": 0,
+      "trace_path": "traces/AV04.SYNTH.s0.burn_rate_anomaly.0000.jsonl",
+      "workflow_type": "synthetic"
+    },
+    {
+      "mission_id": "AV04.SYNTH.s0.confabulation_mild.0000",
+      "run_id": "AV04.SYNTH.s0.confabulation_mild.0000:seg0",
+      "scenario": "confabulation_mild",
+      "seed": 0,
+      "segment_index": 0,
+      "trace_path": "traces/AV04.SYNTH.s0.confabulation_mild.0000.jsonl",
+      "workflow_type": "synthetic"
+    },
+    {
+      "mission_id": "AV04.SYNTH.s0.confabulation_moderate.0000",
+      "run_id": "AV04.SYNTH.s0.confabulation_moderate.0000:seg0",
+      "scenario": "confabulation_moderate",
+      "seed": 0,
+      "segment_index": 0,
+      "trace_path": "traces/AV04.SYNTH.s0.confabulation_moderate.0000.jsonl",
+      "workflow_type": "synthetic"
+    },
+    {
+      "mission_id": "AV04.SYNTH.s0.confabulation_severe.0000",
+      "run_id": "AV04.SYNTH.s0.confabulation_severe.0000:seg0",
+      "scenario": "confabulation_severe",
+      "seed": 0,
+      "segment_index": 0,
+      "trace_path": "traces/AV04.SYNTH.s0.confabulation_severe.0000.jsonl",
+      "workflow_type": "synthetic"
+    },
+    {
+      "mission_id": "AV04.SYNTH.s0.healthy.0000",
+      "run_id": "AV04.SYNTH.s0.healthy.0000:seg0",
+      "scenario": "healthy",
+      "seed": 0,
+      "segment_index": 0,
+      "trace_path": "traces/AV04.SYNTH.s0.healthy.0000.jsonl",
+      "workflow_type": "synthetic"
+    },
+    {
+      "mission_id": "AV04.SYNTH.s0.loop_plateau.0000",
+      "run_id": "AV04.SYNTH.s0.loop_plateau.0000:seg0",
+      "scenario": "loop_plateau",
+      "seed": 0,
+      "segment_index": 0,
+      "trace_path": "traces/AV04.SYNTH.s0.loop_plateau.0000.jsonl",
+      "workflow_type": "synthetic"
+    },
+    {
+      "mission_id": "AV04.SYNTH.s0.loop_refinement_cycle.0000",
+      "run_id": "AV04.SYNTH.s0.loop_refinement_cycle.0000:seg0",
+      "scenario": "loop_refinement_cycle",
+      "seed": 0,
+      "segment_index": 0,
+      "trace_path": "traces/AV04.SYNTH.s0.loop_refinement_cycle.0000.jsonl",
+      "workflow_type": "synthetic"
+    },
+    {
+      "mission_id": "AV04.SYNTH.s0.mixed.0000",
+      "run_id": "AV04.SYNTH.s0.mixed.0000:seg0",
+      "scenario": "mixed",
+      "seed": 0,
+      "segment_index": 0,
+      "trace_path": "traces/AV04.SYNTH.s0.mixed.0000.jsonl",
+      "workflow_type": "synthetic"
+    },
+    {
+      "mission_id": "AV04.SYNTH.s0.retry_thrash.0000",
+      "run_id": "AV04.SYNTH.s0.retry_thrash.0000:seg0",
+      "scenario": "retry_thrash",
+      "seed": 0,
+      "segment_index": 0,
+      "trace_path": "traces/AV04.SYNTH.s0.retry_thrash.0000.jsonl",
+      "workflow_type": "synthetic"
+    },
+    {
+      "mission_id": "AV04.SYNTH.s0.runaway_cost.0000",
+      "run_id": "AV04.SYNTH.s0.runaway_cost.0000:seg0",
+      "scenario": "runaway_cost",
+      "seed": 0,
+      "segment_index": 0,
+      "trace_path": "traces/AV04.SYNTH.s0.runaway_cost.0000.jsonl",
+      "workflow_type": "synthetic"
+    },
+    {
+      "mission_id": "AV04.SYNTH.s0.stuck_coverage.0000",
+      "run_id": "AV04.SYNTH.s0.stuck_coverage.0000:seg0",
+      "scenario": "stuck_coverage",
+      "seed": 0,
+      "segment_index": 0,
+      "trace_path": "traces/AV04.SYNTH.s0.stuck_coverage.0000.jsonl",
+      "workflow_type": "synthetic"
+    },
+    {
+      "mission_id": "AV04.SYNTH.s1.burn_rate_anomaly.0000",
+      "run_id": "AV04.SYNTH.s1.burn_rate_anomaly.0000:seg0",
+      "scenario": "burn_rate_anomaly",
+      "seed": 1,
+      "segment_index": 0,
+      "trace_path": "traces/AV04.SYNTH.s1.burn_rate_anomaly.0000.jsonl",
+      "workflow_type": "synthetic"
+    },
+    {
+      "mission_id": "AV04.SYNTH.s1.confabulation_mild.0000",
+      "run_id": "AV04.SYNTH.s1.confabulation_mild.0000:seg0",
+      "scenario": "confabulation_mild",
+      "seed": 1,
+      "segment_index": 0,
+      "trace_path": "traces/AV04.SYNTH.s1.confabulation_mild.0000.jsonl",
+      "workflow_type": "synthetic"
+    },
+    {
+      "mission_id": "AV04.SYNTH.s1.confabulation_moderate.0000",
+      "run_id": "AV04.SYNTH.s1.confabulation_moderate.0000:seg0",
+      "scenario": "confabulation_moderate",
+      "seed": 1,
+      "segment_index": 0,
+      "trace_path": "traces/AV04.SYNTH.s1.confabulation_moderate.0000.jsonl",
+      "workflow_type": "synthetic"
+    },
+    {
+      "mission_id": "AV04.SYNTH.s1.confabulation_severe.0000",
+      "run_id": "AV04.SYNTH.s1.confabulation_severe.0000:seg0",
+      "scenario": "confabulation_severe",
+      "seed": 1,
+      "segment_index": 0,
+      "trace_path": "traces/AV04.SYNTH.s1.confabulation_severe.0000.jsonl",
+      "workflow_type": "synthetic"
+    },
+    {
+      "mission_id": "AV04.SYNTH.s1.healthy.0000",
+      "run_id": "AV04.SYNTH.s1.healthy.0000:seg0",
+      "scenario": "healthy",
+      "seed": 1,
+      "segment_index": 0,
+      "trace_path": "traces/AV04.SYNTH.s1.healthy.0000.jsonl",
+      "workflow_type": "synthetic"
+    },
+    {
+      "mission_id": "AV04.SYNTH.s1.loop_plateau.0000",
+      "run_id": "AV04.SYNTH.s1.loop_plateau.0000:seg0",
+      "scenario": "loop_plateau",
+      "seed": 1,
+      "segment_index": 0,
+      "trace_path": "traces/AV04.SYNTH.s1.loop_plateau.0000.jsonl",
+      "workflow_type": "synthetic"
+    },
+    {
+      "mission_id": "AV04.SYNTH.s1.loop_refinement_cycle.0000",
+      "run_id": "AV04.SYNTH.s1.loop_refinement_cycle.0000:seg0",
+      "scenario": "loop_refinement_cycle",
+      "seed": 1,
+      "segment_index": 0,
+      "trace_path": "traces/AV04.SYNTH.s1.loop_refinement_cycle.0000.jsonl",
+      "workflow_type": "synthetic"
+    },
+    {
+      "mission_id": "AV04.SYNTH.s1.mixed.0000",
+      "run_id": "AV04.SYNTH.s1.mixed.0000:seg0",
+      "scenario": "mixed",
+      "seed": 1,
+      "segment_index": 0,
+      "trace_path": "traces/AV04.SYNTH.s1.mixed.0000.jsonl",
+      "workflow_type": "synthetic"
+    },
+    {
+      "mission_id": "AV04.SYNTH.s1.retry_thrash.0000",
+      "run_id": "AV04.SYNTH.s1.retry_thrash.0000:seg0",
+      "scenario": "retry_thrash",
+      "seed": 1,
+      "segment_index": 0,
+      "trace_path": "traces/AV04.SYNTH.s1.retry_thrash.0000.jsonl",
+      "workflow_type": "synthetic"
+    },
+    {
+      "mission_id": "AV04.SYNTH.s1.runaway_cost.0000",
+      "run_id": "AV04.SYNTH.s1.runaway_cost.0000:seg0",
+      "scenario": "runaway_cost",
+      "seed": 1,
+      "segment_index": 0,
+      "trace_path": "traces/AV04.SYNTH.s1.runaway_cost.0000.jsonl",
+      "workflow_type": "synthetic"
+    },
+    {
+      "mission_id": "AV04.SYNTH.s1.stuck_coverage.0000",
+      "run_id": "AV04.SYNTH.s1.stuck_coverage.0000:seg0",
+      "scenario": "stuck_coverage",
+      "seed": 1,
+      "segment_index": 0,
+      "trace_path": "traces/AV04.SYNTH.s1.stuck_coverage.0000.jsonl",
+      "workflow_type": "synthetic"
+    },
+    {
+      "mission_id": "AV04.SYNTH.s2.burn_rate_anomaly.0000",
+      "run_id": "AV04.SYNTH.s2.burn_rate_anomaly.0000:seg0",
+      "scenario": "burn_rate_anomaly",
+      "seed": 2,
+      "segment_index": 0,
+      "trace_path": "traces/AV04.SYNTH.s2.burn_rate_anomaly.0000.jsonl",
+      "workflow_type": "synthetic"
+    },
+    {
+      "mission_id": "AV04.SYNTH.s2.confabulation_mild.0000",
+      "run_id": "AV04.SYNTH.s2.confabulation_mild.0000:seg0",
+      "scenario": "confabulation_mild",
+      "seed": 2,
+      "segment_index": 0,
+      "trace_path": "traces/AV04.SYNTH.s2.confabulation_mild.0000.jsonl",
+      "workflow_type": "synthetic"
+    },
+    {
+      "mission_id": "AV04.SYNTH.s2.confabulation_moderate.0000",
+      "run_id": "AV04.SYNTH.s2.confabulation_moderate.0000:seg0",
+      "scenario": "confabulation_moderate",
+      "seed": 2,
+      "segment_index": 0,
+      "trace_path": "traces/AV04.SYNTH.s2.confabulation_moderate.0000.jsonl",
+      "workflow_type": "synthetic"
+    },
+    {
+      "mission_id": "AV04.SYNTH.s2.confabulation_severe.0000",
+      "run_id": "AV04.SYNTH.s2.confabulation_severe.0000:seg0",
+      "scenario": "confabulation_severe",
+      "seed": 2,
+      "segment_index": 0,
+      "trace_path": "traces/AV04.SYNTH.s2.confabulation_severe.0000.jsonl",
+      "workflow_type": "synthetic"
+    },
+    {
+      "mission_id": "AV04.SYNTH.s2.healthy.0000",
+      "run_id": "AV04.SYNTH.s2.healthy.0000:seg0",
+      "scenario": "healthy",
+      "seed": 2,
+      "segment_index": 0,
+      "trace_path": "traces/AV04.SYNTH.s2.healthy.0000.jsonl",
+      "workflow_type": "synthetic"
+    },
+    {
+      "mission_id": "AV04.SYNTH.s2.loop_plateau.0000",
+      "run_id": "AV04.SYNTH.s2.loop_plateau.0000:seg0",
+      "scenario": "loop_plateau",
+      "seed": 2,
+      "segment_index": 0,
+      "trace_path": "traces/AV04.SYNTH.s2.loop_plateau.0000.jsonl",
+      "workflow_type": "synthetic"
+    },
+    {
+      "mission_id": "AV04.SYNTH.s2.loop_refinement_cycle.0000",
+      "run_id": "AV04.SYNTH.s2.loop_refinement_cycle.0000:seg0",
+      "scenario": "loop_refinement_cycle",
+      "seed": 2,
+      "segment_index": 0,
+      "trace_path": "traces/AV04.SYNTH.s2.loop_refinement_cycle.0000.jsonl",
+      "workflow_type": "synthetic"
+    },
+    {
+      "mission_id": "AV04.SYNTH.s2.mixed.0000",
+      "run_id": "AV04.SYNTH.s2.mixed.0000:seg0",
+      "scenario": "mixed",
+      "seed": 2,
+      "segment_index": 0,
+      "trace_path": "traces/AV04.SYNTH.s2.mixed.0000.jsonl",
+      "workflow_type": "synthetic"
+    },
+    {
+      "mission_id": "AV04.SYNTH.s2.retry_thrash.0000",
+      "run_id": "AV04.SYNTH.s2.retry_thrash.0000:seg0",
+      "scenario": "retry_thrash",
+      "seed": 2,
+      "segment_index": 0,
+      "trace_path": "traces/AV04.SYNTH.s2.retry_thrash.0000.jsonl",
+      "workflow_type": "synthetic"
+    },
+    {
+      "mission_id": "AV04.SYNTH.s2.runaway_cost.0000",
+      "run_id": "AV04.SYNTH.s2.runaway_cost.0000:seg0",
+      "scenario": "runaway_cost",
+      "seed": 2,
+      "segment_index": 0,
+      "trace_path": "traces/AV04.SYNTH.s2.runaway_cost.0000.jsonl",
+      "workflow_type": "synthetic"
+    },
+    {
+      "mission_id": "AV04.SYNTH.s2.stuck_coverage.0000",
+      "run_id": "AV04.SYNTH.s2.stuck_coverage.0000:seg0",
+      "scenario": "stuck_coverage",
+      "seed": 2,
+      "segment_index": 0,
+      "trace_path": "traces/AV04.SYNTH.s2.stuck_coverage.0000.jsonl",
+      "workflow_type": "synthetic"
+    }
+  ],
+  "runs_per_scenario": 1,
+  "schema_version": 1,
+  "seeds": [
+    0,
+    1,
+    2
+  ],
+  "suite": "av05_synth",
+  "synthetic": {
+    "enabled": true,
+    "length": 12,
+    "mission_prefix": "AV04.SYNTH",
+    "noise": 0.01,
+    "onset": 4,
+    "scenarios": [
+      "healthy",
+      "loop_plateau",
+      "loop_refinement_cycle",
+      "stuck_coverage",
+      "burn_rate_anomaly",
+      "retry_thrash",
+      "runaway_cost",
+      "mixed",
+      "confabulation_mild",
+      "confabulation_moderate",
+      "confabulation_severe"
+    ],
+    "severity": 0.7
+  }
+}

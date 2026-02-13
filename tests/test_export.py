@@ -195,6 +195,10 @@ class TestMonitorExporterIntegration:
             data = json.loads(line)
             assert data["loop_index"] == i
             assert data["signals"]["findings_count"] == i + 1
+            assert "source_finding_ratio" in data
+            assert "ratio_trend" in data
+            assert "confabulation_confidence" in data
+            assert "confabulation_signals" in data
 
     def test_context_manager_flushes_and_closes(self, tmp_path: Path) -> None:
         exporter = JSONLExporter(directory=tmp_path, layout="per_run")

@@ -23,6 +23,43 @@ class TestAgentVitals:
         assert snap.loop_index == 0
         assert snap.signals.findings_count == 3
 
+    def test_ratio_fields_and_declining_trajectory(self) -> None:
+        """Snapshots should include ratio fields and track declining steps."""
+        monitor = AgentVitals(mission_id="ratio-trend")
+
+        snap1 = monitor.step(
+            findings_count=2,
+            sources_count=2,
+            coverage_score=0.2,
+            total_tokens=500,
+            error_count=0,
+        )
+        assert snap1.source_finding_ratio == pytest.approx(1.0)
+        assert snap1.ratio_trend == "insufficient_data"
+        assert snap1.ratio_declining_steps == 0
+
+        snap2 = monitor.step(
+            findings_count=4,
+            sources_count=2,
+            coverage_score=0.3,
+            total_tokens=1000,
+            error_count=0,
+        )
+        assert snap2.source_finding_ratio == pytest.approx(0.5)
+        assert snap2.ratio_trend == "declining"
+        assert snap2.ratio_declining_steps == 1
+
+        snap3 = monitor.step(
+            findings_count=8,
+            sources_count=2,
+            coverage_score=0.4,
+            total_tokens=1500,
+            error_count=0,
+        )
+        assert snap3.source_finding_ratio == pytest.approx(0.25)
+        assert snap3.ratio_trend == "declining"
+        assert snap3.ratio_declining_steps == 2
+
     def test_loop_index_increments(self) -> None:
         monitor = AgentVitals(mission_id="test")
         for i in range(5):
@@ -128,8 +165,8 @@ class TestAgentVitals:
 class TestDetectionIntegration:
     """Integration tests for detection through the monitor."""
 
-    def test_stuck_detection_on_flat_coverage(self) -> None:
-        """Flat coverage over many steps should trigger stuck detection."""
+    def test_failure_detection_on_flat_coverage(self) -> None:
+        """Flat coverage should trigger a failure detector."""
         config = VitalsConfig(workflow_stuck_enabled="all")
         monitor = AgentVitals(
             config=config,
@@ -137,7 +174,7 @@ class TestDetectionIntegration:
             workflow_type="research",
         )
         # Run 8 steps with flat coverage
-        any_stuck = False
+        any_failure = False
         for i in range(8):
             snap = monitor.step(
                 findings_count=2,
@@ -145,9 +182,10 @@ class TestDetectionIntegration:
                 total_tokens=(i + 1) * 2000,
                 error_count=0,
             )
-            if snap.stuck_detected:
-                any_stuck = True
-        assert any_stuck, "Expected stuck detection on flat coverage"
+            if snap.loop_detected or snap.stuck_detected:
+                any_failure = True
+                assert snap.detector_priority in {"loop", "stuck"}
+        assert any_failure, "Expected detector firing on flat coverage"
 
     def test_healthy_run_no_false_positives(self) -> None:
         """Increasing findings and coverage should not trigger detections."""

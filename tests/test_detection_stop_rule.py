@@ -30,14 +30,15 @@ def test_respects_explicit_flags() -> None:
 
 
 def test_maps_runaway_cost_from_burn_rate_trigger() -> None:
-    """Burn-rate anomaly should map to runaway_cost detection."""
+    """Burn-rate anomaly should map to runaway_cost even when stuck is suppressed."""
     snapshot = {
-        "stuck_detected": True,
+        "stuck_detected": False,
         "stuck_trigger": "burn_rate_anomaly",
         "signals": {"error_count": 0},
     }
     signals = derive_stop_signals(snapshot)
     assert signals.runaway_cost_detected is True
+    assert signals.stuck_detected is False
 
 
 def test_no_false_flags_on_clean_snapshot() -> None:

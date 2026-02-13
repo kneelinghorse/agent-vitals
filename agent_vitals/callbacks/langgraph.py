@@ -56,7 +56,12 @@ class LangGraphVitalsNode:
         return update
 
     def _handle_failure(self, snapshot: VitalsSnapshot, update: dict[str, Any]) -> None:
-        trigger = snapshot.stuck_trigger or snapshot.loop_trigger or "unknown"
+        trigger = (
+            snapshot.confabulation_trigger
+            or snapshot.stuck_trigger
+            or snapshot.loop_trigger
+            or "unknown"
+        )
         message = f"AgentVitals failure detected at loop={snapshot.loop_index}: {trigger}"
 
         if self._on_failure == "log":

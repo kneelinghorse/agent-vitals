@@ -14,6 +14,7 @@ from typing import Any, Dict, Literal, Optional
 from pydantic import BaseModel, ConfigDict, Field, field_serializer, field_validator, model_validator
 
 HealthState = Literal["healthy", "warning", "critical"]
+RatioTrend = Literal["insufficient_data", "declining", "stable", "increasing"]
 InterventionType = Literal["shadow", "enforced"]
 InterventionAction = Literal[
     "none",
@@ -117,9 +118,23 @@ class VitalsSnapshot(BaseModel):
     loop_confidence: float = Field(default=0.0, ge=0.0, le=1.0)
     loop_trigger: Optional[str] = Field(default=None)
 
+    confabulation_detected: bool = Field(default=False)
+    confabulation_confidence: float = Field(default=0.0, ge=0.0, le=1.0)
+    confabulation_trigger: Optional[str] = Field(default=None)
+    confabulation_signals: list[str] = Field(default_factory=list)
+
     stuck_detected: bool = Field(default=False)
     stuck_confidence: float = Field(default=0.0, ge=0.0, le=1.0)
     stuck_trigger: Optional[str] = Field(default=None)
+    detector_priority: Optional[str] = Field(default=None)
+
+    cusum_alarm: bool = Field(default=False)
+    cusum_alarm_metrics: list[str] = Field(default_factory=list)
+    cusum_scores: Dict[str, float] = Field(default_factory=dict)
+
+    source_finding_ratio: Optional[float] = Field(default=None, ge=0.0)
+    ratio_trend: RatioTrend = Field(default="insufficient_data")
+    ratio_declining_steps: int = Field(default=0, ge=0)
 
     output_similarity: Optional[float] = Field(default=None, ge=0.0, le=1.0)
     output_fingerprint: Optional[str] = Field(default=None)
@@ -129,7 +144,7 @@ class VitalsSnapshot(BaseModel):
     @property
     def any_failure(self) -> bool:
         """Return True when any failure-mode signal is active."""
-        return bool(self.loop_detected or self.stuck_detected)
+        return bool(self.loop_detected or self.confabulation_detected or self.stuck_detected)
 
     @field_validator("spec_version", mode="before")
     @classmethod
@@ -200,6 +215,7 @@ __all__ = [
     "InterventionRecord",
     "InterventionType",
     "RawSignals",
+    "RatioTrend",
     "TemporalMetricsResult",
     "VitalsSnapshot",
 ]

@@ -49,8 +49,8 @@ def test_monitor_lifecycle_healthy_run() -> None:
     assert len(monitor.history) == 0
 
 
-def test_monitor_detects_stuck_mid_run() -> None:
-    """Monitor should detect stuck state when coverage stagnates."""
+def test_monitor_detects_failure_mid_run() -> None:
+    """Monitor should detect failure state when coverage stagnates."""
     monitor = AgentVitals(mission_id="stuck-test")
 
     detected_at = None
@@ -64,9 +64,9 @@ def test_monitor_detects_stuck_mid_run() -> None:
         if snapshot.any_failure and detected_at is None:
             detected_at = i
 
-    assert detected_at is not None, "Stuck should be detected during stagnant run"
+    assert detected_at is not None, "Failure should be detected during stagnant run"
     summary = monitor.summary()
-    assert summary["any_stuck_detected"] is True
+    assert summary["any_loop_detected"] is True or summary["any_stuck_detected"] is True
     assert summary["first_detection_at"] is not None
 
 

@@ -11,11 +11,31 @@
 # When output_text is provided to step(), consecutive outputs with
 # Jaccard similarity >= this threshold trigger the content_similarity signal.
 loop_similarity_threshold: 0.8
-loop_consecutive_count: 6
+# Adaptive loop evidence threshold:
+#   threshold = max(2, floor(trace_length * loop_consecutive_pct))
+loop_consecutive_pct: 0.5
+
+# Adaptive findings plateau window:
+#   window = max(2, floor(trace_length * findings_plateau_pct))
+findings_plateau_pct: 0.4
+
+# Statistical minimum evidence floor. No detector fires when trace length is below this.
+min_evidence_steps: 3
+
+# Source-to-finding ratio confabulation floor.
+# ratio = sources_count / findings_count
+# ratio < floor indicates likely findings inflation / confabulation risk.
+source_finding_ratio_floor: 0.3
+
+# Consecutive declining ratio steps required for trajectory-based confab signal.
+source_finding_ratio_declining_steps: 3
+
+# Legacy absolute threshold retained for backward compatibility only.
+loop_consecutive_count: 3
 
 # --- Stuck Detection ---
 stuck_dm_threshold: 0.15
-stuck_cv_threshold: 0.5
+stuck_cv_threshold: 0.3
 burn_rate_multiplier: 3.0
 
 # Token normalization scale factor for models with different tokenization.
@@ -26,6 +46,16 @@ token_scale_factor: 1.0
 # Workflow scope for stuck detection.
 # Options: research-only | build-only | all | none
 workflow_stuck_enabled: research-only
+
+# --- SPC Adaptive Thresholding ---
+# AdaptiveThreshold uses WMA control limits after warmup:
+#   UCL/LCL = WMA +/- (spc_k_sigma * sigma_rolling)
+# where WMA applies exponential decay (spc_wma_decay) to favor recent values.
+spc_k_sigma: 3.0
+spc_window_size: 5
+spc_warmup_steps: 2
+spc_cooldown_steps: 1
+spc_wma_decay: 0.7
 
 # --- Temporal Hysteresis ---
 th_enter_warning: 0.4
@@ -40,15 +70,15 @@ th_exit_critical: 0.35
 # applied on top of the defaults above. Only specified fields are overridden;
 # omitted fields inherit the default values.
 profiles:
-  # LangGraph: stateful graph execution, shorter loops, tighter burn rate.
+  # LangGraph: stateful graph execution with relatively short traces.
   langgraph:
-    loop_consecutive_count: 5
+    loop_consecutive_pct: 0.4
     burn_rate_multiplier: 2.5
 
   # CrewAI: multi-agent orchestration, higher token counts, longer runs.
   # More lenient loop detection — agent handoffs look like repetition.
   crewai:
-    loop_consecutive_count: 8
+    loop_consecutive_pct: 0.5
     burn_rate_multiplier: 4.0
     token_scale_factor: 0.7
 
@@ -56,6 +86,6 @@ profiles:
   # detection, tighter stuck threshold, disable stuck detection entirely
   # (DSPy has its own termination logic).
   dspy:
-    loop_consecutive_count: 10
+    loop_consecutive_pct: 0.6
     stuck_dm_threshold: 0.1
     workflow_stuck_enabled: none

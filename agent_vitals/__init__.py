@@ -16,6 +16,8 @@ Usage::
 """
 
 from .config import ThresholdProfile, VitalsConfig, get_vitals_config
+from .detection.adaptive_threshold import AdaptiveThreshold, AdaptiveThresholdUpdate
+from .detection.cusum import CUSUMTracker, CUSUMUpdate
 from .detection.loop import LoopDetectionResult, detect_loop
 from .detection.stop_rule import StopRuleSignals, derive_stop_signals
 from .exceptions import AdapterError, BacktestError, ConfigurationError, ExportError, VitalsError
@@ -29,12 +31,16 @@ from .schema import (
     VitalsSnapshot,
 )
 
-__version__ = "1.5.0"
+__version__ = "1.8.0"
 
 __all__ = [
     "AdapterError",
     "AgentVitals",
+    "AdaptiveThreshold",
+    "AdaptiveThresholdUpdate",
     "BacktestError",
+    "CUSUMTracker",
+    "CUSUMUpdate",
     "ConfigurationError",
     "ExportError",
     "HealthState",

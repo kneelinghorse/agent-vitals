@@ -1,0 +1,509 @@
+{
+  "AV04.SYNTH.s0.burn_rate_anomaly.0000:seg0": {
+    "confabulation_from_loop": null,
+    "label_status": "generated",
+    "labels": [
+      "runaway_cost",
+      "stuck"
+    ],
+    "loop_from_loop": null,
+    "mission_id": "AV04.SYNTH.s0.burn_rate_anomaly.0000",
+    "notes": "scenario=burn_rate_anomaly length=12 onset=4 severity=0.70 noise=0.010 seed=5346472571684831261",
+    "runaway_cost_from_loop": 4,
+    "stuck_from_loop": 4,
+    "thrash_from_loop": null,
+    "workflow": "burn_rate_anomaly",
+    "workflow_type": "synthetic"
+  },
+  "AV04.SYNTH.s0.confabulation_mild.0000:seg0": {
+    "confabulation_from_loop": 4,
+    "label_status": "generated",
+    "labels": [
+      "confabulation"
+    ],
+    "loop_from_loop": null,
+    "mission_id": "AV04.SYNTH.s0.confabulation_mild.0000",
+    "notes": "scenario=confabulation_mild length=12 onset=4 severity=0.70 noise=0.010 seed=17556323749081656572",
+    "runaway_cost_from_loop": null,
+    "stuck_from_loop": null,
+    "thrash_from_loop": null,
+    "workflow": "confabulation_mild",
+    "workflow_type": "synthetic"
+  },
+  "AV04.SYNTH.s0.confabulation_moderate.0000:seg0": {
+    "confabulation_from_loop": 4,
+    "label_status": "generated",
+    "labels": [
+      "confabulation"
+    ],
+    "loop_from_loop": null,
+    "mission_id": "AV04.SYNTH.s0.confabulation_moderate.0000",
+    "notes": "scenario=confabulation_moderate length=12 onset=4 severity=0.70 noise=0.010 seed=10478897801539729146",
+    "runaway_cost_from_loop": null,
+    "stuck_from_loop": null,
+    "thrash_from_loop": null,
+    "workflow": "confabulation_moderate",
+    "workflow_type": "synthetic"
+  },
+  "AV04.SYNTH.s0.confabulation_severe.0000:seg0": {
+    "confabulation_from_loop": 4,
+    "label_status": "generated",
+    "labels": [
+      "confabulation"
+    ],
+    "loop_from_loop": null,
+    "mission_id": "AV04.SYNTH.s0.confabulation_severe.0000",
+    "notes": "scenario=confabulation_severe length=12 onset=4 severity=0.70 noise=0.010 seed=14075824381243661104",
+    "runaway_cost_from_loop": null,
+    "stuck_from_loop": null,
+    "thrash_from_loop": null,
+    "workflow": "confabulation_severe",
+    "workflow_type": "synthetic"
+  },
+  "AV04.SYNTH.s0.healthy.0000:seg0": {
+    "confabulation_from_loop": null,
+    "label_status": "generated",
+    "labels": [
+      "healthy"
+    ],
+    "loop_from_loop": null,
+    "mission_id": "AV04.SYNTH.s0.healthy.0000",
+    "notes": "scenario=healthy length=12 onset=4 severity=0.70 noise=0.010 seed=16587603211648646415",
+    "runaway_cost_from_loop": null,
+    "stuck_from_loop": null,
+    "thrash_from_loop": null,
+    "workflow": "healthy",
+    "workflow_type": "synthetic"
+  },
+  "AV04.SYNTH.s0.loop_plateau.0000:seg0": {
+    "confabulation_from_loop": null,
+    "label_status": "generated",
+    "labels": [
+      "loop"
+    ],
+    "loop_from_loop": 4,
+    "mission_id": "AV04.SYNTH.s0.loop_plateau.0000",
+    "notes": "scenario=loop_plateau length=12 onset=4 severity=0.70 noise=0.010 seed=13079955437701724559",
+    "runaway_cost_from_loop": null,
+    "stuck_from_loop": null,
+    "thrash_from_loop": null,
+    "workflow": "loop_plateau",
+    "workflow_type": "synthetic"
+  },
+  "AV04.SYNTH.s0.loop_refinement_cycle.0000:seg0": {
+    "confabulation_from_loop": null,
+    "label_status": "generated",
+    "labels": [
+      "loop"
+    ],
+    "loop_from_loop": 4,
+    "mission_id": "AV04.SYNTH.s0.loop_refinement_cycle.0000",
+    "notes": "scenario=loop_refinement_cycle length=12 onset=4 severity=0.70 noise=0.010 seed=13366267407241708365",
+    "runaway_cost_from_loop": null,
+    "stuck_from_loop": null,
+    "thrash_from_loop": null,
+    "workflow": "loop_refinement_cycle",
+    "workflow_type": "synthetic"
+  },
+  "AV04.SYNTH.s0.mixed.0000:seg0": {
+    "confabulation_from_loop": null,
+    "label_status": "generated",
+    "labels": [
+      "loop",
+      "runaway_cost",
+      "stuck",
+      "thrash"
+    ],
+    "loop_from_loop": 4,
+    "mission_id": "AV04.SYNTH.s0.mixed.0000",
+    "notes": "scenario=mixed length=12 onset=4 severity=0.70 noise=0.010 seed=2353012829965351396",
+    "runaway_cost_from_loop": 8,
+    "stuck_from_loop": 8,
+    "thrash_from_loop": 8,
+    "workflow": "mixed",
+    "workflow_type": "synthetic"
+  },
+  "AV04.SYNTH.s0.retry_thrash.0000:seg0": {
+    "confabulation_from_loop": null,
+    "label_status": "generated",
+    "labels": [
+      "thrash"
+    ],
+    "loop_from_loop": null,
+    "mission_id": "AV04.SYNTH.s0.retry_thrash.0000",
+    "notes": "scenario=retry_thrash length=12 onset=4 severity=0.70 noise=0.010 seed=9440385991106105598",
+    "runaway_cost_from_loop": null,
+    "stuck_from_loop": null,
+    "thrash_from_loop": 4,
+    "workflow": "retry_thrash",
+    "workflow_type": "synthetic"
+  },
+  "AV04.SYNTH.s0.runaway_cost.0000:seg0": {
+    "confabulation_from_loop": null,
+    "label_status": "generated",
+    "labels": [
+      "runaway_cost"
+    ],
+    "loop_from_loop": null,
+    "mission_id": "AV04.SYNTH.s0.runaway_cost.0000",
+    "notes": "scenario=runaway_cost length=12 onset=4 severity=0.70 noise=0.010 seed=5604020697403827669",
+    "runaway_cost_from_loop": 4,
+    "stuck_from_loop": null,
+    "thrash_from_loop": null,
+    "workflow": "runaway_cost",
+    "workflow_type": "synthetic"
+  },
+  "AV04.SYNTH.s0.stuck_coverage.0000:seg0": {
+    "confabulation_from_loop": null,
+    "label_status": "generated",
+    "labels": [
+      "stuck"
+    ],
+    "loop_from_loop": null,
+    "mission_id": "AV04.SYNTH.s0.stuck_coverage.0000",
+    "notes": "scenario=stuck_coverage length=12 onset=4 severity=0.70 noise=0.010 seed=5293955894852568839",
+    "runaway_cost_from_loop": null,
+    "stuck_from_loop": 4,
+    "thrash_from_loop": null,
+    "workflow": "stuck_coverage",
+    "workflow_type": "synthetic"
+  },
+  "AV04.SYNTH.s1.burn_rate_anomaly.0000:seg0": {
+    "confabulation_from_loop": null,
+    "label_status": "generated",
+    "labels": [
+      "runaway_cost",
+      "stuck"
+    ],
+    "loop_from_loop": null,
+    "mission_id": "AV04.SYNTH.s1.burn_rate_anomaly.0000",
+    "notes": "scenario=burn_rate_anomaly length=12 onset=4 severity=0.70 noise=0.010 seed=17035356588212656423",
+    "runaway_cost_from_loop": 4,
+    "stuck_from_loop": 4,
+    "thrash_from_loop": null,
+    "workflow": "burn_rate_anomaly",
+    "workflow_type": "synthetic"
+  },
+  "AV04.SYNTH.s1.confabulation_mild.0000:seg0": {
+    "confabulation_from_loop": 4,
+    "label_status": "generated",
+    "labels": [
+      "confabulation"
+    ],
+    "loop_from_loop": null,
+    "mission_id": "AV04.SYNTH.s1.confabulation_mild.0000",
+    "notes": "scenario=confabulation_mild length=12 onset=4 severity=0.70 noise=0.010 seed=2849151378639444187",
+    "runaway_cost_from_loop": null,
+    "stuck_from_loop": null,
+    "thrash_from_loop": null,
+    "workflow": "confabulation_mild",
+    "workflow_type": "synthetic"
+  },
+  "AV04.SYNTH.s1.confabulation_moderate.0000:seg0": {
+    "confabulation_from_loop": 4,
+    "label_status": "generated",
+    "labels": [
+      "confabulation"
+    ],
+    "loop_from_loop": null,
+    "mission_id": "AV04.SYNTH.s1.confabulation_moderate.0000",
+    "notes": "scenario=confabulation_moderate length=12 onset=4 severity=0.70 noise=0.010 seed=8323416679119356335",
+    "runaway_cost_from_loop": null,
+    "stuck_from_loop": null,
+    "thrash_from_loop": null,
+    "workflow": "confabulation_moderate",
+    "workflow_type": "synthetic"
+  },
+  "AV04.SYNTH.s1.confabulation_severe.0000:seg0": {
+    "confabulation_from_loop": 4,
+    "label_status": "generated",
+    "labels": [
+      "confabulation"
+    ],
+    "loop_from_loop": null,
+    "mission_id": "AV04.SYNTH.s1.confabulation_severe.0000",
+    "notes": "scenario=confabulation_severe length=12 onset=4 severity=0.70 noise=0.010 seed=3887611941025753757",
+    "runaway_cost_from_loop": null,
+    "stuck_from_loop": null,
+    "thrash_from_loop": null,
+    "workflow": "confabulation_severe",
+    "workflow_type": "synthetic"
+  },
+  "AV04.SYNTH.s1.healthy.0000:seg0": {
+    "confabulation_from_loop": null,
+    "label_status": "generated",
+    "labels": [
+      "healthy"
+    ],
+    "loop_from_loop": null,
+    "mission_id": "AV04.SYNTH.s1.healthy.0000",
+    "notes": "scenario=healthy length=12 onset=4 severity=0.70 noise=0.010 seed=18362479896307576819",
+    "runaway_cost_from_loop": null,
+    "stuck_from_loop": null,
+    "thrash_from_loop": null,
+    "workflow": "healthy",
+    "workflow_type": "synthetic"
+  },
+  "AV04.SYNTH.s1.loop_plateau.0000:seg0": {
+    "confabulation_from_loop": null,
+    "label_status": "generated",
+    "labels": [
+      "loop"
+    ],
+    "loop_from_loop": 4,
+    "mission_id": "AV04.SYNTH.s1.loop_plateau.0000",
+    "notes": "scenario=loop_plateau length=12 onset=4 severity=0.70 noise=0.010 seed=1003628054956698429",
+    "runaway_cost_from_loop": null,
+    "stuck_from_loop": null,
+    "thrash_from_loop": null,
+    "workflow": "loop_plateau",
+    "workflow_type": "synthetic"
+  },
+  "AV04.SYNTH.s1.loop_refinement_cycle.0000:seg0": {
+    "confabulation_from_loop": null,
+    "label_status": "generated",
+    "labels": [
+      "loop"
+    ],
+    "loop_from_loop": 4,
+    "mission_id": "AV04.SYNTH.s1.loop_refinement_cycle.0000",
+    "notes": "scenario=loop_refinement_cycle length=12 onset=4 severity=0.70 noise=0.010 seed=1132670569100117995",
+    "runaway_cost_from_loop": null,
+    "stuck_from_loop": null,
+    "thrash_from_loop": null,
+    "workflow": "loop_refinement_cycle",
+    "workflow_type": "synthetic"
+  },
+  "AV04.SYNTH.s1.mixed.0000:seg0": {
+    "confabulation_from_loop": null,
+    "label_status": "generated",
+    "labels": [
+      "loop",
+      "runaway_cost",
+      "stuck",
+      "thrash"
+    ],
+    "loop_from_loop": 4,
+    "mission_id": "AV04.SYNTH.s1.mixed.0000",
+    "notes": "scenario=mixed length=12 onset=4 severity=0.70 noise=0.010 seed=823493121345131801",
+    "runaway_cost_from_loop": 8,
+    "stuck_from_loop": 8,
+    "thrash_from_loop": 8,
+    "workflow": "mixed",
+    "workflow_type": "synthetic"
+  },
+  "AV04.SYNTH.s1.retry_thrash.0000:seg0": {
+    "confabulation_from_loop": null,
+    "label_status": "generated",
+    "labels": [
+      "thrash"
+    ],
+    "loop_from_loop": null,
+    "mission_id": "AV04.SYNTH.s1.retry_thrash.0000",
+    "notes": "scenario=retry_thrash length=12 onset=4 severity=0.70 noise=0.010 seed=11799050515963784092",
+    "runaway_cost_from_loop": null,
+    "stuck_from_loop": null,
+    "thrash_from_loop": 4,
+    "workflow": "retry_thrash",
+    "workflow_type": "synthetic"
+  },
+  "AV04.SYNTH.s1.runaway_cost.0000:seg0": {
+    "confabulation_from_loop": null,
+    "label_status": "generated",
+    "labels": [
+      "runaway_cost"
+    ],
+    "loop_from_loop": null,
+    "mission_id": "AV04.SYNTH.s1.runaway_cost.0000",
+    "notes": "scenario=runaway_cost length=12 onset=4 severity=0.70 noise=0.010 seed=146299898264256201",
+    "runaway_cost_from_loop": 4,
+    "stuck_from_loop": null,
+    "thrash_from_loop": null,
+    "workflow": "runaway_cost",
+    "workflow_type": "synthetic"
+  },
+  "AV04.SYNTH.s1.stuck_coverage.0000:seg0": {
+    "confabulation_from_loop": null,
+    "label_status": "generated",
+    "labels": [
+      "stuck"
+    ],
+    "loop_from_loop": null,
+    "mission_id": "AV04.SYNTH.s1.stuck_coverage.0000",
+    "notes": "scenario=stuck_coverage length=12 onset=4 severity=0.70 noise=0.010 seed=5944565202989142754",
+    "runaway_cost_from_loop": null,
+    "stuck_from_loop": 4,
+    "thrash_from_loop": null,
+    "workflow": "stuck_coverage",
+    "workflow_type": "synthetic"
+  },
+  "AV04.SYNTH.s2.burn_rate_anomaly.0000:seg0": {
+    "confabulation_from_loop": null,
+    "label_status": "generated",
+    "labels": [
+      "runaway_cost",
+      "stuck"
+    ],
+    "loop_from_loop": null,
+    "mission_id": "AV04.SYNTH.s2.burn_rate_anomaly.0000",
+    "notes": "scenario=burn_rate_anomaly length=12 onset=4 severity=0.70 noise=0.010 seed=5083861119506299938",
+    "runaway_cost_from_loop": 4,
+    "stuck_from_loop": 4,
+    "thrash_from_loop": null,
+    "workflow": "burn_rate_anomaly",
+    "workflow_type": "synthetic"
+  },
+  "AV04.SYNTH.s2.confabulation_mild.0000:seg0": {
+    "confabulation_from_loop": 4,
+    "label_status": "generated",
+    "labels": [
+      "confabulation"
+    ],
+    "loop_from_loop": null,
+    "mission_id": "AV04.SYNTH.s2.confabulation_mild.0000",
+    "notes": "scenario=confabulation_mild length=12 onset=4 severity=0.70 noise=0.010 seed=8864324495088319801",
+    "runaway_cost_from_loop": null,
+    "stuck_from_loop": null,
+    "thrash_from_loop": null,
+    "workflow": "confabulation_mild",
+    "workflow_type": "synthetic"
+  },
+  "AV04.SYNTH.s2.confabulation_moderate.0000:seg0": {
+    "confabulation_from_loop": 4,
+    "label_status": "generated",
+    "labels": [
+      "confabulation"
+    ],
+    "loop_from_loop": null,
+    "mission_id": "AV04.SYNTH.s2.confabulation_moderate.0000",
+    "notes": "scenario=confabulation_moderate length=12 onset=4 severity=0.70 noise=0.010 seed=11691711409936337342",
+    "runaway_cost_from_loop": null,
+    "stuck_from_loop": null,
+    "thrash_from_loop": null,
+    "workflow": "confabulation_moderate",
+    "workflow_type": "synthetic"
+  },
+  "AV04.SYNTH.s2.confabulation_severe.0000:seg0": {
+    "confabulation_from_loop": 4,
+    "label_status": "generated",
+    "labels": [
+      "confabulation"
+    ],
+    "loop_from_loop": null,
+    "mission_id": "AV04.SYNTH.s2.confabulation_severe.0000",
+    "notes": "scenario=confabulation_severe length=12 onset=4 severity=0.70 noise=0.010 seed=12433346201136203397",
+    "runaway_cost_from_loop": null,
+    "stuck_from_loop": null,
+    "thrash_from_loop": null,
+    "workflow": "confabulation_severe",
+    "workflow_type": "synthetic"
+  },
+  "AV04.SYNTH.s2.healthy.0000:seg0": {
+    "confabulation_from_loop": null,
+    "label_status": "generated",
+    "labels": [
+      "healthy"
+    ],
+    "loop_from_loop": null,
+    "mission_id": "AV04.SYNTH.s2.healthy.0000",
+    "notes": "scenario=healthy length=12 onset=4 severity=0.70 noise=0.010 seed=3849063916715216226",
+    "runaway_cost_from_loop": null,
+    "stuck_from_loop": null,
+    "thrash_from_loop": null,
+    "workflow": "healthy",
+    "workflow_type": "synthetic"
+  },
+  "AV04.SYNTH.s2.loop_plateau.0000:seg0": {
+    "confabulation_from_loop": null,
+    "label_status": "generated",
+    "labels": [
+      "loop"
+    ],
+    "loop_from_loop": 4,
+    "mission_id": "AV04.SYNTH.s2.loop_plateau.0000",
+    "notes": "scenario=loop_plateau length=12 onset=4 severity=0.70 noise=0.010 seed=9534689015659146439",
+    "runaway_cost_from_loop": null,
+    "stuck_from_loop": null,
+    "thrash_from_loop": null,
+    "workflow": "loop_plateau",
+    "workflow_type": "synthetic"
+  },
+  "AV04.SYNTH.s2.loop_refinement_cycle.0000:seg0": {
+    "confabulation_from_loop": null,
+    "label_status": "generated",
+    "labels": [
+      "loop"
+    ],
+    "loop_from_loop": 4,
+    "mission_id": "AV04.SYNTH.s2.loop_refinement_cycle.0000",
+    "notes": "scenario=loop_refinement_cycle length=12 onset=4 severity=0.70 noise=0.010 seed=12681837753581798844",
+    "runaway_cost_from_loop": null,
+    "stuck_from_loop": null,
+    "thrash_from_loop": null,
+    "workflow": "loop_refinement_cycle",
+    "workflow_type": "synthetic"
+  },
+  "AV04.SYNTH.s2.mixed.0000:seg0": {
+    "confabulation_from_loop": null,
+    "label_status": "generated",
+    "labels": [
+      "loop",
+      "runaway_cost",
+      "stuck",
+      "thrash"
+    ],
+    "loop_from_loop": 4,
+    "mission_id": "AV04.SYNTH.s2.mixed.0000",
+    "notes": "scenario=mixed length=12 onset=4 severity=0.70 noise=0.010 seed=270621627012795176",
+    "runaway_cost_from_loop": 8,
+    "stuck_from_loop": 8,
+    "thrash_from_loop": 8,
+    "workflow": "mixed",
+    "workflow_type": "synthetic"
+  },
+  "AV04.SYNTH.s2.retry_thrash.0000:seg0": {
+    "confabulation_from_loop": null,
+    "label_status": "generated",
+    "labels": [
+      "thrash"
+    ],
+    "loop_from_loop": null,
+    "mission_id": "AV04.SYNTH.s2.retry_thrash.0000",
+    "notes": "scenario=retry_thrash length=12 onset=4 severity=0.70 noise=0.010 seed=17363066399648160428",
+    "runaway_cost_from_loop": null,
+    "stuck_from_loop": null,
+    "thrash_from_loop": 4,
+    "workflow": "retry_thrash",
+    "workflow_type": "synthetic"
+  },
+  "AV04.SYNTH.s2.runaway_cost.0000:seg0": {
+    "confabulation_from_loop": null,
+    "label_status": "generated",
+    "labels": [
+      "runaway_cost"
+    ],
+    "loop_from_loop": null,
+    "mission_id": "AV04.SYNTH.s2.runaway_cost.0000",
+    "notes": "scenario=runaway_cost length=12 onset=4 severity=0.70 noise=0.010 seed=16235985048261750404",
+    "runaway_cost_from_loop": 4,
+    "stuck_from_loop": null,
+    "thrash_from_loop": null,
+    "workflow": "runaway_cost",
+    "workflow_type": "synthetic"
+  },
+  "AV04.SYNTH.s2.stuck_coverage.0000:seg0": {
+    "confabulation_from_loop": null,
+    "label_status": "generated",
+    "labels": [
+      "stuck"
+    ],
+    "loop_from_loop": null,
+    "mission_id": "AV04.SYNTH.s2.stuck_coverage.0000",
+    "notes": "scenario=stuck_coverage length=12 onset=4 severity=0.70 noise=0.010 seed=3197434753203518069",
+    "runaway_cost_from_loop": null,
+    "stuck_from_loop": 4,
+    "thrash_from_loop": null,
+    "workflow": "stuck_coverage",
+    "workflow_type": "synthetic"
+  }
+}

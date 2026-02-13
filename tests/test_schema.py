@@ -110,7 +110,11 @@ class TestVitalsSnapshot:
         assert snap.loop_index == 0
         assert snap.health_state == "healthy"
         assert snap.loop_detected is False
+        assert snap.confabulation_detected is False
         assert snap.stuck_detected is False
+        assert snap.source_finding_ratio is None
+        assert snap.ratio_trend == "insufficient_data"
+        assert snap.ratio_declining_steps == 0
 
     def test_any_failure_false_when_healthy(self) -> None:
         snap = self._make_snapshot()
@@ -122,6 +126,14 @@ class TestVitalsSnapshot:
 
     def test_any_failure_true_on_stuck(self) -> None:
         snap = self._make_snapshot(stuck_detected=True, stuck_confidence=0.7)
+        assert snap.any_failure is True
+
+    def test_any_failure_true_on_confabulation(self) -> None:
+        snap = self._make_snapshot(
+            confabulation_detected=True,
+            confabulation_confidence=0.8,
+            confabulation_trigger="source_finding_ratio_low",
+        )
         assert snap.any_failure is True
 
     def test_health_state_change_requires_previous(self) -> None:
@@ -159,3 +171,7 @@ class TestVitalsSnapshot:
         restored = VitalsSnapshot.model_validate_json(json_str)
         assert restored.mission_id == snap.mission_id
         assert restored.loop_index == snap.loop_index
+
+    def test_ratio_trend_validation(self) -> None:
+        with pytest.raises(ValidationError):
+            self._make_snapshot(ratio_trend="invalid-trend")

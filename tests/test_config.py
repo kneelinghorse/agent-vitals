@@ -8,22 +8,50 @@ class TestVitalsConfig:
 
     def test_defaults(self) -> None:
         cfg = VitalsConfig()
-        assert cfg.loop_consecutive_count == 6
+        assert cfg.loop_consecutive_pct == 0.5
+        assert cfg.findings_plateau_pct == 0.4
+        assert cfg.min_evidence_steps == 3
+        assert cfg.source_finding_ratio_floor == 0.3
+        assert cfg.source_finding_ratio_declining_steps == 3
+        assert cfg.loop_consecutive_count == 3
         assert cfg.stuck_dm_threshold == 0.15
-        assert cfg.stuck_cv_threshold == 0.5
+        assert cfg.stuck_cv_threshold == 0.3
         assert cfg.burn_rate_multiplier == 3.0
         assert cfg.token_scale_factor == 1.0
+        assert cfg.spc_k_sigma == 3.0
+        assert cfg.spc_window_size == 5
+        assert cfg.spc_warmup_steps == 2
+        assert cfg.spc_cooldown_steps == 1
+        assert cfg.spc_wma_decay == 0.7
         assert cfg.workflow_stuck_enabled == "research-only"
 
     def test_from_dict(self) -> None:
         cfg = VitalsConfig.from_dict({
-            "loop_consecutive_count": 4,
+            "loop_consecutive_pct": 0.45,
+            "findings_plateau_pct": 0.35,
+            "min_evidence_steps": 4,
+            "source_finding_ratio_floor": 0.25,
+            "source_finding_ratio_declining_steps": 4,
+            "spc_k_sigma": 2.5,
+            "spc_window_size": 7,
+            "spc_warmup_steps": 3,
+            "spc_cooldown_steps": 2,
+            "spc_wma_decay": 0.8,
             "stuck_dm_threshold": 0.2,
             "enabled": True,
             "enforcement": False,
             "workflow_stuck_enabled": "all",
         })
-        assert cfg.loop_consecutive_count == 4
+        assert cfg.loop_consecutive_pct == 0.45
+        assert cfg.findings_plateau_pct == 0.35
+        assert cfg.min_evidence_steps == 4
+        assert cfg.source_finding_ratio_floor == 0.25
+        assert cfg.source_finding_ratio_declining_steps == 4
+        assert cfg.spc_k_sigma == 2.5
+        assert cfg.spc_window_size == 7
+        assert cfg.spc_warmup_steps == 3
+        assert cfg.spc_cooldown_steps == 2
+        assert cfg.spc_wma_decay == 0.8
         assert cfg.stuck_dm_threshold == 0.2
         assert cfg.workflow_stuck_enabled == "all"
 
@@ -39,7 +67,7 @@ class TestVitalsConfig:
             "loop_consecutive_count": "not_a_number",
         })
         # Should fall back to default
-        assert cfg.loop_consecutive_count == 6
+        assert cfg.loop_consecutive_count == 3
 
     def test_hysteresis_config(self) -> None:
         cfg = VitalsConfig(
@@ -55,7 +83,16 @@ class TestVitalsConfig:
     def test_from_yaml_with_bundled_file(self) -> None:
         """Test loading from the bundled thresholds.yaml."""
         cfg = VitalsConfig.from_yaml(allow_env_override=False)
-        assert cfg.loop_consecutive_count == 6
+        assert cfg.loop_consecutive_pct == 0.5
+        assert cfg.findings_plateau_pct == 0.4
+        assert cfg.min_evidence_steps == 3
+        assert cfg.source_finding_ratio_floor == 0.3
+        assert cfg.source_finding_ratio_declining_steps == 3
+        assert cfg.spc_k_sigma == 3.0
+        assert cfg.spc_window_size == 5
+        assert cfg.spc_warmup_steps == 2
+        assert cfg.spc_cooldown_steps == 1
+        assert cfg.spc_wma_decay == 0.7
         assert cfg.stuck_dm_threshold == 0.15
 
 

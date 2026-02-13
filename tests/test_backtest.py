@@ -15,10 +15,14 @@ from agent_vitals.backtest import (
     ConfusionCounts,
     DetectorResult,
     Labels,
+    _replay_trace,
     load_dataset,
     load_labels,
     run_backtest,
 )
+from agent_vitals.config import VitalsConfig
+from agent_vitals.detection.loop import LoopDetectionResult
+from agent_vitals.detection.stop_rule import StopRuleSignals
 from agent_vitals.schema import RawSignals, TemporalMetricsResult, VitalsSnapshot
 
 
@@ -151,13 +155,14 @@ class TestLoadLabels:
 
     def test_corpus_format(self, tmp_path: Path) -> None:
         labels_data = {
-            "t1": {"labels": ["thrash", "stuck"]},
+            "t1": {"labels": ["thrash", "stuck", "confabulation"]},
         }
         path = tmp_path / "labels.json"
         path.write_text(json.dumps(labels_data))
         labels = load_labels(path)
         assert labels["t1"]["thrash_at"] == {0}
         assert labels["t1"]["stuck_at"] == {0}
+        assert labels["t1"]["confabulation_at"] == {0}
 
     def test_rejects_non_object(self, tmp_path: Path) -> None:
         path = tmp_path / "labels.json"
@@ -230,7 +235,13 @@ class TestRunBacktest:
 
         ds = load_dataset(traces_dir)
         labels: Labels = {
-            "h1": {"loop_at": set(), "stuck_at": set(), "thrash_at": set(), "runaway_cost_at": set()},
+            "h1": {
+                "loop_at": set(),
+                "confabulation_at": set(),
+                "stuck_at": set(),
+                "thrash_at": set(),
+                "runaway_cost_at": set(),
+            },
         }
 
         report = run_backtest(ds, labels)
@@ -246,7 +257,13 @@ class TestRunBacktest:
 
         ds = load_dataset(traces_dir)
         labels: Labels = {
-            "t1": {"loop_at": set(), "stuck_at": set(), "thrash_at": set(), "runaway_cost_at": set()},
+            "t1": {
+                "loop_at": set(),
+                "confabulation_at": set(),
+                "stuck_at": set(),
+                "thrash_at": set(),
+                "runaway_cost_at": set(),
+            },
         }
 
         report = run_backtest(ds, labels)
@@ -256,6 +273,7 @@ class TestRunBacktest:
         assert "detectors" in d
         assert "composite_any" in d
         assert "loop" in d["detectors"]
+        assert "confabulation" in d["detectors"]
         assert d["dataset"]["trace_count"] == 1
 
     def test_thrash_detection_via_errors(self, tmp_path: Path) -> None:
@@ -270,8 +288,127 @@ class TestRunBacktest:
 
         ds = load_dataset(traces_dir)
         labels: Labels = {
-            "err1": {"loop_at": set(), "stuck_at": set(), "thrash_at": {0}, "runaway_cost_at": set()},
+            "err1": {
+                "loop_at": set(),
+                "confabulation_at": set(),
+                "stuck_at": set(),
+                "thrash_at": {0},
+                "runaway_cost_at": set(),
+            },
         }
 
         report = run_backtest(ds, labels)
         assert report.detectors["thrash"].confusion.tp >= 1
+
+    def test_confabulation_detection_scored_first_class(
+        self,
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        """Confabulation labels should produce confabulation TP accounting."""
+        traces_dir = tmp_path / "traces"
+        traces_dir.mkdir()
+        _write_jsonl(traces_dir / "c1.jsonl", [_snapshot("c1", 0)])
+
+        ds = load_dataset(traces_dir)
+        labels: Labels = {
+            "c1": {
+                "loop_at": set(),
+                "confabulation_at": {0},
+                "stuck_at": set(),
+                "thrash_at": set(),
+                "runaway_cost_at": set(),
+            }
+        }
+
+        monkeypatch.setattr(
+            "agent_vitals.backtest.detect_loop",
+            lambda *_args, **_kwargs: LoopDetectionResult(
+                confabulation_detected=True,
+                confabulation_confidence=0.85,
+                confabulation_trigger="source_finding_ratio_low",
+            ),
+        )
+        monkeypatch.setattr(
+            "agent_vitals.backtest.derive_stop_signals",
+            lambda *_args, **_kwargs: StopRuleSignals(False, False, False, False),
+        )
+
+        report = run_backtest(ds, labels, config=VitalsConfig())
+        confab = report.detectors["confabulation"]
+        assert confab.confusion.tp == 1
+        assert confab.precision == pytest.approx(1.0)
+        assert confab.recall == pytest.approx(1.0)
+
+
+class TestReplayTraceOverlap:
+    def test_suppresses_stuck_for_pure_loop_overlap(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """Pure loop overlap should suppress stuck at trace level."""
+        snapshots = [_snapshot("t1", i) for i in range(3)]
+        detections = iter(
+            [
+                LoopDetectionResult(stuck_detected=True, stuck_trigger="findings_plateau"),
+                LoopDetectionResult(loop_detected=True, loop_trigger="findings_plateau"),
+                LoopDetectionResult(),
+            ]
+        )
+        stop_signals = iter(
+            [
+                StopRuleSignals(False, True, False, False),
+                StopRuleSignals(True, False, False, False),
+                StopRuleSignals(False, False, False, False),
+            ]
+        )
+
+        monkeypatch.setattr(
+            "agent_vitals.backtest.detect_loop",
+            lambda *_args, **_kwargs: next(detections),
+        )
+        monkeypatch.setattr(
+            "agent_vitals.backtest.derive_stop_signals",
+            lambda *_args, **_kwargs: next(stop_signals),
+        )
+
+        fired = _replay_trace(
+            snapshots,
+            config=VitalsConfig(),
+            workflow_type="synthetic",
+        )
+        assert fired["loop"] is True
+        assert fired["stuck"] is False
+
+    def test_keeps_stuck_for_mixed_overlap_with_thrash(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """Mixed traces should keep stuck when thrash also appears."""
+        snapshots = [_snapshot("t2", i) for i in range(3)]
+        detections = iter(
+            [
+                LoopDetectionResult(stuck_detected=True, stuck_trigger="coverage_stagnation"),
+                LoopDetectionResult(loop_detected=True, loop_trigger="findings_plateau"),
+                LoopDetectionResult(),
+            ]
+        )
+        stop_signals = iter(
+            [
+                StopRuleSignals(False, True, False, False),
+                StopRuleSignals(True, False, False, False),
+                StopRuleSignals(False, False, True, False),
+            ]
+        )
+
+        monkeypatch.setattr(
+            "agent_vitals.backtest.detect_loop",
+            lambda *_args, **_kwargs: next(detections),
+        )
+        monkeypatch.setattr(
+            "agent_vitals.backtest.derive_stop_signals",
+            lambda *_args, **_kwargs: next(stop_signals),
+        )
+
+        fired = _replay_trace(
+            snapshots,
+            config=VitalsConfig(),
+            workflow_type="synthetic",
+        )
+        assert fired["loop"] is True
+        assert fired["thrash"] is True
+        assert fired["stuck"] is True

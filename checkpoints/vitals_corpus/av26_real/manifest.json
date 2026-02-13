@@ -1,0 +1,174 @@
+{
+  "suite": "av26_real",
+  "schema_version": 1,
+  "mode": "real",
+  "outputs": {
+    "labels": "labels.json",
+    "traces_dir": "traces"
+  },
+  "runs": [
+    {
+      "mission_id": "AV26.R01",
+      "run_id": "AV26.R01:seg0",
+      "scenario": "healthy_baseline",
+      "seed": 0,
+      "segment_index": 0,
+      "trace_path": "traces/AV26.R01.jsonl",
+      "workflow_type": "real"
+    },
+    {
+      "mission_id": "AV26.R02",
+      "run_id": "AV26.R02:seg0",
+      "scenario": "healthy_deep",
+      "seed": 0,
+      "segment_index": 0,
+      "trace_path": "traces/AV26.R02.jsonl",
+      "workflow_type": "real"
+    },
+    {
+      "mission_id": "AV26.R03",
+      "run_id": "AV26.R03:seg0",
+      "scenario": "healthy_baseline",
+      "seed": 0,
+      "segment_index": 0,
+      "trace_path": "traces/AV26.R03.jsonl",
+      "workflow_type": "real"
+    },
+    {
+      "mission_id": "AV26.R04",
+      "run_id": "AV26.R04:seg0",
+      "scenario": "healthy_baseline",
+      "seed": 0,
+      "segment_index": 0,
+      "trace_path": "traces/AV26.R04.jsonl",
+      "workflow_type": "real"
+    },
+    {
+      "mission_id": "AV26.R05",
+      "run_id": "AV26.R05:seg0",
+      "scenario": "healthy_deep",
+      "seed": 0,
+      "segment_index": 0,
+      "trace_path": "traces/AV26.R05.jsonl",
+      "workflow_type": "real"
+    },
+    {
+      "mission_id": "AV26.R06",
+      "run_id": "AV26.R06:seg0",
+      "scenario": "healthy_niche_fp",
+      "seed": 0,
+      "segment_index": 0,
+      "trace_path": "traces/AV26.R06.jsonl",
+      "workflow_type": "real"
+    },
+    {
+      "mission_id": "AV26.R07",
+      "run_id": "AV26.R07:seg0",
+      "scenario": "healthy_baseline",
+      "seed": 0,
+      "segment_index": 0,
+      "trace_path": "traces/AV26.R07.jsonl",
+      "workflow_type": "real"
+    },
+    {
+      "mission_id": "AV26.R08",
+      "run_id": "AV26.R08:seg0",
+      "scenario": "healthy_baseline",
+      "seed": 0,
+      "segment_index": 0,
+      "trace_path": "traces/AV26.R08.jsonl",
+      "workflow_type": "real"
+    },
+    {
+      "mission_id": "AV26.F01",
+      "run_id": "AV26.F01:seg0",
+      "scenario": "loop_narrow_topic",
+      "seed": 0,
+      "segment_index": 0,
+      "trace_path": "traces/AV26.F01.jsonl",
+      "workflow_type": "real"
+    },
+    {
+      "mission_id": "AV26.F02",
+      "run_id": "AV26.F02:seg0",
+      "scenario": "loop_findings_inflation",
+      "seed": 0,
+      "segment_index": 0,
+      "trace_path": "traces/AV26.F02.jsonl",
+      "workflow_type": "real"
+    },
+    {
+      "mission_id": "AV26.F03",
+      "run_id": "AV26.F03:seg0",
+      "scenario": "stuck_fictional",
+      "seed": 0,
+      "segment_index": 0,
+      "trace_path": "traces/AV26.F03.jsonl",
+      "workflow_type": "real"
+    },
+    {
+      "mission_id": "AV26.F04",
+      "run_id": "AV26.F04:seg0",
+      "scenario": "stuck_niche_intersection",
+      "seed": 0,
+      "segment_index": 0,
+      "trace_path": "traces/AV26.F04.jsonl",
+      "workflow_type": "real"
+    },
+    {
+      "mission_id": "AV26.F05",
+      "run_id": "AV26.F05:seg0",
+      "scenario": "stuck_contradictory",
+      "seed": 0,
+      "segment_index": 0,
+      "trace_path": "traces/AV26.F05.jsonl",
+      "workflow_type": "real"
+    },
+    {
+      "mission_id": "AV26.F06",
+      "run_id": "AV26.F06:seg0",
+      "scenario": "stuck_complexity",
+      "seed": 0,
+      "segment_index": 0,
+      "trace_path": "traces/AV26.F06.jsonl",
+      "workflow_type": "real"
+    },
+    {
+      "mission_id": "AV29.C01",
+      "run_id": "AV29.C01:seg0",
+      "scenario": "confab_real_narrow_nist_authenticator_assurance",
+      "seed": 0,
+      "segment_index": 0,
+      "trace_path": "traces/AV29.C01.jsonl",
+      "workflow_type": "real"
+    },
+    {
+      "mission_id": "AV29.C05",
+      "run_id": "AV29.C05:seg0",
+      "scenario": "confab_real_repetitive_source_loop_variant_a",
+      "seed": 0,
+      "segment_index": 0,
+      "trace_path": "traces/AV29.C05.jsonl",
+      "workflow_type": "real"
+    }
+  ],
+  "runs_per_scenario": 1,
+  "seeds": [
+    0
+  ],
+  "build": {
+    "enabled": false,
+    "include_enforcement": false,
+    "scenarios_dir": null,
+    "workers": 1
+  },
+  "synthetic": {
+    "enabled": false,
+    "length": 0,
+    "mission_prefix": "AV26.REAL",
+    "noise": 0,
+    "onset": null,
+    "scenarios": [],
+    "severity": 0
+  }
+}

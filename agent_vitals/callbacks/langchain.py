@@ -151,7 +151,12 @@ class LangChainVitalsCallback(BaseCallbackHandler):
         if not snapshot.any_failure:
             return
 
-        trigger = snapshot.stuck_trigger or snapshot.loop_trigger or "unknown"
+        trigger = (
+            snapshot.confabulation_trigger
+            or snapshot.stuck_trigger
+            or snapshot.loop_trigger
+            or "unknown"
+        )
         message = f"AgentVitals failure detected at loop={snapshot.loop_index}: {trigger}"
 
         if self._on_failure == "log":
