@@ -10,19 +10,15 @@ from __future__ import annotations
 
 import argparse
 import json
-import os
-import sys
 import time
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-ROOT = Path(__file__).resolve().parents[1]
-if str(ROOT) not in sys.path:
-    sys.path.insert(0, str(ROOT))
-
 from agent_vitals.backtest import ConfusionCounts, Dataset, _replay_trace, load_dataset
 from agent_vitals.config import VitalsConfig
+
+ROOT = Path(__file__).resolve().parents[1]
 
 Labels = dict[str, dict[str, set[int]]]
 
