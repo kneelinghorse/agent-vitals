@@ -1,290 +1,506 @@
 {
-  "AV26.R01": {
-    "label_status": "manual",
-    "labels": [
-      "healthy"
-    ],
-    "loop_from_loop": null,
-    "stuck_from_loop": null,
-    "thrash_from_loop": null,
-    "runaway_cost_from_loop": null,
-    "mission_id": "AV26.R01",
-    "scenario_id": "healthy_baseline",
-    "segment_index": 0,
-    "source_jsonl": "traces/AV26.R01.jsonl",
-    "workflow": "research",
-    "workflow_type": "real",
-    "notes": "M02 healthy run. Agent Failure Mode Taxonomy (baseline). 3 loops, 15 sources, verdict=healthy. No detectors fired.",
-    "confabulation_from_loop": null
-  },
-  "AV26.R02": {
-    "label_status": "manual",
-    "labels": [
-      "healthy"
-    ],
-    "loop_from_loop": null,
-    "stuck_from_loop": null,
-    "thrash_from_loop": null,
-    "runaway_cost_from_loop": null,
-    "mission_id": "AV26.R02",
-    "scenario_id": "healthy_deep",
-    "segment_index": 0,
-    "source_jsonl": "traces/AV26.R02.jsonl",
-    "workflow": "research",
-    "workflow_type": "real",
-    "notes": "M02 healthy run. Similarity & Anomaly Detection (deep). 5 loops, 25 sources, convergence. No detectors fired.",
-    "confabulation_from_loop": null
-  },
-  "AV26.R03": {
-    "label_status": "manual",
-    "labels": [
-      "healthy"
-    ],
-    "loop_from_loop": null,
-    "stuck_from_loop": null,
-    "thrash_from_loop": null,
-    "runaway_cost_from_loop": null,
-    "mission_id": "AV26.R03",
-    "scenario_id": "healthy_baseline",
-    "segment_index": 0,
-    "source_jsonl": "traces/AV26.R03.jsonl",
-    "workflow": "research",
-    "workflow_type": "real",
-    "notes": "M02 healthy run. Agent Observability Market Q1 2026 (baseline). 3 loops, 15 sources, verdict=healthy. No detectors fired.",
-    "confabulation_from_loop": null
-  },
-  "AV26.R04": {
-    "label_status": "manual",
-    "labels": [
-      "healthy"
-    ],
-    "loop_from_loop": null,
-    "stuck_from_loop": null,
-    "thrash_from_loop": null,
-    "runaway_cost_from_loop": null,
-    "mission_id": "AV26.R04",
-    "scenario_id": "healthy_baseline",
-    "segment_index": 0,
-    "source_jsonl": "traces/AV26.R04.jsonl",
-    "workflow": "research",
-    "workflow_type": "real",
-    "notes": "M02 healthy run. Multi-Agent Monitoring Patterns (baseline). 3 loops, 15 sources, verdict=healthy. No detectors fired.",
-    "confabulation_from_loop": null
-  },
-  "AV26.R05": {
-    "label_status": "manual",
-    "labels": [
-      "healthy"
-    ],
-    "loop_from_loop": null,
-    "stuck_from_loop": null,
-    "thrash_from_loop": null,
-    "runaway_cost_from_loop": null,
-    "mission_id": "AV26.R05",
-    "scenario_id": "healthy_deep",
-    "segment_index": 0,
-    "source_jsonl": "traces/AV26.R05.jsonl",
-    "workflow": "research",
-    "workflow_type": "real",
-    "notes": "M02 healthy run. LLM Cost Optimization & Burn Rate (deep). 5 loops, 25 sources, convergence. No detectors fired.",
-    "confabulation_from_loop": null
-  },
-  "AV26.R06": {
-    "label_status": "manual",
-    "labels": [
-      "healthy"
-    ],
-    "loop_from_loop": null,
-    "stuck_from_loop": null,
-    "thrash_from_loop": null,
-    "runaway_cost_from_loop": null,
-    "mission_id": "AV26.R06",
-    "scenario_id": "healthy_niche_fp",
-    "segment_index": 0,
-    "source_jsonl": "traces/AV26.R06.jsonl",
-    "workflow": "research",
-    "workflow_type": "real",
-    "notes": "M02 FALSE POSITIVE. Change-Point Detection (deep). 4 loops, 20 sources. Stuck detector fired (coverage_stagnation) but this was legitimate niche research making genuine progress. Ground truth: healthy. Key FP analysis target for M06.",
-    "confabulation_from_loop": null
-  },
-  "AV26.R07": {
-    "label_status": "manual",
-    "labels": [
-      "healthy"
-    ],
-    "loop_from_loop": null,
-    "stuck_from_loop": null,
-    "thrash_from_loop": null,
-    "runaway_cost_from_loop": null,
-    "mission_id": "AV26.R07",
-    "scenario_id": "healthy_baseline",
-    "segment_index": 0,
-    "source_jsonl": "traces/AV26.R07.jsonl",
-    "workflow": "research",
-    "workflow_type": "real",
-    "notes": "M02 healthy run. Grafana Plugin Architecture (baseline). 1 loop, 5 sources, gated_finalization. No detectors fired.",
-    "confabulation_from_loop": null
-  },
-  "AV26.R08": {
-    "label_status": "manual",
-    "labels": [
-      "healthy"
-    ],
-    "loop_from_loop": null,
-    "stuck_from_loop": null,
-    "thrash_from_loop": null,
-    "runaway_cost_from_loop": null,
-    "mission_id": "AV26.R08",
-    "scenario_id": "healthy_baseline",
-    "segment_index": 0,
-    "source_jsonl": "traces/AV26.R08.jsonl",
-    "workflow": "research",
-    "workflow_type": "real",
-    "notes": "M02 healthy run. Reliability Benchmarking Standards (baseline). 3 loops, 15 sources, verdict=healthy. No detectors fired.",
-    "confabulation_from_loop": null
-  },
   "AV26.F01": {
+    "confabulation_from_loop": null,
     "label_status": "manual",
     "labels": [
       "stuck"
     ],
     "loop_from_loop": null,
-    "stuck_from_loop": 2,
-    "thrash_from_loop": null,
-    "runaway_cost_from_loop": null,
     "mission_id": "AV26.F01",
+    "notes": "M03 loop provocation relabeled in av29-m01 as STUCK. Narrow GPU Aho-Corasick topic (alpha). Sources exhausted at loop 1 (3 sources only), diversity filter rejected all new sources from loop 2. Findings stalled at 6 due source exhaustion, and detector fired late_onset_stagnation. Treat as stuck (no feasible progress) rather than loop.",
+    "runaway_cost_from_loop": null,
     "scenario_id": "loop_narrow_topic",
     "segment_index": 0,
     "source_jsonl": "traces/AV26.F01.jsonl",
+    "stuck_from_loop": 2,
+    "thrash_from_loop": null,
     "workflow": "research",
-    "workflow_type": "real",
-    "notes": "M03 loop provocation relabeled in av29-m01 as STUCK. Narrow GPU Aho-Corasick topic (alpha). Sources exhausted at loop 1 (3 sources only), diversity filter rejected all new sources from loop 2. Findings stalled at 6 due source exhaustion, and detector fired late_onset_stagnation. Treat as stuck (no feasible progress) rather than loop.",
-    "confabulation_from_loop": null
+    "workflow_type": "real"
   },
   "AV26.F02": {
+    "confabulation_from_loop": 3,
     "label_status": "manual",
     "labels": [
       "confabulation"
     ],
     "loop_from_loop": null,
-    "stuck_from_loop": null,
-    "thrash_from_loop": null,
-    "runaway_cost_from_loop": null,
     "mission_id": "AV26.F02",
+    "notes": "M03 loop provocation relabeled in av29-m04 as CONFABULATION. NIST 800-63B single-standard (alpha). Sources stagnated at 3 across loops while findings inflated 3\u219219 through rephrasing/fragmentation. Confabulation onset at loop 3 (first meaningful findings>sources divergence).",
+    "runaway_cost_from_loop": null,
     "scenario_id": "loop_findings_inflation",
     "segment_index": 0,
     "source_jsonl": "traces/AV26.F02.jsonl",
+    "stuck_from_loop": null,
+    "thrash_from_loop": null,
     "workflow": "research",
-    "workflow_type": "real",
-    "notes": "M03 loop provocation relabeled in av29-m04 as CONFABULATION. NIST 800-63B single-standard (alpha). Sources stagnated at 3 across loops while findings inflated 3→19 through rephrasing/fragmentation. Confabulation onset at loop 3 (first meaningful findings>sources divergence).",
-    "confabulation_from_loop": 3
+    "workflow_type": "real"
   },
   "AV26.F03": {
+    "confabulation_from_loop": null,
     "label_status": "manual",
     "labels": [
       "stuck"
     ],
     "loop_from_loop": null,
-    "stuck_from_loop": 1,
-    "thrash_from_loop": null,
-    "runaway_cost_from_loop": null,
     "mission_id": "AV26.F03",
+    "notes": "M03 stuck provocation. Fictional Zorblatt-9 protocol (deep). Topic doesn't exist. Found 9 tangential quantum computing sources but 0 findings on-target. Stuck fired at loop 2 (coverage_stagnation). Health: critical. Fast correct detection.",
+    "runaway_cost_from_loop": null,
     "scenario_id": "stuck_fictional",
     "segment_index": 0,
     "source_jsonl": "traces/AV26.F03.jsonl",
+    "stuck_from_loop": 1,
+    "thrash_from_loop": null,
     "workflow": "research",
-    "workflow_type": "real",
-    "notes": "M03 stuck provocation. Fictional Zorblatt-9 protocol (deep). Topic doesn't exist. Found 9 tangential quantum computing sources but 0 findings on-target. Stuck fired at loop 2 (coverage_stagnation). Health: critical. Fast correct detection.",
-    "confabulation_from_loop": null
+    "workflow_type": "real"
   },
   "AV26.F04": {
+    "confabulation_from_loop": null,
     "label_status": "manual",
     "labels": [
       "stuck"
     ],
     "loop_from_loop": null,
-    "stuck_from_loop": 1,
-    "thrash_from_loop": null,
-    "runaway_cost_from_loop": null,
     "mission_id": "AV26.F04",
+    "notes": "M03 stuck provocation. BPC-157 metabolite M7b in zebrafish larvae (deep). Impossibly specific intersection of real topics. 10 tangential sources but 0 on-target. Stuck fired at loop 2 (coverage_stagnation). Health: critical.",
+    "runaway_cost_from_loop": null,
     "scenario_id": "stuck_niche_intersection",
     "segment_index": 0,
     "source_jsonl": "traces/AV26.F04.jsonl",
+    "stuck_from_loop": 1,
+    "thrash_from_loop": null,
     "workflow": "research",
-    "workflow_type": "real",
-    "notes": "M03 stuck provocation. BPC-157 metabolite M7b in zebrafish larvae (deep). Impossibly specific intersection of real topics. 10 tangential sources but 0 on-target. Stuck fired at loop 2 (coverage_stagnation). Health: critical.",
-    "confabulation_from_loop": null
+    "workflow_type": "real"
   },
   "AV26.F05": {
+    "confabulation_from_loop": null,
     "label_status": "manual",
     "labels": [
       "stuck"
     ],
     "loop_from_loop": null,
-    "stuck_from_loop": 1,
-    "thrash_from_loop": null,
-    "runaway_cost_from_loop": null,
     "mission_id": "AV26.F05",
+    "notes": "M03 thrash provocation \u2014 but manifested as STUCK. Contradictory remote vs office criteria (deep). Found 10 sources but mutually exclusive objectives prevented coverage progress. Stuck fired at loop 2 (coverage_stagnation). Thrash NOT detected (error_count=0). Labels as stuck because that's the observed behavior, not thrash. Detection gap: behavioral thrash invisible to error-count-only detector.",
+    "runaway_cost_from_loop": null,
     "scenario_id": "stuck_contradictory",
     "segment_index": 0,
     "source_jsonl": "traces/AV26.F05.jsonl",
+    "stuck_from_loop": 1,
+    "thrash_from_loop": null,
     "workflow": "research",
-    "workflow_type": "real",
-    "notes": "M03 thrash provocation — but manifested as STUCK. Contradictory remote vs office criteria (deep). Found 10 sources but mutually exclusive objectives prevented coverage progress. Stuck fired at loop 2 (coverage_stagnation). Thrash NOT detected (error_count=0). Labels as stuck because that's the observed behavior, not thrash. Detection gap: behavioral thrash invisible to error-count-only detector.",
-    "confabulation_from_loop": null
+    "workflow_type": "real"
   },
   "AV26.F06": {
+    "confabulation_from_loop": null,
     "label_status": "manual",
     "labels": [
       "stuck"
     ],
     "loop_from_loop": null,
-    "stuck_from_loop": 1,
-    "thrash_from_loop": null,
-    "runaway_cost_from_loop": null,
     "mission_id": "AV26.F06",
+    "notes": "M03 runaway cost provocation \u2014 but manifested as STUCK. 4-domain cross-analysis (alpha). 8 objectives across 4 domains overwhelmed with only 3 sources. Stuck fired at loop 2 (coverage_stagnation) before burn_rate_anomaly could accumulate. Labels as stuck because that's the observed behavior. Detection gap: runaway_cost pre-empted by stuck.",
+    "runaway_cost_from_loop": null,
     "scenario_id": "stuck_complexity",
     "segment_index": 0,
     "source_jsonl": "traces/AV26.F06.jsonl",
+    "stuck_from_loop": 1,
+    "thrash_from_loop": null,
     "workflow": "research",
-    "workflow_type": "real",
-    "notes": "M03 runaway cost provocation — but manifested as STUCK. 4-domain cross-analysis (alpha). 8 objectives across 4 domains overwhelmed with only 3 sources. Stuck fired at loop 2 (coverage_stagnation) before burn_rate_anomaly could accumulate. Labels as stuck because that's the observed behavior. Detection gap: runaway_cost pre-empted by stuck.",
-    "confabulation_from_loop": null
+    "workflow_type": "real"
+  },
+  "AV26.R01": {
+    "confabulation_from_loop": null,
+    "label_status": "manual",
+    "labels": [
+      "healthy"
+    ],
+    "loop_from_loop": null,
+    "mission_id": "AV26.R01",
+    "notes": "M02 healthy run. Agent Failure Mode Taxonomy (baseline). 3 loops, 15 sources, verdict=healthy. No detectors fired.",
+    "runaway_cost_from_loop": null,
+    "scenario_id": "healthy_baseline",
+    "segment_index": 0,
+    "source_jsonl": "traces/AV26.R01.jsonl",
+    "stuck_from_loop": null,
+    "thrash_from_loop": null,
+    "workflow": "research",
+    "workflow_type": "real"
+  },
+  "AV26.R02": {
+    "confabulation_from_loop": null,
+    "label_status": "manual",
+    "labels": [
+      "healthy"
+    ],
+    "loop_from_loop": null,
+    "mission_id": "AV26.R02",
+    "notes": "M02 healthy run. Similarity & Anomaly Detection (deep). 5 loops, 25 sources, convergence. No detectors fired.",
+    "runaway_cost_from_loop": null,
+    "scenario_id": "healthy_deep",
+    "segment_index": 0,
+    "source_jsonl": "traces/AV26.R02.jsonl",
+    "stuck_from_loop": null,
+    "thrash_from_loop": null,
+    "workflow": "research",
+    "workflow_type": "real"
+  },
+  "AV26.R03": {
+    "confabulation_from_loop": null,
+    "label_status": "manual",
+    "labels": [
+      "healthy"
+    ],
+    "loop_from_loop": null,
+    "mission_id": "AV26.R03",
+    "notes": "M02 healthy run. Agent Observability Market Q1 2026 (baseline). 3 loops, 15 sources, verdict=healthy. No detectors fired.",
+    "runaway_cost_from_loop": null,
+    "scenario_id": "healthy_baseline",
+    "segment_index": 0,
+    "source_jsonl": "traces/AV26.R03.jsonl",
+    "stuck_from_loop": null,
+    "thrash_from_loop": null,
+    "workflow": "research",
+    "workflow_type": "real"
+  },
+  "AV26.R04": {
+    "confabulation_from_loop": null,
+    "label_status": "manual",
+    "labels": [
+      "healthy"
+    ],
+    "loop_from_loop": null,
+    "mission_id": "AV26.R04",
+    "notes": "M02 healthy run. Multi-Agent Monitoring Patterns (baseline). 3 loops, 15 sources, verdict=healthy. No detectors fired.",
+    "runaway_cost_from_loop": null,
+    "scenario_id": "healthy_baseline",
+    "segment_index": 0,
+    "source_jsonl": "traces/AV26.R04.jsonl",
+    "stuck_from_loop": null,
+    "thrash_from_loop": null,
+    "workflow": "research",
+    "workflow_type": "real"
+  },
+  "AV26.R05": {
+    "confabulation_from_loop": null,
+    "label_status": "manual",
+    "labels": [
+      "healthy"
+    ],
+    "loop_from_loop": null,
+    "mission_id": "AV26.R05",
+    "notes": "M02 healthy run. LLM Cost Optimization & Burn Rate (deep). 5 loops, 25 sources, convergence. No detectors fired.",
+    "runaway_cost_from_loop": null,
+    "scenario_id": "healthy_deep",
+    "segment_index": 0,
+    "source_jsonl": "traces/AV26.R05.jsonl",
+    "stuck_from_loop": null,
+    "thrash_from_loop": null,
+    "workflow": "research",
+    "workflow_type": "real"
+  },
+  "AV26.R06": {
+    "confabulation_from_loop": null,
+    "label_status": "manual",
+    "labels": [
+      "healthy"
+    ],
+    "loop_from_loop": null,
+    "mission_id": "AV26.R06",
+    "notes": "M02 FALSE POSITIVE. Change-Point Detection (deep). 4 loops, 20 sources. Stuck detector fired (coverage_stagnation) but this was legitimate niche research making genuine progress. Ground truth: healthy. Key FP analysis target for M06.",
+    "runaway_cost_from_loop": null,
+    "scenario_id": "healthy_niche_fp",
+    "segment_index": 0,
+    "source_jsonl": "traces/AV26.R06.jsonl",
+    "stuck_from_loop": null,
+    "thrash_from_loop": null,
+    "workflow": "research",
+    "workflow_type": "real"
+  },
+  "AV26.R07": {
+    "confabulation_from_loop": null,
+    "label_status": "manual",
+    "labels": [
+      "healthy"
+    ],
+    "loop_from_loop": null,
+    "mission_id": "AV26.R07",
+    "notes": "M02 healthy run. Grafana Plugin Architecture (baseline). 1 loop, 5 sources, gated_finalization. No detectors fired.",
+    "runaway_cost_from_loop": null,
+    "scenario_id": "healthy_baseline",
+    "segment_index": 0,
+    "source_jsonl": "traces/AV26.R07.jsonl",
+    "stuck_from_loop": null,
+    "thrash_from_loop": null,
+    "workflow": "research",
+    "workflow_type": "real"
+  },
+  "AV26.R08": {
+    "confabulation_from_loop": null,
+    "label_status": "manual",
+    "labels": [
+      "healthy"
+    ],
+    "loop_from_loop": null,
+    "mission_id": "AV26.R08",
+    "notes": "M02 healthy run. Reliability Benchmarking Standards (baseline). 3 loops, 15 sources, verdict=healthy. No detectors fired.",
+    "runaway_cost_from_loop": null,
+    "scenario_id": "healthy_baseline",
+    "segment_index": 0,
+    "source_jsonl": "traces/AV26.R08.jsonl",
+    "stuck_from_loop": null,
+    "thrash_from_loop": null,
+    "workflow": "research",
+    "workflow_type": "real"
   },
   "AV29.C01": {
+    "confabulation_from_loop": 5,
     "label_status": "manual",
     "labels": [
       "confabulation"
     ],
     "loop_from_loop": null,
-    "confabulation_from_loop": 5,
-    "stuck_from_loop": null,
-    "thrash_from_loop": null,
-    "runaway_cost_from_loop": null,
     "mission_id": "AV29.C01",
+    "notes": "av29-m04 real confab trace. NIST 800-63B authenticator assurance narrow slice. Sources fixed at 3 and unique_domains fixed at 1 while findings inflated to 15 over 6 loops. First detector-grade confab signal appeared at loop 5 (ratio low + sources/domain stagnation).",
+    "runaway_cost_from_loop": null,
     "scenario_id": "confab_real_narrow_nist_authenticator_assurance",
     "segment_index": 0,
     "source_jsonl": "traces/AV29.C01.jsonl",
+    "stuck_from_loop": null,
+    "thrash_from_loop": null,
     "workflow": "research",
-    "workflow_type": "real",
-    "notes": "av29-m04 real confab trace. NIST 800-63B authenticator assurance narrow slice. Sources fixed at 3 and unique_domains fixed at 1 while findings inflated to 15 over 6 loops. First detector-grade confab signal appeared at loop 5 (ratio low + sources/domain stagnation)."
+    "workflow_type": "real"
   },
   "AV29.C05": {
+    "confabulation_from_loop": 6,
     "label_status": "manual",
     "labels": [
       "confabulation"
     ],
     "loop_from_loop": null,
-    "confabulation_from_loop": 6,
-    "stuck_from_loop": null,
-    "thrash_from_loop": null,
-    "runaway_cost_from_loop": null,
     "mission_id": "AV29.C05",
+    "notes": "av29-m04 real confab trace. Repetitive-source loop variant (enforcement disabled). Sources remained at 3 and unique_domains at 1 while findings rose to 12 over 6 loops. Confabulation fired at loop 6 with high confidence and confab priority.",
+    "runaway_cost_from_loop": null,
     "scenario_id": "confab_real_repetitive_source_loop_variant_a",
     "segment_index": 0,
     "source_jsonl": "traces/AV29.C05.jsonl",
+    "stuck_from_loop": null,
+    "thrash_from_loop": null,
     "workflow": "research",
-    "workflow_type": "real",
-    "notes": "av29-m04 real confab trace. Repetitive-source loop variant (enforcement disabled). Sources remained at 3 and unique_domains at 1 while findings rose to 12 over 6 loops. Confabulation fired at loop 6 with high confidence and confab priority."
+    "workflow_type": "real"
+  },
+  "AV30.M03.01": {
+    "confabulation_from_loop": null,
+    "label_status": "manual",
+    "labels": [
+      "healthy"
+    ],
+    "loop_from_loop": null,
+    "mission_id": "AV30.M03.01",
+    "notes": "Round-2 real run (2026-02-14) with VITALS_ENFORCEMENT=true. Agent failure-mode taxonomy baseline; no detector fired.",
+    "runaway_cost_from_loop": null,
+    "scenario_id": "healthy_round2_taxonomy",
+    "segment_index": 0,
+    "source_jsonl": "traces/AV30.M03.01.jsonl",
+    "stuck_from_loop": null,
+    "thrash_from_loop": null,
+    "workflow": "research",
+    "workflow_type": "real"
+  },
+  "AV30.M03.02": {
+    "confabulation_from_loop": null,
+    "label_status": "manual",
+    "labels": [
+      "healthy"
+    ],
+    "loop_from_loop": null,
+    "mission_id": "AV30.M03.02",
+    "notes": "Round-2 real run (2026-02-14) with VITALS_ENFORCEMENT=true. Observability market baseline; detector surface remained healthy.",
+    "runaway_cost_from_loop": null,
+    "scenario_id": "healthy_round2_observability",
+    "segment_index": 0,
+    "source_jsonl": "traces/AV30.M03.02.jsonl",
+    "stuck_from_loop": null,
+    "thrash_from_loop": null,
+    "workflow": "research",
+    "workflow_type": "real"
+  },
+  "AV30.M03.03": {
+    "confabulation_from_loop": null,
+    "label_status": "manual",
+    "labels": [
+      "healthy"
+    ],
+    "loop_from_loop": null,
+    "mission_id": "AV30.M03.03",
+    "notes": "Round-2 real run (2026-02-14) with VITALS_ENFORCEMENT=true. Deep cost-optimization mission completed without detector triggers.",
+    "runaway_cost_from_loop": null,
+    "scenario_id": "healthy_round2_cost_optimization",
+    "segment_index": 0,
+    "source_jsonl": "traces/AV30.M03.03.jsonl",
+    "stuck_from_loop": null,
+    "thrash_from_loop": null,
+    "workflow": "research",
+    "workflow_type": "real"
+  },
+  "AV30.M03.04": {
+    "confabulation_from_loop": null,
+    "label_status": "manual",
+    "labels": [
+      "loop"
+    ],
+    "loop_from_loop": 4,
+    "mission_id": "AV30.M03.04",
+    "notes": "Round-2 real run. Repetitive-source loop provocation. Content-similarity loop detection fired at loop 4 under enforcement.",
+    "runaway_cost_from_loop": null,
+    "scenario_id": "loop_round2_repetitive_source",
+    "segment_index": 0,
+    "source_jsonl": "traces/AV30.M03.04.jsonl",
+    "stuck_from_loop": null,
+    "thrash_from_loop": null,
+    "workflow": "research",
+    "workflow_type": "real"
+  },
+  "AV30.M03.05": {
+    "confabulation_from_loop": null,
+    "label_status": "manual",
+    "labels": [
+      "stuck"
+    ],
+    "loop_from_loop": null,
+    "mission_id": "AV30.M03.05",
+    "notes": "Round-2 real run. Fictional-topic dead-end. Coverage stagnation stuck detection fired early (loop 2).",
+    "runaway_cost_from_loop": null,
+    "scenario_id": "stuck_round2_fictional_topic",
+    "segment_index": 0,
+    "source_jsonl": "traces/AV30.M03.05.jsonl",
+    "stuck_from_loop": 2,
+    "thrash_from_loop": null,
+    "workflow": "research",
+    "workflow_type": "real"
+  },
+  "AV30.M03.06": {
+    "confabulation_from_loop": 5,
+    "label_status": "manual",
+    "labels": [
+      "confabulation"
+    ],
+    "loop_from_loop": null,
+    "mission_id": "AV30.M03.06",
+    "notes": "Round-2 real run. Narrow NIST assurance probe; source-finding ratio degradation produced confabulation signal from loop 5.",
+    "runaway_cost_from_loop": null,
+    "scenario_id": "confab_round2_nist_assurance",
+    "segment_index": 0,
+    "source_jsonl": "traces/AV30.M03.06.jsonl",
+    "stuck_from_loop": null,
+    "thrash_from_loop": null,
+    "workflow": "research",
+    "workflow_type": "real"
+  },
+  "AV30.M03.07": {
+    "confabulation_from_loop": 6,
+    "label_status": "manual",
+    "labels": [
+      "confabulation"
+    ],
+    "loop_from_loop": null,
+    "mission_id": "AV30.M03.07",
+    "notes": "Round-2 real run. Repetitive-source variant A with persistent source stagnation; confabulation priority path active by loop 6.",
+    "runaway_cost_from_loop": null,
+    "scenario_id": "confab_round2_repetitive_source_a",
+    "segment_index": 0,
+    "source_jsonl": "traces/AV30.M03.07.jsonl",
+    "stuck_from_loop": null,
+    "thrash_from_loop": null,
+    "workflow": "research",
+    "workflow_type": "real"
+  },
+  "AV30.M03.08": {
+    "confabulation_from_loop": null,
+    "label_status": "manual",
+    "labels": [
+      "loop"
+    ],
+    "loop_from_loop": 2,
+    "mission_id": "AV30.M03.08",
+    "notes": "Round-2 real run. Kubernetes narrow-slice probe; content-similarity loop detected from loop 2.",
+    "runaway_cost_from_loop": null,
+    "scenario_id": "loop_round2_k8s_narrow_slice",
+    "segment_index": 0,
+    "source_jsonl": "traces/AV30.M03.08.jsonl",
+    "stuck_from_loop": null,
+    "thrash_from_loop": null,
+    "workflow": "research",
+    "workflow_type": "real"
+  },
+  "AV30.M03.09": {
+    "confabulation_from_loop": null,
+    "label_status": "manual",
+    "labels": [
+      "stuck"
+    ],
+    "loop_from_loop": null,
+    "mission_id": "AV30.M03.09",
+    "notes": "Round-2 real run. Repetitive-source variant B; coverage_flat stuck trigger activated at loop 3.",
+    "runaway_cost_from_loop": null,
+    "scenario_id": "stuck_round2_repetitive_source_b",
+    "segment_index": 0,
+    "source_jsonl": "traces/AV30.M03.09.jsonl",
+    "stuck_from_loop": 3,
+    "thrash_from_loop": null,
+    "workflow": "research",
+    "workflow_type": "real"
+  },
+  "AV30.M03.10": {
+    "confabulation_from_loop": null,
+    "label_status": "manual",
+    "labels": [
+      "thrash"
+    ],
+    "loop_from_loop": null,
+    "mission_id": "AV30.M03.10",
+    "notes": "Round-2 build workflow run under VITALS_ENFORCEMENT=true. Retry/error oscillation with enforcement stop at retry attempt 3; labeled thrash.",
+    "runaway_cost_from_loop": null,
+    "scenario_id": "thrash_round2_build_retry",
+    "segment_index": 0,
+    "source_jsonl": "traces/AV30.M03.10.jsonl",
+    "stuck_from_loop": null,
+    "thrash_from_loop": 3,
+    "workflow": "build",
+    "workflow_type": "real"
+  },
+  "AV30.M03.11": {
+    "confabulation_from_loop": null,
+    "label_status": "manual",
+    "labels": [
+      "runaway_cost"
+    ],
+    "loop_from_loop": null,
+    "mission_id": "AV30.M03.11",
+    "notes": "Round-2 build workflow run. Long 29-loop execution with burn-rate anomaly signaling from loop 21; labeled runaway_cost.",
+    "runaway_cost_from_loop": 21,
+    "scenario_id": "runaway_round2_build_cost",
+    "segment_index": 0,
+    "source_jsonl": "traces/AV30.M03.11.jsonl",
+    "stuck_from_loop": null,
+    "thrash_from_loop": null,
+    "workflow": "build",
+    "workflow_type": "real"
+  },
+  "AV30.M03.12": {
+    "confabulation_from_loop": null,
+    "label_status": "manual",
+    "labels": [
+      "stuck"
+    ],
+    "loop_from_loop": null,
+    "mission_id": "AV30.M03.12",
+    "notes": "Round-2 real run. Contradictory criteria mission converged to coverage stagnation stuck pattern (loop 2).",
+    "runaway_cost_from_loop": null,
+    "scenario_id": "stuck_round2_contradictory_criteria",
+    "segment_index": 0,
+    "source_jsonl": "traces/AV30.M03.12.jsonl",
+    "stuck_from_loop": 2,
+    "thrash_from_loop": null,
+    "workflow": "research",
+    "workflow_type": "real"
   }
 }

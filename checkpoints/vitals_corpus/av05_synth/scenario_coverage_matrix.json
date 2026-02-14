@@ -1,860 +1,620 @@
 {
-  "generator": "scripts/generate_synthetic_corpus.py",
-  "mode": "synthetic",
-  "outputs": {
-    "labels": "labels.json",
-    "traces_dir": "traces"
-  },
-  "profiles": [
+  "rows": [
     {
-      "length": 12,
-      "mission_prefix": "AV04.SYNTH",
-      "name": "baseline_av05",
-      "noise": 0.01,
-      "onset": 4,
-      "purpose": "Baseline synthetic suite retained for continuity.",
-      "runs_per_scenario": 1,
-      "scenarios": [
-        "healthy",
-        "loop_plateau",
-        "loop_refinement_cycle",
-        "stuck_coverage",
-        "burn_rate_anomaly",
-        "retry_thrash",
+      "label_status": "generated",
+      "labels": [
         "runaway_cost",
-        "mixed",
-        "confabulation_mild",
-        "confabulation_moderate",
-        "confabulation_severe"
+        "stuck"
       ],
-      "seeds": [
-        0,
-        1,
-        2
-      ],
-      "severity": 0.7,
-      "tags": [
-        "baseline"
-      ]
-    },
-    {
-      "length": 3,
-      "mission_prefix": "AV30.SHORT.HEALTHY",
-      "name": "short_run_healthy_noisy",
-      "noise": 0.2,
-      "onset": 1,
-      "purpose": "Short run (3 steps) healthy traces with noise spikes.",
-      "runs_per_scenario": 1,
-      "scenarios": [
-        "healthy"
-      ],
-      "seeds": [
-        10,
-        11
-      ],
-      "severity": 0.3,
-      "tags": [
-        "short_run",
-        "healthy",
-        "noisy"
-      ]
-    },
-    {
-      "length": 3,
-      "mission_prefix": "AV30.SHORT.STUCK",
-      "name": "short_run_stuck_edge",
-      "noise": 0.12,
-      "onset": 1,
-      "purpose": "Short run (3 steps) stuck-edge behavior for early-exit handling.",
-      "runs_per_scenario": 1,
-      "scenarios": [
-        "stuck_coverage"
-      ],
-      "seeds": [
-        10,
-        11
-      ],
-      "severity": 0.35,
-      "tags": [
-        "short_run",
-        "borderline",
-        "detector:stuck"
-      ]
-    },
-    {
-      "length": 10,
-      "mission_prefix": "AV30.BORDER.LOOP",
-      "name": "borderline_loop",
-      "noise": 0.04,
-      "onset": 3,
-      "purpose": "Near-threshold loop traces.",
-      "runs_per_scenario": 1,
-      "scenarios": [
-        "loop_plateau"
-      ],
-      "seeds": [
-        20,
-        21
-      ],
-      "severity": 0.32,
-      "tags": [
-        "borderline",
-        "detector:loop"
-      ]
-    },
-    {
-      "length": 10,
-      "mission_prefix": "AV30.BORDER.STUCK",
-      "name": "borderline_stuck",
-      "noise": 0.04,
-      "onset": 3,
-      "purpose": "Near-threshold stuck traces.",
-      "runs_per_scenario": 1,
-      "scenarios": [
-        "stuck_coverage"
-      ],
-      "seeds": [
-        20,
-        21
-      ],
-      "severity": 0.32,
-      "tags": [
-        "borderline",
-        "detector:stuck"
-      ]
-    },
-    {
-      "length": 10,
-      "mission_prefix": "AV30.BORDER.THRASH",
-      "name": "borderline_thrash",
-      "noise": 0.04,
-      "onset": 3,
-      "purpose": "Near-threshold thrash traces.",
-      "runs_per_scenario": 1,
-      "scenarios": [
-        "retry_thrash"
-      ],
-      "seeds": [
-        20,
-        21
-      ],
-      "severity": 0.32,
-      "tags": [
-        "borderline",
-        "detector:thrash"
-      ]
-    },
-    {
-      "length": 10,
-      "mission_prefix": "AV30.BORDER.RUNAWAY",
-      "name": "borderline_runaway",
-      "noise": 0.04,
-      "onset": 3,
-      "purpose": "Near-threshold runaway-cost traces.",
-      "runs_per_scenario": 1,
-      "scenarios": [
-        "runaway_cost"
-      ],
-      "seeds": [
-        20,
-        21
-      ],
-      "severity": 0.32,
-      "tags": [
-        "borderline",
-        "detector:runaway_cost"
-      ]
-    },
-    {
-      "length": 10,
-      "mission_prefix": "AV30.BORDER.CONFAB",
-      "name": "borderline_confab",
-      "noise": 0.04,
-      "onset": 3,
-      "purpose": "Near-threshold confabulation traces.",
-      "runs_per_scenario": 1,
-      "scenarios": [
-        "confabulation_mild"
-      ],
-      "seeds": [
-        20,
-        21
-      ],
-      "severity": 0.32,
-      "tags": [
-        "borderline",
-        "detector:confabulation"
-      ]
-    },
-    {
-      "length": 12,
-      "mission_prefix": "AV30.MIXED.LOOP_THRASH",
-      "name": "mixed_combo_loop_thrash",
-      "noise": 0.02,
-      "onset": 3,
-      "purpose": "Multi-failure mixed mode including loop+thrash behavior.",
-      "runs_per_scenario": 1,
-      "scenarios": [
-        "mixed"
-      ],
-      "seeds": [
-        30,
-        31
-      ],
-      "severity": 0.6,
-      "tags": [
-        "mixed_combo",
-        "combo:loop+thrash",
-        "combo:stuck+runaway_cost"
-      ]
-    },
-    {
-      "length": 12,
-      "mission_prefix": "AV30.MIXED.STUCK_RUNAWAY",
-      "name": "mixed_combo_stuck_runaway",
-      "noise": 0.02,
-      "onset": 3,
-      "purpose": "Multi-failure mixed mode emphasizing stuck+runaway-cost.",
-      "runs_per_scenario": 1,
-      "scenarios": [
-        "burn_rate_anomaly"
-      ],
-      "seeds": [
-        30,
-        31
-      ],
-      "severity": 0.62,
-      "tags": [
-        "mixed_combo",
-        "combo:stuck+runaway_cost"
-      ]
-    },
-    {
-      "length": 12,
-      "mission_prefix": "AV30.NOISY.HEALTHY",
-      "name": "noisy_healthy_tn",
-      "noise": 0.25,
-      "onset": 4,
-      "purpose": "Noisy healthy controls that should remain TN.",
-      "runs_per_scenario": 1,
-      "scenarios": [
-        "healthy"
-      ],
-      "seeds": [
-        40,
-        41
-      ],
-      "severity": 0.25,
-      "tags": [
-        "healthy",
-        "noisy",
-        "tn_control"
-      ]
-    }
-  ],
-  "runs": [
-    {
+      "length_steps": 12,
       "mission_id": "AV04.SYNTH.s0.burn_rate_anomaly.0000",
       "profile": "baseline_av05",
-      "profile_length": 12,
-      "profile_noise": 0.01,
-      "profile_onset": 4,
       "profile_purpose": "Baseline synthetic suite retained for continuity.",
-      "profile_severity": 0.7,
       "profile_tags": [
         "baseline"
       ],
       "run_id": "AV04.SYNTH.s0.burn_rate_anomaly.0000:seg0",
       "scenario": "burn_rate_anomaly",
       "seed": 0,
-      "segment_index": 0,
       "trace_path": "traces/AV04.SYNTH.s0.burn_rate_anomaly.0000.jsonl",
-      "workflow_type": "synthetic"
+      "workflow": "burn_rate_anomaly"
     },
     {
+      "label_status": "generated",
+      "labels": [
+        "confabulation"
+      ],
+      "length_steps": 12,
       "mission_id": "AV04.SYNTH.s0.confabulation_mild.0000",
       "profile": "baseline_av05",
-      "profile_length": 12,
-      "profile_noise": 0.01,
-      "profile_onset": 4,
       "profile_purpose": "Baseline synthetic suite retained for continuity.",
-      "profile_severity": 0.7,
       "profile_tags": [
         "baseline"
       ],
       "run_id": "AV04.SYNTH.s0.confabulation_mild.0000:seg0",
       "scenario": "confabulation_mild",
       "seed": 0,
-      "segment_index": 0,
       "trace_path": "traces/AV04.SYNTH.s0.confabulation_mild.0000.jsonl",
-      "workflow_type": "synthetic"
+      "workflow": "confabulation_mild"
     },
     {
+      "label_status": "generated",
+      "labels": [
+        "confabulation"
+      ],
+      "length_steps": 12,
       "mission_id": "AV04.SYNTH.s0.confabulation_moderate.0000",
       "profile": "baseline_av05",
-      "profile_length": 12,
-      "profile_noise": 0.01,
-      "profile_onset": 4,
       "profile_purpose": "Baseline synthetic suite retained for continuity.",
-      "profile_severity": 0.7,
       "profile_tags": [
         "baseline"
       ],
       "run_id": "AV04.SYNTH.s0.confabulation_moderate.0000:seg0",
       "scenario": "confabulation_moderate",
       "seed": 0,
-      "segment_index": 0,
       "trace_path": "traces/AV04.SYNTH.s0.confabulation_moderate.0000.jsonl",
-      "workflow_type": "synthetic"
+      "workflow": "confabulation_moderate"
     },
     {
+      "label_status": "generated",
+      "labels": [
+        "confabulation"
+      ],
+      "length_steps": 12,
       "mission_id": "AV04.SYNTH.s0.confabulation_severe.0000",
       "profile": "baseline_av05",
-      "profile_length": 12,
-      "profile_noise": 0.01,
-      "profile_onset": 4,
       "profile_purpose": "Baseline synthetic suite retained for continuity.",
-      "profile_severity": 0.7,
       "profile_tags": [
         "baseline"
       ],
       "run_id": "AV04.SYNTH.s0.confabulation_severe.0000:seg0",
       "scenario": "confabulation_severe",
       "seed": 0,
-      "segment_index": 0,
       "trace_path": "traces/AV04.SYNTH.s0.confabulation_severe.0000.jsonl",
-      "workflow_type": "synthetic"
+      "workflow": "confabulation_severe"
     },
     {
+      "label_status": "generated",
+      "labels": [
+        "healthy"
+      ],
+      "length_steps": 12,
       "mission_id": "AV04.SYNTH.s0.healthy.0000",
       "profile": "baseline_av05",
-      "profile_length": 12,
-      "profile_noise": 0.01,
-      "profile_onset": 4,
       "profile_purpose": "Baseline synthetic suite retained for continuity.",
-      "profile_severity": 0.7,
       "profile_tags": [
         "baseline"
       ],
       "run_id": "AV04.SYNTH.s0.healthy.0000:seg0",
       "scenario": "healthy",
       "seed": 0,
-      "segment_index": 0,
       "trace_path": "traces/AV04.SYNTH.s0.healthy.0000.jsonl",
-      "workflow_type": "synthetic"
+      "workflow": "healthy"
     },
     {
+      "label_status": "generated",
+      "labels": [
+        "loop"
+      ],
+      "length_steps": 12,
       "mission_id": "AV04.SYNTH.s0.loop_plateau.0000",
       "profile": "baseline_av05",
-      "profile_length": 12,
-      "profile_noise": 0.01,
-      "profile_onset": 4,
       "profile_purpose": "Baseline synthetic suite retained for continuity.",
-      "profile_severity": 0.7,
       "profile_tags": [
         "baseline"
       ],
       "run_id": "AV04.SYNTH.s0.loop_plateau.0000:seg0",
       "scenario": "loop_plateau",
       "seed": 0,
-      "segment_index": 0,
       "trace_path": "traces/AV04.SYNTH.s0.loop_plateau.0000.jsonl",
-      "workflow_type": "synthetic"
+      "workflow": "loop_plateau"
     },
     {
+      "label_status": "generated",
+      "labels": [
+        "loop"
+      ],
+      "length_steps": 12,
       "mission_id": "AV04.SYNTH.s0.loop_refinement_cycle.0000",
       "profile": "baseline_av05",
-      "profile_length": 12,
-      "profile_noise": 0.01,
-      "profile_onset": 4,
       "profile_purpose": "Baseline synthetic suite retained for continuity.",
-      "profile_severity": 0.7,
       "profile_tags": [
         "baseline"
       ],
       "run_id": "AV04.SYNTH.s0.loop_refinement_cycle.0000:seg0",
       "scenario": "loop_refinement_cycle",
       "seed": 0,
-      "segment_index": 0,
       "trace_path": "traces/AV04.SYNTH.s0.loop_refinement_cycle.0000.jsonl",
-      "workflow_type": "synthetic"
+      "workflow": "loop_refinement_cycle"
     },
     {
+      "label_status": "generated",
+      "labels": [
+        "loop",
+        "runaway_cost",
+        "stuck",
+        "thrash"
+      ],
+      "length_steps": 12,
       "mission_id": "AV04.SYNTH.s0.mixed.0000",
       "profile": "baseline_av05",
-      "profile_length": 12,
-      "profile_noise": 0.01,
-      "profile_onset": 4,
       "profile_purpose": "Baseline synthetic suite retained for continuity.",
-      "profile_severity": 0.7,
       "profile_tags": [
         "baseline"
       ],
       "run_id": "AV04.SYNTH.s0.mixed.0000:seg0",
       "scenario": "mixed",
       "seed": 0,
-      "segment_index": 0,
       "trace_path": "traces/AV04.SYNTH.s0.mixed.0000.jsonl",
-      "workflow_type": "synthetic"
+      "workflow": "mixed"
     },
     {
+      "label_status": "generated",
+      "labels": [
+        "thrash"
+      ],
+      "length_steps": 12,
       "mission_id": "AV04.SYNTH.s0.retry_thrash.0000",
       "profile": "baseline_av05",
-      "profile_length": 12,
-      "profile_noise": 0.01,
-      "profile_onset": 4,
       "profile_purpose": "Baseline synthetic suite retained for continuity.",
-      "profile_severity": 0.7,
       "profile_tags": [
         "baseline"
       ],
       "run_id": "AV04.SYNTH.s0.retry_thrash.0000:seg0",
       "scenario": "retry_thrash",
       "seed": 0,
-      "segment_index": 0,
       "trace_path": "traces/AV04.SYNTH.s0.retry_thrash.0000.jsonl",
-      "workflow_type": "synthetic"
+      "workflow": "retry_thrash"
     },
     {
+      "label_status": "generated",
+      "labels": [
+        "runaway_cost"
+      ],
+      "length_steps": 12,
       "mission_id": "AV04.SYNTH.s0.runaway_cost.0000",
       "profile": "baseline_av05",
-      "profile_length": 12,
-      "profile_noise": 0.01,
-      "profile_onset": 4,
       "profile_purpose": "Baseline synthetic suite retained for continuity.",
-      "profile_severity": 0.7,
       "profile_tags": [
         "baseline"
       ],
       "run_id": "AV04.SYNTH.s0.runaway_cost.0000:seg0",
       "scenario": "runaway_cost",
       "seed": 0,
-      "segment_index": 0,
       "trace_path": "traces/AV04.SYNTH.s0.runaway_cost.0000.jsonl",
-      "workflow_type": "synthetic"
+      "workflow": "runaway_cost"
     },
     {
+      "label_status": "generated",
+      "labels": [
+        "stuck"
+      ],
+      "length_steps": 12,
       "mission_id": "AV04.SYNTH.s0.stuck_coverage.0000",
       "profile": "baseline_av05",
-      "profile_length": 12,
-      "profile_noise": 0.01,
-      "profile_onset": 4,
       "profile_purpose": "Baseline synthetic suite retained for continuity.",
-      "profile_severity": 0.7,
       "profile_tags": [
         "baseline"
       ],
       "run_id": "AV04.SYNTH.s0.stuck_coverage.0000:seg0",
       "scenario": "stuck_coverage",
       "seed": 0,
-      "segment_index": 0,
       "trace_path": "traces/AV04.SYNTH.s0.stuck_coverage.0000.jsonl",
-      "workflow_type": "synthetic"
+      "workflow": "stuck_coverage"
     },
     {
+      "label_status": "generated",
+      "labels": [
+        "runaway_cost",
+        "stuck"
+      ],
+      "length_steps": 12,
       "mission_id": "AV04.SYNTH.s1.burn_rate_anomaly.0000",
       "profile": "baseline_av05",
-      "profile_length": 12,
-      "profile_noise": 0.01,
-      "profile_onset": 4,
       "profile_purpose": "Baseline synthetic suite retained for continuity.",
-      "profile_severity": 0.7,
       "profile_tags": [
         "baseline"
       ],
       "run_id": "AV04.SYNTH.s1.burn_rate_anomaly.0000:seg0",
       "scenario": "burn_rate_anomaly",
       "seed": 1,
-      "segment_index": 0,
       "trace_path": "traces/AV04.SYNTH.s1.burn_rate_anomaly.0000.jsonl",
-      "workflow_type": "synthetic"
+      "workflow": "burn_rate_anomaly"
     },
     {
+      "label_status": "generated",
+      "labels": [
+        "confabulation"
+      ],
+      "length_steps": 12,
       "mission_id": "AV04.SYNTH.s1.confabulation_mild.0000",
       "profile": "baseline_av05",
-      "profile_length": 12,
-      "profile_noise": 0.01,
-      "profile_onset": 4,
       "profile_purpose": "Baseline synthetic suite retained for continuity.",
-      "profile_severity": 0.7,
       "profile_tags": [
         "baseline"
       ],
       "run_id": "AV04.SYNTH.s1.confabulation_mild.0000:seg0",
       "scenario": "confabulation_mild",
       "seed": 1,
-      "segment_index": 0,
       "trace_path": "traces/AV04.SYNTH.s1.confabulation_mild.0000.jsonl",
-      "workflow_type": "synthetic"
+      "workflow": "confabulation_mild"
     },
     {
+      "label_status": "generated",
+      "labels": [
+        "confabulation"
+      ],
+      "length_steps": 12,
       "mission_id": "AV04.SYNTH.s1.confabulation_moderate.0000",
       "profile": "baseline_av05",
-      "profile_length": 12,
-      "profile_noise": 0.01,
-      "profile_onset": 4,
       "profile_purpose": "Baseline synthetic suite retained for continuity.",
-      "profile_severity": 0.7,
       "profile_tags": [
         "baseline"
       ],
       "run_id": "AV04.SYNTH.s1.confabulation_moderate.0000:seg0",
       "scenario": "confabulation_moderate",
       "seed": 1,
-      "segment_index": 0,
       "trace_path": "traces/AV04.SYNTH.s1.confabulation_moderate.0000.jsonl",
-      "workflow_type": "synthetic"
+      "workflow": "confabulation_moderate"
     },
     {
+      "label_status": "generated",
+      "labels": [
+        "confabulation"
+      ],
+      "length_steps": 12,
       "mission_id": "AV04.SYNTH.s1.confabulation_severe.0000",
       "profile": "baseline_av05",
-      "profile_length": 12,
-      "profile_noise": 0.01,
-      "profile_onset": 4,
       "profile_purpose": "Baseline synthetic suite retained for continuity.",
-      "profile_severity": 0.7,
       "profile_tags": [
         "baseline"
       ],
       "run_id": "AV04.SYNTH.s1.confabulation_severe.0000:seg0",
       "scenario": "confabulation_severe",
       "seed": 1,
-      "segment_index": 0,
       "trace_path": "traces/AV04.SYNTH.s1.confabulation_severe.0000.jsonl",
-      "workflow_type": "synthetic"
+      "workflow": "confabulation_severe"
     },
     {
+      "label_status": "generated",
+      "labels": [
+        "healthy"
+      ],
+      "length_steps": 12,
       "mission_id": "AV04.SYNTH.s1.healthy.0000",
       "profile": "baseline_av05",
-      "profile_length": 12,
-      "profile_noise": 0.01,
-      "profile_onset": 4,
       "profile_purpose": "Baseline synthetic suite retained for continuity.",
-      "profile_severity": 0.7,
       "profile_tags": [
         "baseline"
       ],
       "run_id": "AV04.SYNTH.s1.healthy.0000:seg0",
       "scenario": "healthy",
       "seed": 1,
-      "segment_index": 0,
       "trace_path": "traces/AV04.SYNTH.s1.healthy.0000.jsonl",
-      "workflow_type": "synthetic"
+      "workflow": "healthy"
     },
     {
+      "label_status": "generated",
+      "labels": [
+        "loop"
+      ],
+      "length_steps": 12,
       "mission_id": "AV04.SYNTH.s1.loop_plateau.0000",
       "profile": "baseline_av05",
-      "profile_length": 12,
-      "profile_noise": 0.01,
-      "profile_onset": 4,
       "profile_purpose": "Baseline synthetic suite retained for continuity.",
-      "profile_severity": 0.7,
       "profile_tags": [
         "baseline"
       ],
       "run_id": "AV04.SYNTH.s1.loop_plateau.0000:seg0",
       "scenario": "loop_plateau",
       "seed": 1,
-      "segment_index": 0,
       "trace_path": "traces/AV04.SYNTH.s1.loop_plateau.0000.jsonl",
-      "workflow_type": "synthetic"
+      "workflow": "loop_plateau"
     },
     {
+      "label_status": "generated",
+      "labels": [
+        "loop"
+      ],
+      "length_steps": 12,
       "mission_id": "AV04.SYNTH.s1.loop_refinement_cycle.0000",
       "profile": "baseline_av05",
-      "profile_length": 12,
-      "profile_noise": 0.01,
-      "profile_onset": 4,
       "profile_purpose": "Baseline synthetic suite retained for continuity.",
-      "profile_severity": 0.7,
       "profile_tags": [
         "baseline"
       ],
       "run_id": "AV04.SYNTH.s1.loop_refinement_cycle.0000:seg0",
       "scenario": "loop_refinement_cycle",
       "seed": 1,
-      "segment_index": 0,
       "trace_path": "traces/AV04.SYNTH.s1.loop_refinement_cycle.0000.jsonl",
-      "workflow_type": "synthetic"
+      "workflow": "loop_refinement_cycle"
     },
     {
+      "label_status": "generated",
+      "labels": [
+        "loop",
+        "runaway_cost",
+        "stuck",
+        "thrash"
+      ],
+      "length_steps": 12,
       "mission_id": "AV04.SYNTH.s1.mixed.0000",
       "profile": "baseline_av05",
-      "profile_length": 12,
-      "profile_noise": 0.01,
-      "profile_onset": 4,
       "profile_purpose": "Baseline synthetic suite retained for continuity.",
-      "profile_severity": 0.7,
       "profile_tags": [
         "baseline"
       ],
       "run_id": "AV04.SYNTH.s1.mixed.0000:seg0",
       "scenario": "mixed",
       "seed": 1,
-      "segment_index": 0,
       "trace_path": "traces/AV04.SYNTH.s1.mixed.0000.jsonl",
-      "workflow_type": "synthetic"
+      "workflow": "mixed"
     },
     {
+      "label_status": "generated",
+      "labels": [
+        "thrash"
+      ],
+      "length_steps": 12,
       "mission_id": "AV04.SYNTH.s1.retry_thrash.0000",
       "profile": "baseline_av05",
-      "profile_length": 12,
-      "profile_noise": 0.01,
-      "profile_onset": 4,
       "profile_purpose": "Baseline synthetic suite retained for continuity.",
-      "profile_severity": 0.7,
       "profile_tags": [
         "baseline"
       ],
       "run_id": "AV04.SYNTH.s1.retry_thrash.0000:seg0",
       "scenario": "retry_thrash",
       "seed": 1,
-      "segment_index": 0,
       "trace_path": "traces/AV04.SYNTH.s1.retry_thrash.0000.jsonl",
-      "workflow_type": "synthetic"
+      "workflow": "retry_thrash"
     },
     {
+      "label_status": "generated",
+      "labels": [
+        "runaway_cost"
+      ],
+      "length_steps": 12,
       "mission_id": "AV04.SYNTH.s1.runaway_cost.0000",
       "profile": "baseline_av05",
-      "profile_length": 12,
-      "profile_noise": 0.01,
-      "profile_onset": 4,
       "profile_purpose": "Baseline synthetic suite retained for continuity.",
-      "profile_severity": 0.7,
       "profile_tags": [
         "baseline"
       ],
       "run_id": "AV04.SYNTH.s1.runaway_cost.0000:seg0",
       "scenario": "runaway_cost",
       "seed": 1,
-      "segment_index": 0,
       "trace_path": "traces/AV04.SYNTH.s1.runaway_cost.0000.jsonl",
-      "workflow_type": "synthetic"
+      "workflow": "runaway_cost"
     },
     {
+      "label_status": "generated",
+      "labels": [
+        "stuck"
+      ],
+      "length_steps": 12,
       "mission_id": "AV04.SYNTH.s1.stuck_coverage.0000",
       "profile": "baseline_av05",
-      "profile_length": 12,
-      "profile_noise": 0.01,
-      "profile_onset": 4,
       "profile_purpose": "Baseline synthetic suite retained for continuity.",
-      "profile_severity": 0.7,
       "profile_tags": [
         "baseline"
       ],
       "run_id": "AV04.SYNTH.s1.stuck_coverage.0000:seg0",
       "scenario": "stuck_coverage",
       "seed": 1,
-      "segment_index": 0,
       "trace_path": "traces/AV04.SYNTH.s1.stuck_coverage.0000.jsonl",
-      "workflow_type": "synthetic"
+      "workflow": "stuck_coverage"
     },
     {
+      "label_status": "generated",
+      "labels": [
+        "runaway_cost",
+        "stuck"
+      ],
+      "length_steps": 12,
       "mission_id": "AV04.SYNTH.s2.burn_rate_anomaly.0000",
       "profile": "baseline_av05",
-      "profile_length": 12,
-      "profile_noise": 0.01,
-      "profile_onset": 4,
       "profile_purpose": "Baseline synthetic suite retained for continuity.",
-      "profile_severity": 0.7,
       "profile_tags": [
         "baseline"
       ],
       "run_id": "AV04.SYNTH.s2.burn_rate_anomaly.0000:seg0",
       "scenario": "burn_rate_anomaly",
       "seed": 2,
-      "segment_index": 0,
       "trace_path": "traces/AV04.SYNTH.s2.burn_rate_anomaly.0000.jsonl",
-      "workflow_type": "synthetic"
+      "workflow": "burn_rate_anomaly"
     },
     {
+      "label_status": "generated",
+      "labels": [
+        "confabulation"
+      ],
+      "length_steps": 12,
       "mission_id": "AV04.SYNTH.s2.confabulation_mild.0000",
       "profile": "baseline_av05",
-      "profile_length": 12,
-      "profile_noise": 0.01,
-      "profile_onset": 4,
       "profile_purpose": "Baseline synthetic suite retained for continuity.",
-      "profile_severity": 0.7,
       "profile_tags": [
         "baseline"
       ],
       "run_id": "AV04.SYNTH.s2.confabulation_mild.0000:seg0",
       "scenario": "confabulation_mild",
       "seed": 2,
-      "segment_index": 0,
       "trace_path": "traces/AV04.SYNTH.s2.confabulation_mild.0000.jsonl",
-      "workflow_type": "synthetic"
+      "workflow": "confabulation_mild"
     },
     {
+      "label_status": "generated",
+      "labels": [
+        "confabulation"
+      ],
+      "length_steps": 12,
       "mission_id": "AV04.SYNTH.s2.confabulation_moderate.0000",
       "profile": "baseline_av05",
-      "profile_length": 12,
-      "profile_noise": 0.01,
-      "profile_onset": 4,
       "profile_purpose": "Baseline synthetic suite retained for continuity.",
-      "profile_severity": 0.7,
       "profile_tags": [
         "baseline"
       ],
       "run_id": "AV04.SYNTH.s2.confabulation_moderate.0000:seg0",
       "scenario": "confabulation_moderate",
       "seed": 2,
-      "segment_index": 0,
       "trace_path": "traces/AV04.SYNTH.s2.confabulation_moderate.0000.jsonl",
-      "workflow_type": "synthetic"
+      "workflow": "confabulation_moderate"
     },
     {
+      "label_status": "generated",
+      "labels": [
+        "confabulation"
+      ],
+      "length_steps": 12,
       "mission_id": "AV04.SYNTH.s2.confabulation_severe.0000",
       "profile": "baseline_av05",
-      "profile_length": 12,
-      "profile_noise": 0.01,
-      "profile_onset": 4,
       "profile_purpose": "Baseline synthetic suite retained for continuity.",
-      "profile_severity": 0.7,
       "profile_tags": [
         "baseline"
       ],
       "run_id": "AV04.SYNTH.s2.confabulation_severe.0000:seg0",
       "scenario": "confabulation_severe",
       "seed": 2,
-      "segment_index": 0,
       "trace_path": "traces/AV04.SYNTH.s2.confabulation_severe.0000.jsonl",
-      "workflow_type": "synthetic"
+      "workflow": "confabulation_severe"
     },
     {
+      "label_status": "generated",
+      "labels": [
+        "healthy"
+      ],
+      "length_steps": 12,
       "mission_id": "AV04.SYNTH.s2.healthy.0000",
       "profile": "baseline_av05",
-      "profile_length": 12,
-      "profile_noise": 0.01,
-      "profile_onset": 4,
       "profile_purpose": "Baseline synthetic suite retained for continuity.",
-      "profile_severity": 0.7,
       "profile_tags": [
         "baseline"
       ],
       "run_id": "AV04.SYNTH.s2.healthy.0000:seg0",
       "scenario": "healthy",
       "seed": 2,
-      "segment_index": 0,
       "trace_path": "traces/AV04.SYNTH.s2.healthy.0000.jsonl",
-      "workflow_type": "synthetic"
+      "workflow": "healthy"
     },
     {
+      "label_status": "generated",
+      "labels": [
+        "loop"
+      ],
+      "length_steps": 12,
       "mission_id": "AV04.SYNTH.s2.loop_plateau.0000",
       "profile": "baseline_av05",
-      "profile_length": 12,
-      "profile_noise": 0.01,
-      "profile_onset": 4,
       "profile_purpose": "Baseline synthetic suite retained for continuity.",
-      "profile_severity": 0.7,
       "profile_tags": [
         "baseline"
       ],
       "run_id": "AV04.SYNTH.s2.loop_plateau.0000:seg0",
       "scenario": "loop_plateau",
       "seed": 2,
-      "segment_index": 0,
       "trace_path": "traces/AV04.SYNTH.s2.loop_plateau.0000.jsonl",
-      "workflow_type": "synthetic"
+      "workflow": "loop_plateau"
     },
     {
+      "label_status": "generated",
+      "labels": [
+        "loop"
+      ],
+      "length_steps": 12,
       "mission_id": "AV04.SYNTH.s2.loop_refinement_cycle.0000",
       "profile": "baseline_av05",
-      "profile_length": 12,
-      "profile_noise": 0.01,
-      "profile_onset": 4,
       "profile_purpose": "Baseline synthetic suite retained for continuity.",
-      "profile_severity": 0.7,
       "profile_tags": [
         "baseline"
       ],
       "run_id": "AV04.SYNTH.s2.loop_refinement_cycle.0000:seg0",
       "scenario": "loop_refinement_cycle",
       "seed": 2,
-      "segment_index": 0,
       "trace_path": "traces/AV04.SYNTH.s2.loop_refinement_cycle.0000.jsonl",
-      "workflow_type": "synthetic"
+      "workflow": "loop_refinement_cycle"
     },
     {
+      "label_status": "generated",
+      "labels": [
+        "loop",
+        "runaway_cost",
+        "stuck",
+        "thrash"
+      ],
+      "length_steps": 12,
       "mission_id": "AV04.SYNTH.s2.mixed.0000",
       "profile": "baseline_av05",
-      "profile_length": 12,
-      "profile_noise": 0.01,
-      "profile_onset": 4,
       "profile_purpose": "Baseline synthetic suite retained for continuity.",
-      "profile_severity": 0.7,
       "profile_tags": [
         "baseline"
       ],
       "run_id": "AV04.SYNTH.s2.mixed.0000:seg0",
       "scenario": "mixed",
       "seed": 2,
-      "segment_index": 0,
       "trace_path": "traces/AV04.SYNTH.s2.mixed.0000.jsonl",
-      "workflow_type": "synthetic"
+      "workflow": "mixed"
     },
     {
+      "label_status": "generated",
+      "labels": [
+        "thrash"
+      ],
+      "length_steps": 12,
       "mission_id": "AV04.SYNTH.s2.retry_thrash.0000",
       "profile": "baseline_av05",
-      "profile_length": 12,
-      "profile_noise": 0.01,
-      "profile_onset": 4,
       "profile_purpose": "Baseline synthetic suite retained for continuity.",
-      "profile_severity": 0.7,
       "profile_tags": [
         "baseline"
       ],
       "run_id": "AV04.SYNTH.s2.retry_thrash.0000:seg0",
       "scenario": "retry_thrash",
       "seed": 2,
-      "segment_index": 0,
       "trace_path": "traces/AV04.SYNTH.s2.retry_thrash.0000.jsonl",
-      "workflow_type": "synthetic"
+      "workflow": "retry_thrash"
     },
     {
+      "label_status": "generated",
+      "labels": [
+        "runaway_cost"
+      ],
+      "length_steps": 12,
       "mission_id": "AV04.SYNTH.s2.runaway_cost.0000",
       "profile": "baseline_av05",
-      "profile_length": 12,
-      "profile_noise": 0.01,
-      "profile_onset": 4,
       "profile_purpose": "Baseline synthetic suite retained for continuity.",
-      "profile_severity": 0.7,
       "profile_tags": [
         "baseline"
       ],
       "run_id": "AV04.SYNTH.s2.runaway_cost.0000:seg0",
       "scenario": "runaway_cost",
       "seed": 2,
-      "segment_index": 0,
       "trace_path": "traces/AV04.SYNTH.s2.runaway_cost.0000.jsonl",
-      "workflow_type": "synthetic"
+      "workflow": "runaway_cost"
     },
     {
+      "label_status": "generated",
+      "labels": [
+        "stuck"
+      ],
+      "length_steps": 12,
       "mission_id": "AV04.SYNTH.s2.stuck_coverage.0000",
       "profile": "baseline_av05",
-      "profile_length": 12,
-      "profile_noise": 0.01,
-      "profile_onset": 4,
       "profile_purpose": "Baseline synthetic suite retained for continuity.",
-      "profile_severity": 0.7,
       "profile_tags": [
         "baseline"
       ],
       "run_id": "AV04.SYNTH.s2.stuck_coverage.0000:seg0",
       "scenario": "stuck_coverage",
       "seed": 2,
-      "segment_index": 0,
       "trace_path": "traces/AV04.SYNTH.s2.stuck_coverage.0000.jsonl",
-      "workflow_type": "synthetic"
+      "workflow": "stuck_coverage"
     },
     {
+      "label_status": "generated",
+      "labels": [
+        "confabulation"
+      ],
+      "length_steps": 10,
       "mission_id": "AV30.BORDER.CONFAB.s20.confabulation_mild.0000",
       "profile": "borderline_confab",
-      "profile_length": 10,
-      "profile_noise": 0.04,
-      "profile_onset": 3,
       "profile_purpose": "Near-threshold confabulation traces.",
-      "profile_severity": 0.32,
       "profile_tags": [
         "borderline",
         "detector:confabulation"
@@ -862,18 +622,18 @@
       "run_id": "AV30.BORDER.CONFAB.s20.confabulation_mild.0000:seg0",
       "scenario": "confabulation_mild",
       "seed": 20,
-      "segment_index": 0,
       "trace_path": "traces/AV30.BORDER.CONFAB.s20.confabulation_mild.0000.jsonl",
-      "workflow_type": "synthetic"
+      "workflow": "confabulation_mild"
     },
     {
+      "label_status": "generated",
+      "labels": [
+        "confabulation"
+      ],
+      "length_steps": 10,
       "mission_id": "AV30.BORDER.CONFAB.s21.confabulation_mild.0000",
       "profile": "borderline_confab",
-      "profile_length": 10,
-      "profile_noise": 0.04,
-      "profile_onset": 3,
       "profile_purpose": "Near-threshold confabulation traces.",
-      "profile_severity": 0.32,
       "profile_tags": [
         "borderline",
         "detector:confabulation"
@@ -881,18 +641,18 @@
       "run_id": "AV30.BORDER.CONFAB.s21.confabulation_mild.0000:seg0",
       "scenario": "confabulation_mild",
       "seed": 21,
-      "segment_index": 0,
       "trace_path": "traces/AV30.BORDER.CONFAB.s21.confabulation_mild.0000.jsonl",
-      "workflow_type": "synthetic"
+      "workflow": "confabulation_mild"
     },
     {
+      "label_status": "generated",
+      "labels": [
+        "loop"
+      ],
+      "length_steps": 10,
       "mission_id": "AV30.BORDER.LOOP.s20.loop_plateau.0000",
       "profile": "borderline_loop",
-      "profile_length": 10,
-      "profile_noise": 0.04,
-      "profile_onset": 3,
       "profile_purpose": "Near-threshold loop traces.",
-      "profile_severity": 0.32,
       "profile_tags": [
         "borderline",
         "detector:loop"
@@ -900,18 +660,18 @@
       "run_id": "AV30.BORDER.LOOP.s20.loop_plateau.0000:seg0",
       "scenario": "loop_plateau",
       "seed": 20,
-      "segment_index": 0,
       "trace_path": "traces/AV30.BORDER.LOOP.s20.loop_plateau.0000.jsonl",
-      "workflow_type": "synthetic"
+      "workflow": "loop_plateau"
     },
     {
+      "label_status": "generated",
+      "labels": [
+        "loop"
+      ],
+      "length_steps": 10,
       "mission_id": "AV30.BORDER.LOOP.s21.loop_plateau.0000",
       "profile": "borderline_loop",
-      "profile_length": 10,
-      "profile_noise": 0.04,
-      "profile_onset": 3,
       "profile_purpose": "Near-threshold loop traces.",
-      "profile_severity": 0.32,
       "profile_tags": [
         "borderline",
         "detector:loop"
@@ -919,18 +679,18 @@
       "run_id": "AV30.BORDER.LOOP.s21.loop_plateau.0000:seg0",
       "scenario": "loop_plateau",
       "seed": 21,
-      "segment_index": 0,
       "trace_path": "traces/AV30.BORDER.LOOP.s21.loop_plateau.0000.jsonl",
-      "workflow_type": "synthetic"
+      "workflow": "loop_plateau"
     },
     {
+      "label_status": "generated",
+      "labels": [
+        "runaway_cost"
+      ],
+      "length_steps": 10,
       "mission_id": "AV30.BORDER.RUNAWAY.s20.runaway_cost.0000",
       "profile": "borderline_runaway",
-      "profile_length": 10,
-      "profile_noise": 0.04,
-      "profile_onset": 3,
       "profile_purpose": "Near-threshold runaway-cost traces.",
-      "profile_severity": 0.32,
       "profile_tags": [
         "borderline",
         "detector:runaway_cost"
@@ -938,18 +698,18 @@
       "run_id": "AV30.BORDER.RUNAWAY.s20.runaway_cost.0000:seg0",
       "scenario": "runaway_cost",
       "seed": 20,
-      "segment_index": 0,
       "trace_path": "traces/AV30.BORDER.RUNAWAY.s20.runaway_cost.0000.jsonl",
-      "workflow_type": "synthetic"
+      "workflow": "runaway_cost"
     },
     {
+      "label_status": "generated",
+      "labels": [
+        "runaway_cost"
+      ],
+      "length_steps": 10,
       "mission_id": "AV30.BORDER.RUNAWAY.s21.runaway_cost.0000",
       "profile": "borderline_runaway",
-      "profile_length": 10,
-      "profile_noise": 0.04,
-      "profile_onset": 3,
       "profile_purpose": "Near-threshold runaway-cost traces.",
-      "profile_severity": 0.32,
       "profile_tags": [
         "borderline",
         "detector:runaway_cost"
@@ -957,18 +717,18 @@
       "run_id": "AV30.BORDER.RUNAWAY.s21.runaway_cost.0000:seg0",
       "scenario": "runaway_cost",
       "seed": 21,
-      "segment_index": 0,
       "trace_path": "traces/AV30.BORDER.RUNAWAY.s21.runaway_cost.0000.jsonl",
-      "workflow_type": "synthetic"
+      "workflow": "runaway_cost"
     },
     {
+      "label_status": "generated",
+      "labels": [
+        "stuck"
+      ],
+      "length_steps": 10,
       "mission_id": "AV30.BORDER.STUCK.s20.stuck_coverage.0000",
       "profile": "borderline_stuck",
-      "profile_length": 10,
-      "profile_noise": 0.04,
-      "profile_onset": 3,
       "profile_purpose": "Near-threshold stuck traces.",
-      "profile_severity": 0.32,
       "profile_tags": [
         "borderline",
         "detector:stuck"
@@ -976,18 +736,18 @@
       "run_id": "AV30.BORDER.STUCK.s20.stuck_coverage.0000:seg0",
       "scenario": "stuck_coverage",
       "seed": 20,
-      "segment_index": 0,
       "trace_path": "traces/AV30.BORDER.STUCK.s20.stuck_coverage.0000.jsonl",
-      "workflow_type": "synthetic"
+      "workflow": "stuck_coverage"
     },
     {
+      "label_status": "generated",
+      "labels": [
+        "stuck"
+      ],
+      "length_steps": 10,
       "mission_id": "AV30.BORDER.STUCK.s21.stuck_coverage.0000",
       "profile": "borderline_stuck",
-      "profile_length": 10,
-      "profile_noise": 0.04,
-      "profile_onset": 3,
       "profile_purpose": "Near-threshold stuck traces.",
-      "profile_severity": 0.32,
       "profile_tags": [
         "borderline",
         "detector:stuck"
@@ -995,18 +755,18 @@
       "run_id": "AV30.BORDER.STUCK.s21.stuck_coverage.0000:seg0",
       "scenario": "stuck_coverage",
       "seed": 21,
-      "segment_index": 0,
       "trace_path": "traces/AV30.BORDER.STUCK.s21.stuck_coverage.0000.jsonl",
-      "workflow_type": "synthetic"
+      "workflow": "stuck_coverage"
     },
     {
+      "label_status": "generated",
+      "labels": [
+        "thrash"
+      ],
+      "length_steps": 10,
       "mission_id": "AV30.BORDER.THRASH.s20.retry_thrash.0000",
       "profile": "borderline_thrash",
-      "profile_length": 10,
-      "profile_noise": 0.04,
-      "profile_onset": 3,
       "profile_purpose": "Near-threshold thrash traces.",
-      "profile_severity": 0.32,
       "profile_tags": [
         "borderline",
         "detector:thrash"
@@ -1014,18 +774,18 @@
       "run_id": "AV30.BORDER.THRASH.s20.retry_thrash.0000:seg0",
       "scenario": "retry_thrash",
       "seed": 20,
-      "segment_index": 0,
       "trace_path": "traces/AV30.BORDER.THRASH.s20.retry_thrash.0000.jsonl",
-      "workflow_type": "synthetic"
+      "workflow": "retry_thrash"
     },
     {
+      "label_status": "generated",
+      "labels": [
+        "thrash"
+      ],
+      "length_steps": 10,
       "mission_id": "AV30.BORDER.THRASH.s21.retry_thrash.0000",
       "profile": "borderline_thrash",
-      "profile_length": 10,
-      "profile_noise": 0.04,
-      "profile_onset": 3,
       "profile_purpose": "Near-threshold thrash traces.",
-      "profile_severity": 0.32,
       "profile_tags": [
         "borderline",
         "detector:thrash"
@@ -1033,18 +793,21 @@
       "run_id": "AV30.BORDER.THRASH.s21.retry_thrash.0000:seg0",
       "scenario": "retry_thrash",
       "seed": 21,
-      "segment_index": 0,
       "trace_path": "traces/AV30.BORDER.THRASH.s21.retry_thrash.0000.jsonl",
-      "workflow_type": "synthetic"
+      "workflow": "retry_thrash"
     },
     {
+      "label_status": "generated",
+      "labels": [
+        "loop",
+        "runaway_cost",
+        "stuck",
+        "thrash"
+      ],
+      "length_steps": 12,
       "mission_id": "AV30.MIXED.LOOP_THRASH.s30.mixed.0000",
       "profile": "mixed_combo_loop_thrash",
-      "profile_length": 12,
-      "profile_noise": 0.02,
-      "profile_onset": 3,
       "profile_purpose": "Multi-failure mixed mode including loop+thrash behavior.",
-      "profile_severity": 0.6,
       "profile_tags": [
         "mixed_combo",
         "combo:loop+thrash",
@@ -1053,18 +816,21 @@
       "run_id": "AV30.MIXED.LOOP_THRASH.s30.mixed.0000:seg0",
       "scenario": "mixed",
       "seed": 30,
-      "segment_index": 0,
       "trace_path": "traces/AV30.MIXED.LOOP_THRASH.s30.mixed.0000.jsonl",
-      "workflow_type": "synthetic"
+      "workflow": "mixed"
     },
     {
+      "label_status": "generated",
+      "labels": [
+        "loop",
+        "runaway_cost",
+        "stuck",
+        "thrash"
+      ],
+      "length_steps": 12,
       "mission_id": "AV30.MIXED.LOOP_THRASH.s31.mixed.0000",
       "profile": "mixed_combo_loop_thrash",
-      "profile_length": 12,
-      "profile_noise": 0.02,
-      "profile_onset": 3,
       "profile_purpose": "Multi-failure mixed mode including loop+thrash behavior.",
-      "profile_severity": 0.6,
       "profile_tags": [
         "mixed_combo",
         "combo:loop+thrash",
@@ -1073,18 +839,19 @@
       "run_id": "AV30.MIXED.LOOP_THRASH.s31.mixed.0000:seg0",
       "scenario": "mixed",
       "seed": 31,
-      "segment_index": 0,
       "trace_path": "traces/AV30.MIXED.LOOP_THRASH.s31.mixed.0000.jsonl",
-      "workflow_type": "synthetic"
+      "workflow": "mixed"
     },
     {
+      "label_status": "generated",
+      "labels": [
+        "runaway_cost",
+        "stuck"
+      ],
+      "length_steps": 12,
       "mission_id": "AV30.MIXED.STUCK_RUNAWAY.s30.burn_rate_anomaly.0000",
       "profile": "mixed_combo_stuck_runaway",
-      "profile_length": 12,
-      "profile_noise": 0.02,
-      "profile_onset": 3,
       "profile_purpose": "Multi-failure mixed mode emphasizing stuck+runaway-cost.",
-      "profile_severity": 0.62,
       "profile_tags": [
         "mixed_combo",
         "combo:stuck+runaway_cost"
@@ -1092,18 +859,19 @@
       "run_id": "AV30.MIXED.STUCK_RUNAWAY.s30.burn_rate_anomaly.0000:seg0",
       "scenario": "burn_rate_anomaly",
       "seed": 30,
-      "segment_index": 0,
       "trace_path": "traces/AV30.MIXED.STUCK_RUNAWAY.s30.burn_rate_anomaly.0000.jsonl",
-      "workflow_type": "synthetic"
+      "workflow": "burn_rate_anomaly"
     },
     {
+      "label_status": "generated",
+      "labels": [
+        "runaway_cost",
+        "stuck"
+      ],
+      "length_steps": 12,
       "mission_id": "AV30.MIXED.STUCK_RUNAWAY.s31.burn_rate_anomaly.0000",
       "profile": "mixed_combo_stuck_runaway",
-      "profile_length": 12,
-      "profile_noise": 0.02,
-      "profile_onset": 3,
       "profile_purpose": "Multi-failure mixed mode emphasizing stuck+runaway-cost.",
-      "profile_severity": 0.62,
       "profile_tags": [
         "mixed_combo",
         "combo:stuck+runaway_cost"
@@ -1111,18 +879,18 @@
       "run_id": "AV30.MIXED.STUCK_RUNAWAY.s31.burn_rate_anomaly.0000:seg0",
       "scenario": "burn_rate_anomaly",
       "seed": 31,
-      "segment_index": 0,
       "trace_path": "traces/AV30.MIXED.STUCK_RUNAWAY.s31.burn_rate_anomaly.0000.jsonl",
-      "workflow_type": "synthetic"
+      "workflow": "burn_rate_anomaly"
     },
     {
+      "label_status": "generated",
+      "labels": [
+        "healthy"
+      ],
+      "length_steps": 12,
       "mission_id": "AV30.NOISY.HEALTHY.s40.healthy.0000",
       "profile": "noisy_healthy_tn",
-      "profile_length": 12,
-      "profile_noise": 0.25,
-      "profile_onset": 4,
       "profile_purpose": "Noisy healthy controls that should remain TN.",
-      "profile_severity": 0.25,
       "profile_tags": [
         "healthy",
         "noisy",
@@ -1131,18 +899,18 @@
       "run_id": "AV30.NOISY.HEALTHY.s40.healthy.0000:seg0",
       "scenario": "healthy",
       "seed": 40,
-      "segment_index": 0,
       "trace_path": "traces/AV30.NOISY.HEALTHY.s40.healthy.0000.jsonl",
-      "workflow_type": "synthetic"
+      "workflow": "healthy"
     },
     {
+      "label_status": "generated",
+      "labels": [
+        "healthy"
+      ],
+      "length_steps": 12,
       "mission_id": "AV30.NOISY.HEALTHY.s41.healthy.0000",
       "profile": "noisy_healthy_tn",
-      "profile_length": 12,
-      "profile_noise": 0.25,
-      "profile_onset": 4,
       "profile_purpose": "Noisy healthy controls that should remain TN.",
-      "profile_severity": 0.25,
       "profile_tags": [
         "healthy",
         "noisy",
@@ -1151,18 +919,18 @@
       "run_id": "AV30.NOISY.HEALTHY.s41.healthy.0000:seg0",
       "scenario": "healthy",
       "seed": 41,
-      "segment_index": 0,
       "trace_path": "traces/AV30.NOISY.HEALTHY.s41.healthy.0000.jsonl",
-      "workflow_type": "synthetic"
+      "workflow": "healthy"
     },
     {
+      "label_status": "generated",
+      "labels": [
+        "healthy"
+      ],
+      "length_steps": 3,
       "mission_id": "AV30.SHORT.HEALTHY.s10.healthy.0000",
       "profile": "short_run_healthy_noisy",
-      "profile_length": 3,
-      "profile_noise": 0.2,
-      "profile_onset": 1,
       "profile_purpose": "Short run (3 steps) healthy traces with noise spikes.",
-      "profile_severity": 0.3,
       "profile_tags": [
         "short_run",
         "healthy",
@@ -1171,18 +939,18 @@
       "run_id": "AV30.SHORT.HEALTHY.s10.healthy.0000:seg0",
       "scenario": "healthy",
       "seed": 10,
-      "segment_index": 0,
       "trace_path": "traces/AV30.SHORT.HEALTHY.s10.healthy.0000.jsonl",
-      "workflow_type": "synthetic"
+      "workflow": "healthy"
     },
     {
+      "label_status": "generated",
+      "labels": [
+        "healthy"
+      ],
+      "length_steps": 3,
       "mission_id": "AV30.SHORT.HEALTHY.s11.healthy.0000",
       "profile": "short_run_healthy_noisy",
-      "profile_length": 3,
-      "profile_noise": 0.2,
-      "profile_onset": 1,
       "profile_purpose": "Short run (3 steps) healthy traces with noise spikes.",
-      "profile_severity": 0.3,
       "profile_tags": [
         "short_run",
         "healthy",
@@ -1191,18 +959,18 @@
       "run_id": "AV30.SHORT.HEALTHY.s11.healthy.0000:seg0",
       "scenario": "healthy",
       "seed": 11,
-      "segment_index": 0,
       "trace_path": "traces/AV30.SHORT.HEALTHY.s11.healthy.0000.jsonl",
-      "workflow_type": "synthetic"
+      "workflow": "healthy"
     },
     {
+      "label_status": "generated",
+      "labels": [
+        "stuck"
+      ],
+      "length_steps": 3,
       "mission_id": "AV30.SHORT.STUCK.s10.stuck_coverage.0000",
       "profile": "short_run_stuck_edge",
-      "profile_length": 3,
-      "profile_noise": 0.12,
-      "profile_onset": 1,
       "profile_purpose": "Short run (3 steps) stuck-edge behavior for early-exit handling.",
-      "profile_severity": 0.35,
       "profile_tags": [
         "short_run",
         "borderline",
@@ -1211,18 +979,18 @@
       "run_id": "AV30.SHORT.STUCK.s10.stuck_coverage.0000:seg0",
       "scenario": "stuck_coverage",
       "seed": 10,
-      "segment_index": 0,
       "trace_path": "traces/AV30.SHORT.STUCK.s10.stuck_coverage.0000.jsonl",
-      "workflow_type": "synthetic"
+      "workflow": "stuck_coverage"
     },
     {
+      "label_status": "generated",
+      "labels": [
+        "stuck"
+      ],
+      "length_steps": 3,
       "mission_id": "AV30.SHORT.STUCK.s11.stuck_coverage.0000",
       "profile": "short_run_stuck_edge",
-      "profile_length": 3,
-      "profile_noise": 0.12,
-      "profile_onset": 1,
       "profile_purpose": "Short run (3 steps) stuck-edge behavior for early-exit handling.",
-      "profile_severity": 0.35,
       "profile_tags": [
         "short_run",
         "borderline",
@@ -1231,12 +999,9 @@
       "run_id": "AV30.SHORT.STUCK.s11.stuck_coverage.0000:seg0",
       "scenario": "stuck_coverage",
       "seed": 11,
-      "segment_index": 0,
       "trace_path": "traces/AV30.SHORT.STUCK.s11.stuck_coverage.0000.jsonl",
-      "workflow_type": "synthetic"
+      "workflow": "stuck_coverage"
     }
   ],
-  "schema_version": 2,
-  "suite": "av05_synth",
-  "trace_count": 53
+  "schema_version": 1
 }

@@ -40,7 +40,14 @@ jobs:
 
       - name: Run backtest gate
         if: matrix.python-version == '3.11'
-        run: python scripts/ci_backtest.py --output backtest-results.json
+        run: |
+          python scripts/ci_backtest.py \
+            --output backtest-results.json \
+            --composite-min-precision 0.90 \
+            --composite-min-recall 0.85 \
+            --detector-min-positives 8 \
+            --detector-min-precision-lb 0.80 \
+            --detector-min-recall-lb 0.75
 
       - name: Upload backtest results
         if: always() && matrix.python-version == '3.11'

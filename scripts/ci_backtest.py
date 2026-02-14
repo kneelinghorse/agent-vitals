@@ -16,6 +16,7 @@ from pathlib import Path
 from typing import Any
 
 from agent_vitals.backtest import ConfusionCounts, Dataset, _replay_trace, load_dataset
+from agent_vitals.ci_gate import evaluate_hard_gate, evaluate_promotion, metrics_with_ci
 from agent_vitals.config import VitalsConfig
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -118,18 +119,6 @@ def _init_counts() -> dict[str, ConfusionCounts]:
     }
 
 
-def _metrics(cc: ConfusionCounts) -> dict[str, float | int]:
-    return {
-        "precision": cc.precision,
-        "recall": cc.recall,
-        "f1": cc.f1,
-        "tp": cc.tp,
-        "fp": cc.fp,
-        "fn": cc.fn,
-        "tn": cc.tn,
-    }
-
-
 def _evaluate(
     dataset: Dataset,
     labels: Labels,
@@ -186,6 +175,9 @@ def main() -> int:
     )
     parser.add_argument("--composite-min-precision", type=float, default=0.90)
     parser.add_argument("--composite-min-recall", type=float, default=0.85)
+    parser.add_argument("--detector-min-positives", type=int, default=8)
+    parser.add_argument("--detector-min-precision-lb", type=float, default=0.80)
+    parser.add_argument("--detector-min-recall-lb", type=float, default=0.75)
     args = parser.parse_args()
 
     t0 = time.perf_counter()
@@ -211,16 +203,51 @@ def main() -> int:
     runtime_s = time.perf_counter() - t0
 
     detectors = {
-        name: _metrics(cc)
+        name: metrics_with_ci(cc)
         for name, cc in counts.items()
         if name != "vitals.any"
     }
-    composite = _metrics(counts["vitals.any"])
+    composite = metrics_with_ci(counts["vitals.any"])
 
-    gate_pass = (
+    composite_gate_pass = (
         composite["precision"] >= args.composite_min_precision
         and composite["recall"] >= args.composite_min_recall
     )
+
+    promotion_decisions: dict[str, dict[str, Any]] = {}
+    for detector_name, metric in detectors.items():
+        promotion_decisions[detector_name] = evaluate_promotion(
+            detector_name=detector_name,
+            metric=metric,
+            min_positives=args.detector_min_positives,
+            min_precision_lb=args.detector_min_precision_lb,
+            min_recall_lb=args.detector_min_recall_lb,
+        )
+
+    hard_detectors = sorted(
+        name
+        for name, decision in promotion_decisions.items()
+        if bool(decision["qualifies_for_hard_gate"])
+    )
+    soft_detectors = sorted(set(detectors.keys()) - set(hard_detectors))
+
+    hard_gate_failures: dict[str, list[str]] = {}
+    for detector_name in hard_detectors:
+        passed, reasons = evaluate_hard_gate(
+            metric=detectors[detector_name],
+            min_precision_lb=args.detector_min_precision_lb,
+            min_recall_lb=args.detector_min_recall_lb,
+        )
+        if not passed:
+            hard_gate_failures[detector_name] = reasons
+
+    gate_pass = composite_gate_pass and not hard_gate_failures
+    if not composite_gate_pass:
+        gate_reason = "composite_threshold_failed"
+    elif hard_gate_failures:
+        gate_reason = "hard_detector_threshold_failed"
+    else:
+        gate_reason = "composite_and_hard_detectors_passed"
 
     result_payload = {
         "generated_at": datetime.now(timezone.utc).isoformat(),
@@ -238,12 +265,22 @@ def main() -> int:
         "thresholds": {
             "composite_min_precision": args.composite_min_precision,
             "composite_min_recall": args.composite_min_recall,
+            "detector_min_positives": args.detector_min_positives,
+            "detector_min_precision_lb": args.detector_min_precision_lb,
+            "detector_min_recall_lb": args.detector_min_recall_lb,
         },
         "composite_any": composite,
         "detectors": detectors,
+        "detector_gate_policy": {
+            "hard_detectors": hard_detectors,
+            "soft_detectors": soft_detectors,
+            "decisions": promotion_decisions,
+        },
         "gate": {
             "passed": gate_pass,
-            "reason": "composite_threshold_met" if gate_pass else "composite_threshold_failed",
+            "reason": gate_reason,
+            "composite_passed": composite_gate_pass,
+            "hard_detector_failures": hard_gate_failures,
         },
     }
 
@@ -262,15 +299,32 @@ def main() -> int:
         f"F1={composite['f1']:.3f} TP={composite['tp']} FP={composite['fp']} "
         f"FN={composite['fn']} TN={composite['tn']}"
     )
+    print(
+        "Detector gate policy: "
+        f"hard={len(hard_detectors)} soft={len(soft_detectors)} "
+        f"criteria=(positives>={args.detector_min_positives}, "
+        f"P_lb>={args.detector_min_precision_lb:.2f}, "
+        f"R_lb>={args.detector_min_recall_lb:.2f})"
+    )
 
     # Informational per-detector annotations only.
     for detector_name, metric in detectors.items():
+        decision = promotion_decisions[detector_name]
         _annotate(
             "notice",
             f"backtest:{detector_name}",
             (
                 f"P={metric['precision']:.3f} R={metric['recall']:.3f} F1={metric['f1']:.3f} "
                 f"TP={metric['tp']} FP={metric['fp']} FN={metric['fn']} TN={metric['tn']}"
+            ),
+        )
+        _annotate(
+            "notice" if decision["qualifies_for_hard_gate"] else "warning",
+            f"backtest:gate_policy:{detector_name}",
+            (
+                f"status={decision['status']} positives={decision['positive_count']} "
+                f"P_lb={decision['precision_lb']:.3f} R_lb={decision['recall_lb']:.3f} "
+                f"reasons={'; '.join(decision['reasons']) if decision['reasons'] else 'meets_promotion_criteria'}"
             ),
         )
 
@@ -288,13 +342,21 @@ def main() -> int:
             f"Backtest runtime exceeded 60s ({runtime_s:.3f}s).",
         )
 
+    if hard_gate_failures:
+        for detector_name, reasons in hard_gate_failures.items():
+            _annotate(
+                "error",
+                f"backtest:hard_gate:{detector_name}",
+                "; ".join(reasons),
+            )
+
     if gate_pass:
         _annotate(
             "notice",
             "backtest:gate",
             (
-                f"PASS composite vitals.any (P={composite['precision']:.3f}, "
-                f"R={composite['recall']:.3f})"
+                f"PASS CI gate policy composite(P={composite['precision']:.3f}, "
+                f"R={composite['recall']:.3f}); hard_detectors={hard_detectors}"
             ),
         )
         return 0
@@ -303,8 +365,8 @@ def main() -> int:
         "error",
         "backtest:gate",
         (
-            f"FAIL composite vitals.any (P={composite['precision']:.3f}, "
-            f"R={composite['recall']:.3f})"
+            f"FAIL CI gate policy composite(P={composite['precision']:.3f}, "
+            f"R={composite['recall']:.3f}); hard_failures={hard_gate_failures}"
         ),
     )
     return 1

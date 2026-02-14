@@ -505,5 +505,313 @@
     "thrash_from_loop": null,
     "workflow": "stuck_coverage",
     "workflow_type": "synthetic"
+  },
+  "AV30.BORDER.CONFAB.s20.confabulation_mild.0000:seg0": {
+    "confabulation_from_loop": 3,
+    "label_status": "generated",
+    "labels": [
+      "confabulation"
+    ],
+    "loop_from_loop": null,
+    "mission_id": "AV30.BORDER.CONFAB.s20.confabulation_mild.0000",
+    "notes": "scenario=confabulation_mild length=10 onset=3 severity=0.32 noise=0.040 seed=6113209801165781498",
+    "runaway_cost_from_loop": null,
+    "stuck_from_loop": null,
+    "thrash_from_loop": null,
+    "workflow": "confabulation_mild",
+    "workflow_type": "synthetic"
+  },
+  "AV30.BORDER.CONFAB.s21.confabulation_mild.0000:seg0": {
+    "confabulation_from_loop": 3,
+    "label_status": "generated",
+    "labels": [
+      "confabulation"
+    ],
+    "loop_from_loop": null,
+    "mission_id": "AV30.BORDER.CONFAB.s21.confabulation_mild.0000",
+    "notes": "scenario=confabulation_mild length=10 onset=3 severity=0.32 noise=0.040 seed=5030837794990178330",
+    "runaway_cost_from_loop": null,
+    "stuck_from_loop": null,
+    "thrash_from_loop": null,
+    "workflow": "confabulation_mild",
+    "workflow_type": "synthetic"
+  },
+  "AV30.BORDER.LOOP.s20.loop_plateau.0000:seg0": {
+    "confabulation_from_loop": null,
+    "label_status": "generated",
+    "labels": [
+      "loop"
+    ],
+    "loop_from_loop": 3,
+    "mission_id": "AV30.BORDER.LOOP.s20.loop_plateau.0000",
+    "notes": "scenario=loop_plateau length=10 onset=3 severity=0.32 noise=0.040 seed=1112100546071843159",
+    "runaway_cost_from_loop": null,
+    "stuck_from_loop": null,
+    "thrash_from_loop": null,
+    "workflow": "loop_plateau",
+    "workflow_type": "synthetic"
+  },
+  "AV30.BORDER.LOOP.s21.loop_plateau.0000:seg0": {
+    "confabulation_from_loop": null,
+    "label_status": "generated",
+    "labels": [
+      "loop"
+    ],
+    "loop_from_loop": 3,
+    "mission_id": "AV30.BORDER.LOOP.s21.loop_plateau.0000",
+    "notes": "scenario=loop_plateau length=10 onset=3 severity=0.32 noise=0.040 seed=15700154452239872919",
+    "runaway_cost_from_loop": null,
+    "stuck_from_loop": null,
+    "thrash_from_loop": null,
+    "workflow": "loop_plateau",
+    "workflow_type": "synthetic"
+  },
+  "AV30.BORDER.RUNAWAY.s20.runaway_cost.0000:seg0": {
+    "confabulation_from_loop": null,
+    "label_status": "generated",
+    "labels": [
+      "runaway_cost"
+    ],
+    "loop_from_loop": null,
+    "mission_id": "AV30.BORDER.RUNAWAY.s20.runaway_cost.0000",
+    "notes": "scenario=runaway_cost length=10 onset=3 severity=0.32 noise=0.040 seed=1820380357512282428",
+    "runaway_cost_from_loop": 3,
+    "stuck_from_loop": null,
+    "thrash_from_loop": null,
+    "workflow": "runaway_cost",
+    "workflow_type": "synthetic"
+  },
+  "AV30.BORDER.RUNAWAY.s21.runaway_cost.0000:seg0": {
+    "confabulation_from_loop": null,
+    "label_status": "generated",
+    "labels": [
+      "runaway_cost"
+    ],
+    "loop_from_loop": null,
+    "mission_id": "AV30.BORDER.RUNAWAY.s21.runaway_cost.0000",
+    "notes": "scenario=runaway_cost length=10 onset=3 severity=0.32 noise=0.040 seed=7401491331406248382",
+    "runaway_cost_from_loop": 3,
+    "stuck_from_loop": null,
+    "thrash_from_loop": null,
+    "workflow": "runaway_cost",
+    "workflow_type": "synthetic"
+  },
+  "AV30.BORDER.STUCK.s20.stuck_coverage.0000:seg0": {
+    "confabulation_from_loop": null,
+    "label_status": "generated",
+    "labels": [
+      "stuck"
+    ],
+    "loop_from_loop": null,
+    "mission_id": "AV30.BORDER.STUCK.s20.stuck_coverage.0000",
+    "notes": "scenario=stuck_coverage length=10 onset=3 severity=0.32 noise=0.040 seed=5663627322778362029",
+    "runaway_cost_from_loop": null,
+    "stuck_from_loop": 3,
+    "thrash_from_loop": null,
+    "workflow": "stuck_coverage",
+    "workflow_type": "synthetic"
+  },
+  "AV30.BORDER.STUCK.s21.stuck_coverage.0000:seg0": {
+    "confabulation_from_loop": null,
+    "label_status": "generated",
+    "labels": [
+      "stuck"
+    ],
+    "loop_from_loop": null,
+    "mission_id": "AV30.BORDER.STUCK.s21.stuck_coverage.0000",
+    "notes": "scenario=stuck_coverage length=10 onset=3 severity=0.32 noise=0.040 seed=4063821916287003153",
+    "runaway_cost_from_loop": null,
+    "stuck_from_loop": 3,
+    "thrash_from_loop": null,
+    "workflow": "stuck_coverage",
+    "workflow_type": "synthetic"
+  },
+  "AV30.BORDER.THRASH.s20.retry_thrash.0000:seg0": {
+    "confabulation_from_loop": null,
+    "label_status": "generated",
+    "labels": [
+      "thrash"
+    ],
+    "loop_from_loop": null,
+    "mission_id": "AV30.BORDER.THRASH.s20.retry_thrash.0000",
+    "notes": "scenario=retry_thrash length=10 onset=3 severity=0.32 noise=0.040 seed=9738511746453875952",
+    "runaway_cost_from_loop": null,
+    "stuck_from_loop": null,
+    "thrash_from_loop": 3,
+    "workflow": "retry_thrash",
+    "workflow_type": "synthetic"
+  },
+  "AV30.BORDER.THRASH.s21.retry_thrash.0000:seg0": {
+    "confabulation_from_loop": null,
+    "label_status": "generated",
+    "labels": [
+      "thrash"
+    ],
+    "loop_from_loop": null,
+    "mission_id": "AV30.BORDER.THRASH.s21.retry_thrash.0000",
+    "notes": "scenario=retry_thrash length=10 onset=3 severity=0.32 noise=0.040 seed=894154156698373421",
+    "runaway_cost_from_loop": null,
+    "stuck_from_loop": null,
+    "thrash_from_loop": 3,
+    "workflow": "retry_thrash",
+    "workflow_type": "synthetic"
+  },
+  "AV30.MIXED.LOOP_THRASH.s30.mixed.0000:seg0": {
+    "confabulation_from_loop": null,
+    "label_status": "generated",
+    "labels": [
+      "loop",
+      "runaway_cost",
+      "stuck",
+      "thrash"
+    ],
+    "loop_from_loop": 3,
+    "mission_id": "AV30.MIXED.LOOP_THRASH.s30.mixed.0000",
+    "notes": "scenario=mixed length=12 onset=3 severity=0.60 noise=0.020 seed=13653376223756121010",
+    "runaway_cost_from_loop": 7,
+    "stuck_from_loop": 7,
+    "thrash_from_loop": 7,
+    "workflow": "mixed",
+    "workflow_type": "synthetic"
+  },
+  "AV30.MIXED.LOOP_THRASH.s31.mixed.0000:seg0": {
+    "confabulation_from_loop": null,
+    "label_status": "generated",
+    "labels": [
+      "loop",
+      "runaway_cost",
+      "stuck",
+      "thrash"
+    ],
+    "loop_from_loop": 3,
+    "mission_id": "AV30.MIXED.LOOP_THRASH.s31.mixed.0000",
+    "notes": "scenario=mixed length=12 onset=3 severity=0.60 noise=0.020 seed=8203486852906286275",
+    "runaway_cost_from_loop": 7,
+    "stuck_from_loop": 7,
+    "thrash_from_loop": 7,
+    "workflow": "mixed",
+    "workflow_type": "synthetic"
+  },
+  "AV30.MIXED.STUCK_RUNAWAY.s30.burn_rate_anomaly.0000:seg0": {
+    "confabulation_from_loop": null,
+    "label_status": "generated",
+    "labels": [
+      "runaway_cost",
+      "stuck"
+    ],
+    "loop_from_loop": null,
+    "mission_id": "AV30.MIXED.STUCK_RUNAWAY.s30.burn_rate_anomaly.0000",
+    "notes": "scenario=burn_rate_anomaly length=12 onset=3 severity=0.62 noise=0.020 seed=12433771368003923306",
+    "runaway_cost_from_loop": 3,
+    "stuck_from_loop": 3,
+    "thrash_from_loop": null,
+    "workflow": "burn_rate_anomaly",
+    "workflow_type": "synthetic"
+  },
+  "AV30.MIXED.STUCK_RUNAWAY.s31.burn_rate_anomaly.0000:seg0": {
+    "confabulation_from_loop": null,
+    "label_status": "generated",
+    "labels": [
+      "runaway_cost",
+      "stuck"
+    ],
+    "loop_from_loop": null,
+    "mission_id": "AV30.MIXED.STUCK_RUNAWAY.s31.burn_rate_anomaly.0000",
+    "notes": "scenario=burn_rate_anomaly length=12 onset=3 severity=0.62 noise=0.020 seed=16215215618796282003",
+    "runaway_cost_from_loop": 3,
+    "stuck_from_loop": 3,
+    "thrash_from_loop": null,
+    "workflow": "burn_rate_anomaly",
+    "workflow_type": "synthetic"
+  },
+  "AV30.NOISY.HEALTHY.s40.healthy.0000:seg0": {
+    "confabulation_from_loop": null,
+    "label_status": "generated",
+    "labels": [
+      "healthy"
+    ],
+    "loop_from_loop": null,
+    "mission_id": "AV30.NOISY.HEALTHY.s40.healthy.0000",
+    "notes": "scenario=healthy length=12 onset=4 severity=0.25 noise=0.250 seed=6628365406910543687",
+    "runaway_cost_from_loop": null,
+    "stuck_from_loop": null,
+    "thrash_from_loop": null,
+    "workflow": "healthy",
+    "workflow_type": "synthetic"
+  },
+  "AV30.NOISY.HEALTHY.s41.healthy.0000:seg0": {
+    "confabulation_from_loop": null,
+    "label_status": "generated",
+    "labels": [
+      "healthy"
+    ],
+    "loop_from_loop": null,
+    "mission_id": "AV30.NOISY.HEALTHY.s41.healthy.0000",
+    "notes": "scenario=healthy length=12 onset=4 severity=0.25 noise=0.250 seed=2154057721363925713",
+    "runaway_cost_from_loop": null,
+    "stuck_from_loop": null,
+    "thrash_from_loop": null,
+    "workflow": "healthy",
+    "workflow_type": "synthetic"
+  },
+  "AV30.SHORT.HEALTHY.s10.healthy.0000:seg0": {
+    "confabulation_from_loop": null,
+    "label_status": "generated",
+    "labels": [
+      "healthy"
+    ],
+    "loop_from_loop": null,
+    "mission_id": "AV30.SHORT.HEALTHY.s10.healthy.0000",
+    "notes": "scenario=healthy length=3 onset=1 severity=0.30 noise=0.200 seed=728687530154882655",
+    "runaway_cost_from_loop": null,
+    "stuck_from_loop": null,
+    "thrash_from_loop": null,
+    "workflow": "healthy",
+    "workflow_type": "synthetic"
+  },
+  "AV30.SHORT.HEALTHY.s11.healthy.0000:seg0": {
+    "confabulation_from_loop": null,
+    "label_status": "generated",
+    "labels": [
+      "healthy"
+    ],
+    "loop_from_loop": null,
+    "mission_id": "AV30.SHORT.HEALTHY.s11.healthy.0000",
+    "notes": "scenario=healthy length=3 onset=1 severity=0.30 noise=0.200 seed=15442155560947104404",
+    "runaway_cost_from_loop": null,
+    "stuck_from_loop": null,
+    "thrash_from_loop": null,
+    "workflow": "healthy",
+    "workflow_type": "synthetic"
+  },
+  "AV30.SHORT.STUCK.s10.stuck_coverage.0000:seg0": {
+    "confabulation_from_loop": null,
+    "label_status": "generated",
+    "labels": [
+      "stuck"
+    ],
+    "loop_from_loop": null,
+    "mission_id": "AV30.SHORT.STUCK.s10.stuck_coverage.0000",
+    "notes": "scenario=stuck_coverage length=3 onset=1 severity=0.35 noise=0.120 seed=6572381839092432030",
+    "runaway_cost_from_loop": null,
+    "stuck_from_loop": 1,
+    "thrash_from_loop": null,
+    "workflow": "stuck_coverage",
+    "workflow_type": "synthetic"
+  },
+  "AV30.SHORT.STUCK.s11.stuck_coverage.0000:seg0": {
+    "confabulation_from_loop": null,
+    "label_status": "generated",
+    "labels": [
+      "stuck"
+    ],
+    "loop_from_loop": null,
+    "mission_id": "AV30.SHORT.STUCK.s11.stuck_coverage.0000",
+    "notes": "scenario=stuck_coverage length=3 onset=1 severity=0.35 noise=0.120 seed=885029572551800858",
+    "runaway_cost_from_loop": null,
+    "stuck_from_loop": 1,
+    "thrash_from_loop": null,
+    "workflow": "stuck_coverage",
+    "workflow_type": "synthetic"
   }
 }

@@ -1,12 +1,70 @@
 {
-  "suite": "av26_real",
-  "schema_version": 1,
+  "build": {
+    "enabled": false,
+    "include_enforcement": false,
+    "scenarios_dir": null,
+    "workers": 1
+  },
   "mode": "real",
   "outputs": {
     "labels": "labels.json",
     "traces_dir": "traces"
   },
   "runs": [
+    {
+      "mission_id": "AV26.F01",
+      "run_id": "AV26.F01:seg0",
+      "scenario": "loop_narrow_topic",
+      "seed": 0,
+      "segment_index": 0,
+      "trace_path": "traces/AV26.F01.jsonl",
+      "workflow_type": "real"
+    },
+    {
+      "mission_id": "AV26.F02",
+      "run_id": "AV26.F02:seg0",
+      "scenario": "loop_findings_inflation",
+      "seed": 0,
+      "segment_index": 0,
+      "trace_path": "traces/AV26.F02.jsonl",
+      "workflow_type": "real"
+    },
+    {
+      "mission_id": "AV26.F03",
+      "run_id": "AV26.F03:seg0",
+      "scenario": "stuck_fictional",
+      "seed": 0,
+      "segment_index": 0,
+      "trace_path": "traces/AV26.F03.jsonl",
+      "workflow_type": "real"
+    },
+    {
+      "mission_id": "AV26.F04",
+      "run_id": "AV26.F04:seg0",
+      "scenario": "stuck_niche_intersection",
+      "seed": 0,
+      "segment_index": 0,
+      "trace_path": "traces/AV26.F04.jsonl",
+      "workflow_type": "real"
+    },
+    {
+      "mission_id": "AV26.F05",
+      "run_id": "AV26.F05:seg0",
+      "scenario": "stuck_contradictory",
+      "seed": 0,
+      "segment_index": 0,
+      "trace_path": "traces/AV26.F05.jsonl",
+      "workflow_type": "real"
+    },
+    {
+      "mission_id": "AV26.F06",
+      "run_id": "AV26.F06:seg0",
+      "scenario": "stuck_complexity",
+      "seed": 0,
+      "segment_index": 0,
+      "trace_path": "traces/AV26.F06.jsonl",
+      "workflow_type": "real"
+    },
     {
       "mission_id": "AV26.R01",
       "run_id": "AV26.R01:seg0",
@@ -80,60 +138,6 @@
       "workflow_type": "real"
     },
     {
-      "mission_id": "AV26.F01",
-      "run_id": "AV26.F01:seg0",
-      "scenario": "loop_narrow_topic",
-      "seed": 0,
-      "segment_index": 0,
-      "trace_path": "traces/AV26.F01.jsonl",
-      "workflow_type": "real"
-    },
-    {
-      "mission_id": "AV26.F02",
-      "run_id": "AV26.F02:seg0",
-      "scenario": "loop_findings_inflation",
-      "seed": 0,
-      "segment_index": 0,
-      "trace_path": "traces/AV26.F02.jsonl",
-      "workflow_type": "real"
-    },
-    {
-      "mission_id": "AV26.F03",
-      "run_id": "AV26.F03:seg0",
-      "scenario": "stuck_fictional",
-      "seed": 0,
-      "segment_index": 0,
-      "trace_path": "traces/AV26.F03.jsonl",
-      "workflow_type": "real"
-    },
-    {
-      "mission_id": "AV26.F04",
-      "run_id": "AV26.F04:seg0",
-      "scenario": "stuck_niche_intersection",
-      "seed": 0,
-      "segment_index": 0,
-      "trace_path": "traces/AV26.F04.jsonl",
-      "workflow_type": "real"
-    },
-    {
-      "mission_id": "AV26.F05",
-      "run_id": "AV26.F05:seg0",
-      "scenario": "stuck_contradictory",
-      "seed": 0,
-      "segment_index": 0,
-      "trace_path": "traces/AV26.F05.jsonl",
-      "workflow_type": "real"
-    },
-    {
-      "mission_id": "AV26.F06",
-      "run_id": "AV26.F06:seg0",
-      "scenario": "stuck_complexity",
-      "seed": 0,
-      "segment_index": 0,
-      "trace_path": "traces/AV26.F06.jsonl",
-      "workflow_type": "real"
-    },
-    {
       "mission_id": "AV29.C01",
       "run_id": "AV29.C01:seg0",
       "scenario": "confab_real_narrow_nist_authenticator_assurance",
@@ -150,18 +154,123 @@
       "segment_index": 0,
       "trace_path": "traces/AV29.C05.jsonl",
       "workflow_type": "real"
+    },
+    {
+      "mission_id": "AV30.M03.01",
+      "run_id": "AV30.M03.01:seg0",
+      "scenario": "healthy_round2_taxonomy",
+      "seed": 1,
+      "segment_index": 0,
+      "trace_path": "traces/AV30.M03.01.jsonl",
+      "workflow_type": "real"
+    },
+    {
+      "mission_id": "AV30.M03.02",
+      "run_id": "AV30.M03.02:seg0",
+      "scenario": "healthy_round2_observability",
+      "seed": 1,
+      "segment_index": 0,
+      "trace_path": "traces/AV30.M03.02.jsonl",
+      "workflow_type": "real"
+    },
+    {
+      "mission_id": "AV30.M03.03",
+      "run_id": "AV30.M03.03:seg0",
+      "scenario": "healthy_round2_cost_optimization",
+      "seed": 1,
+      "segment_index": 0,
+      "trace_path": "traces/AV30.M03.03.jsonl",
+      "workflow_type": "real"
+    },
+    {
+      "mission_id": "AV30.M03.04",
+      "run_id": "AV30.M03.04:seg0",
+      "scenario": "loop_round2_repetitive_source",
+      "seed": 1,
+      "segment_index": 0,
+      "trace_path": "traces/AV30.M03.04.jsonl",
+      "workflow_type": "real"
+    },
+    {
+      "mission_id": "AV30.M03.05",
+      "run_id": "AV30.M03.05:seg0",
+      "scenario": "stuck_round2_fictional_topic",
+      "seed": 1,
+      "segment_index": 0,
+      "trace_path": "traces/AV30.M03.05.jsonl",
+      "workflow_type": "real"
+    },
+    {
+      "mission_id": "AV30.M03.06",
+      "run_id": "AV30.M03.06:seg0",
+      "scenario": "confab_round2_nist_assurance",
+      "seed": 1,
+      "segment_index": 0,
+      "trace_path": "traces/AV30.M03.06.jsonl",
+      "workflow_type": "real"
+    },
+    {
+      "mission_id": "AV30.M03.07",
+      "run_id": "AV30.M03.07:seg0",
+      "scenario": "confab_round2_repetitive_source_a",
+      "seed": 1,
+      "segment_index": 0,
+      "trace_path": "traces/AV30.M03.07.jsonl",
+      "workflow_type": "real"
+    },
+    {
+      "mission_id": "AV30.M03.08",
+      "run_id": "AV30.M03.08:seg0",
+      "scenario": "loop_round2_k8s_narrow_slice",
+      "seed": 1,
+      "segment_index": 0,
+      "trace_path": "traces/AV30.M03.08.jsonl",
+      "workflow_type": "real"
+    },
+    {
+      "mission_id": "AV30.M03.09",
+      "run_id": "AV30.M03.09:seg0",
+      "scenario": "stuck_round2_repetitive_source_b",
+      "seed": 1,
+      "segment_index": 0,
+      "trace_path": "traces/AV30.M03.09.jsonl",
+      "workflow_type": "real"
+    },
+    {
+      "mission_id": "AV30.M03.10",
+      "run_id": "AV30.M03.10:seg0",
+      "scenario": "thrash_round2_build_retry",
+      "seed": 1,
+      "segment_index": 0,
+      "trace_path": "traces/AV30.M03.10.jsonl",
+      "workflow_type": "real"
+    },
+    {
+      "mission_id": "AV30.M03.11",
+      "run_id": "AV30.M03.11:seg0",
+      "scenario": "runaway_round2_build_cost",
+      "seed": 1,
+      "segment_index": 0,
+      "trace_path": "traces/AV30.M03.11.jsonl",
+      "workflow_type": "real"
+    },
+    {
+      "mission_id": "AV30.M03.12",
+      "run_id": "AV30.M03.12:seg0",
+      "scenario": "stuck_round2_contradictory_criteria",
+      "seed": 1,
+      "segment_index": 0,
+      "trace_path": "traces/AV30.M03.12.jsonl",
+      "workflow_type": "real"
     }
   ],
   "runs_per_scenario": 1,
+  "schema_version": 1,
   "seeds": [
-    0
+    0,
+    1
   ],
-  "build": {
-    "enabled": false,
-    "include_enforcement": false,
-    "scenarios_dir": null,
-    "workers": 1
-  },
+  "suite": "av26_real",
   "synthetic": {
     "enabled": false,
     "length": 0,

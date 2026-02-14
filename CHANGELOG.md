@@ -5,6 +5,32 @@ All notable changes to the `agent-vitals` package.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.9.0] - 2026-02-14
+
+### Added
+- Unfiltered three-way validation artifacts for the 81-trace corpus:
+  - `docs/vitals/av30-m04-unfiltered-backtest.json`
+  - `docs/vitals/av30-m04-unfiltered-backtest.md`
+- Per-detector 95% Wilson confidence interval reporting for backtest decision-making.
+- Per-detector CI gate policy helpers in `agent_vitals/ci_gate.py`.
+- CI gate promotion decision artifacts:
+  - `docs/vitals/av30-m05-ci-backtest.json`
+  - `docs/vitals/av30-m05-gate-promotion.md`
+
+### Changed
+- `scripts/ci_backtest.py` now:
+  - computes per-detector CI metrics,
+  - applies promotion criteria (`>=8` positives, precision LB `>=0.80`, recall LB `>=0.75`),
+  - emits hard/soft detector gate decisions in JSON,
+  - enforces hard detector gates when detectors qualify.
+- `.github/workflows/ci.yml` now passes explicit composite and detector-promotion thresholds to the backtest gate step.
+
+### Validation
+- Full suite: `pytest -q tests agent-vitals/tests` (`1474 passed`, `12 skipped`).
+- CI backtest gate on full unfiltered corpus (`81` traces):
+  - Composite `vitals.any` hard gate: `P=1.000`, `R=0.968` (PASS).
+  - Per-detector hard promotions: none (all remain soft with statistical rationale).
+
 ## [1.8.0] - 2026-02-13
 
 ### Added
