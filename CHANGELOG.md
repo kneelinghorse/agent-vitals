@@ -5,6 +5,49 @@ All notable changes to the `agent-vitals` package.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.10.0] - 2026-03-14
+
+### Added
+- **AV-31 multi-model corpus**: 373 manually-reviewed traces across 12 model providers
+  (DeepSeek, Claude Sonnet, Claude Haiku, GPT-4o, GPT-4o-mini, Gemini Flash,
+  Llama 70B, Llama 8B, Mistral Large, Mixtral, Qwen 72B, Command-R+).
+- Manual label review pipeline (`scripts/manual_label_review.py`) with systematic
+  heuristic review of all predicted positives, detector disagreement resolution,
+  and 15-20% random negative sampling for hidden FN detection.
+- Bundled av31_reviewed corpus (289 traces) for CI backtest validation.
+- Full backtest report with per-detector 95% Wilson CI and three-way split analysis
+  (build-only, research-only, combined).
+- Gate promotion decision document with per-detector gap analysis.
+
+### Changed
+- **Loop detector promoted to hard CI gate**: P=0.986 [CI lower: 0.960],
+  R=1.000 [CI lower: 0.982] on 370-trace combined corpus. First detector
+  to meet all promotion thresholds (>=8 positives, P_lower >= 0.80, R_lower >= 0.75).
+- `scripts/ci_backtest.py` now loads av31_reviewed corpus alongside existing
+  av05_synth and av26_real corpora for expanded CI validation (370 traces total).
+
+### Fixed
+- **Thrash detector false positives**: All 59 thrash predictions in av31 corpus
+  reclassified as FP — caused by single-step segmentation artifacts, not real
+  thrash behavior. Thrash detector needs segmentation artifact filtering
+  before gate promotion consideration.
+
+### Validation
+- Full suite: 370 traces, composite `vitals.any` P=0.919 R=0.986 (PASS).
+- Loop hard gate: P=0.986 [0.960], R=1.000 [0.982] (PASS).
+- Remaining soft gates: confabulation (P_lower=0.790, needs 0.800),
+  stuck (suppressed by loop co-occurrence), thrash (FP from segmentation),
+  runaway_cost (insufficient positives).
+- Manual label review: 20.9% reclassification rate (78/373 entries).
+  Dominant pattern: 59 thrash FPs from single-step segments.
+
+### Notes
+- Stuck detector recall is very low (0.8%) on the backtest because the
+  engine suppresses stuck when loop co-fires. Most stuck-labeled traces
+  also have loop labels; loop subsumes stuck in practice.
+- Confabulation is 1 percentage point short of hard gate promotion
+  (P_lower=0.790 vs 0.800 threshold). 2 more TP traces would likely qualify it.
+
 ## [1.9.0] - 2026-02-14
 
 ### Added

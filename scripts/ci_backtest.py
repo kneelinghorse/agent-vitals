@@ -168,6 +168,12 @@ def main() -> int:
         help="Path to av26_real corpus root (contains labels.json and traces/)",
     )
     parser.add_argument(
+        "--av31-corpus",
+        type=Path,
+        default=ROOT / "checkpoints" / "vitals_corpus" / "av31_reviewed",
+        help="Path to av31_reviewed corpus root (contains labels.json and traces/)",
+    )
+    parser.add_argument(
         "--output",
         type=Path,
         default=ROOT / "backtest-results.json",
@@ -194,11 +200,30 @@ def main() -> int:
     synth_unlabeled = sorted(set(synth_ds.traces.keys()) - set(synth_labels.keys()))
     real_unlabeled = sorted(set(real_ds.traces.keys()) - set(real_labels.keys()))
 
+    # AV-31 reviewed corpus (onset-format labels, no conversion needed)
+    av31_ds = None
+    av31_labels: Labels = {}
+    av31_unlabeled: list[str] = []
+    av31_corpus_path = args.av31_corpus
+    if av31_corpus_path.exists() and (av31_corpus_path / "traces").is_dir():
+        av31_ds = load_dataset(av31_corpus_path / "traces")
+        av31_raw = json.loads((av31_corpus_path / "labels.json").read_text(encoding="utf-8"))
+        # Labels are already in onset format (keyed by trace file stem)
+        for trace_id, onset_data in av31_raw.items():
+            if trace_id in av31_ds.traces:
+                av31_labels[trace_id] = {
+                    k: set(v) if isinstance(v, list) else v
+                    for k, v in onset_data.items()
+                }
+        av31_unlabeled = sorted(set(av31_ds.traces.keys()) - set(av31_labels.keys()))
+
     cfg = VitalsConfig.from_yaml(allow_env_override=False)
     counts = _init_counts()
 
     _evaluate(synth_ds, synth_labels, workflow_type="synthetic", config=cfg, counts=counts)
     _evaluate(real_ds, real_labels, workflow_type="real", config=cfg, counts=counts)
+    if av31_ds is not None:
+        _evaluate(av31_ds, av31_labels, workflow_type="real", config=cfg, counts=counts)
 
     runtime_s = time.perf_counter() - t0
 
@@ -249,17 +274,24 @@ def main() -> int:
     else:
         gate_reason = "composite_and_hard_detectors_passed"
 
+    av31_trace_count = av31_ds.trace_count if av31_ds else 0
+    av31_snapshot_count = av31_ds.snapshot_count if av31_ds else 0
+    total_trace_count = synth_ds.trace_count + real_ds.trace_count + av31_trace_count
+    total_snapshot_count = synth_ds.snapshot_count + real_ds.snapshot_count + av31_snapshot_count
+
     result_payload = {
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "runtime_seconds": runtime_s,
         "dataset": {
             "synthetic_trace_count": synth_ds.trace_count,
             "real_trace_count": real_ds.trace_count,
-            "trace_count": synth_ds.trace_count + real_ds.trace_count,
-            "snapshot_count": synth_ds.snapshot_count + real_ds.snapshot_count,
+            "av31_trace_count": av31_trace_count,
+            "trace_count": total_trace_count,
+            "snapshot_count": total_snapshot_count,
             "unlabeled": {
                 "synthetic": synth_unlabeled,
                 "real": real_unlabeled,
+                "av31": av31_unlabeled,
             },
         },
         "thresholds": {

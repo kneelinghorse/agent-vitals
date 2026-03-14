@@ -1,0 +1,2617 @@
+{
+  "av31-deepseek-av31.bc.deepseek.0145": {
+    "confabulation_at": [],
+    "loop_at": [
+      2
+    ],
+    "runaway_cost_at": [],
+    "stuck_at": [],
+    "thrash_at": []
+  },
+  "av31-deepseek-av31.bc.deepseek.0146": {
+    "confabulation_at": [],
+    "loop_at": [
+      2
+    ],
+    "runaway_cost_at": [],
+    "stuck_at": [],
+    "thrash_at": []
+  },
+  "av31-deepseek-av31.bc.deepseek.0147": {
+    "confabulation_at": [],
+    "loop_at": [
+      2
+    ],
+    "runaway_cost_at": [],
+    "stuck_at": [],
+    "thrash_at": []
+  },
+  "av31-deepseek-av31.bc.deepseek.0148": {
+    "confabulation_at": [],
+    "loop_at": [
+      2
+    ],
+    "runaway_cost_at": [],
+    "stuck_at": [],
+    "thrash_at": []
+  },
+  "av31-deepseek-av31.bc.deepseek.0149": {
+    "confabulation_at": [],
+    "loop_at": [
+      2
+    ],
+    "runaway_cost_at": [],
+    "stuck_at": [],
+    "thrash_at": []
+  },
+  "av31-deepseek-av31.bc.deepseek.0150": {
+    "confabulation_at": [],
+    "loop_at": [
+      2
+    ],
+    "runaway_cost_at": [],
+    "stuck_at": [],
+    "thrash_at": []
+  },
+  "av31-deepseek-av31.bc.deepseek.0151": {
+    "confabulation_at": [],
+    "loop_at": [
+      2
+    ],
+    "runaway_cost_at": [],
+    "stuck_at": [],
+    "thrash_at": []
+  },
+  "av31-deepseek-av31.bc.deepseek.0152": {
+    "confabulation_at": [],
+    "loop_at": [],
+    "runaway_cost_at": [],
+    "stuck_at": [],
+    "thrash_at": []
+  },
+  "av31-deepseek-av31.rc.deepseek.0145": {
+    "confabulation_at": [],
+    "loop_at": [
+      2
+    ],
+    "runaway_cost_at": [],
+    "stuck_at": [
+      2
+    ],
+    "thrash_at": []
+  },
+  "av31-deepseek-av31.rc.deepseek.0146": {
+    "confabulation_at": [],
+    "loop_at": [
+      2
+    ],
+    "runaway_cost_at": [],
+    "stuck_at": [
+      2
+    ],
+    "thrash_at": []
+  },
+  "av31-deepseek-av31.rc.deepseek.0147": {
+    "confabulation_at": [],
+    "loop_at": [
+      2
+    ],
+    "runaway_cost_at": [],
+    "stuck_at": [
+      2
+    ],
+    "thrash_at": []
+  },
+  "av31-deepseek-av31.rc.deepseek.0148": {
+    "confabulation_at": [],
+    "loop_at": [
+      2
+    ],
+    "runaway_cost_at": [],
+    "stuck_at": [
+      2
+    ],
+    "thrash_at": []
+  },
+  "av31-deepseek-av31.rc.deepseek.0149": {
+    "confabulation_at": [],
+    "loop_at": [
+      0,
+      2
+    ],
+    "runaway_cost_at": [],
+    "stuck_at": [
+      0,
+      2,
+      3
+    ],
+    "thrash_at": []
+  },
+  "av31-deepseek-av31.rc.deepseek.0150": {
+    "confabulation_at": [],
+    "loop_at": [
+      2
+    ],
+    "runaway_cost_at": [],
+    "stuck_at": [
+      2
+    ],
+    "thrash_at": []
+  },
+  "av31-deepseek-av31.rc.deepseek.0151": {
+    "confabulation_at": [],
+    "loop_at": [
+      2
+    ],
+    "runaway_cost_at": [],
+    "stuck_at": [
+      2
+    ],
+    "thrash_at": []
+  },
+  "av31-deepseek-av31.rc.deepseek.0152": {
+    "confabulation_at": [],
+    "loop_at": [
+      0,
+      2
+    ],
+    "runaway_cost_at": [],
+    "stuck_at": [
+      0,
+      2
+    ],
+    "thrash_at": []
+  },
+  "av31-deepseek-av31.rc.deepseek.0153": {
+    "confabulation_at": [],
+    "loop_at": [
+      2
+    ],
+    "runaway_cost_at": [],
+    "stuck_at": [
+      2,
+      3
+    ],
+    "thrash_at": []
+  },
+  "av31-deepseek-av31.rc.deepseek.0154": {
+    "confabulation_at": [],
+    "loop_at": [
+      2,
+      4
+    ],
+    "runaway_cost_at": [],
+    "stuck_at": [
+      2
+    ],
+    "thrash_at": []
+  },
+  "av31-deepseek-av31.rc.deepseek.0155": {
+    "confabulation_at": [],
+    "loop_at": [
+      2
+    ],
+    "runaway_cost_at": [],
+    "stuck_at": [
+      2,
+      3
+    ],
+    "thrash_at": []
+  },
+  "av31-deepseek-av31.rc.deepseek.0156": {
+    "confabulation_at": [],
+    "loop_at": [
+      2
+    ],
+    "runaway_cost_at": [],
+    "stuck_at": [
+      2
+    ],
+    "thrash_at": []
+  },
+  "av31-deepseek-av31.rc.deepseek.0157": {
+    "confabulation_at": [],
+    "loop_at": [
+      2
+    ],
+    "runaway_cost_at": [],
+    "stuck_at": [
+      2
+    ],
+    "thrash_at": []
+  },
+  "av31-deepseek-av31.rc.deepseek.0158": {
+    "confabulation_at": [],
+    "loop_at": [
+      0,
+      2
+    ],
+    "runaway_cost_at": [],
+    "stuck_at": [
+      0,
+      2
+    ],
+    "thrash_at": []
+  },
+  "av31-deepseek-av31.rc.deepseek.0159": {
+    "confabulation_at": [],
+    "loop_at": [
+      0,
+      2
+    ],
+    "runaway_cost_at": [],
+    "stuck_at": [
+      0,
+      2
+    ],
+    "thrash_at": []
+  },
+  "av31-or_claude_haiku-av31.bc.or_claude_haiku.0013": {
+    "confabulation_at": [],
+    "loop_at": [
+      2
+    ],
+    "runaway_cost_at": [],
+    "stuck_at": [],
+    "thrash_at": []
+  },
+  "av31-or_claude_haiku-av31.bc.or_claude_haiku.0014": {
+    "confabulation_at": [],
+    "loop_at": [
+      2
+    ],
+    "runaway_cost_at": [],
+    "stuck_at": [],
+    "thrash_at": []
+  },
+  "av31-or_claude_haiku-av31.bc.or_claude_haiku.0015": {
+    "confabulation_at": [],
+    "loop_at": [
+      2
+    ],
+    "runaway_cost_at": [],
+    "stuck_at": [],
+    "thrash_at": []
+  },
+  "av31-or_claude_haiku-av31.bc.or_claude_haiku.0016": {
+    "confabulation_at": [],
+    "loop_at": [
+      2
+    ],
+    "runaway_cost_at": [],
+    "stuck_at": [],
+    "thrash_at": []
+  },
+  "av31-or_claude_haiku-av31.bc.or_claude_haiku.0017": {
+    "confabulation_at": [],
+    "loop_at": [
+      2
+    ],
+    "runaway_cost_at": [],
+    "stuck_at": [],
+    "thrash_at": []
+  },
+  "av31-or_claude_haiku-av31.bc.or_claude_haiku.0018": {
+    "confabulation_at": [],
+    "loop_at": [
+      2
+    ],
+    "runaway_cost_at": [],
+    "stuck_at": [],
+    "thrash_at": []
+  },
+  "av31-or_claude_haiku-av31.bc.or_claude_haiku.0019": {
+    "confabulation_at": [],
+    "loop_at": [
+      2
+    ],
+    "runaway_cost_at": [],
+    "stuck_at": [],
+    "thrash_at": []
+  },
+  "av31-or_claude_haiku-av31.bc.or_claude_haiku.0020": {
+    "confabulation_at": [],
+    "loop_at": [
+      2
+    ],
+    "runaway_cost_at": [],
+    "stuck_at": [],
+    "thrash_at": []
+  },
+  "av31-or_claude_haiku-av31.bc.or_claude_haiku.0021": {
+    "confabulation_at": [],
+    "loop_at": [
+      2
+    ],
+    "runaway_cost_at": [],
+    "stuck_at": [],
+    "thrash_at": []
+  },
+  "av31-or_claude_haiku-av31.bc.or_claude_haiku.0024": {
+    "confabulation_at": [],
+    "loop_at": [],
+    "runaway_cost_at": [],
+    "stuck_at": [
+      3
+    ],
+    "thrash_at": []
+  },
+  "av31-or_claude_haiku-av31.rc.or_claude_haiku.0061": {
+    "confabulation_at": [],
+    "loop_at": [],
+    "runaway_cost_at": [],
+    "stuck_at": [],
+    "thrash_at": []
+  },
+  "av31-or_claude_haiku-av31.rc.or_claude_haiku.0062": {
+    "confabulation_at": [],
+    "loop_at": [],
+    "runaway_cost_at": [],
+    "stuck_at": [],
+    "thrash_at": []
+  },
+  "av31-or_claude_haiku-av31.rc.or_claude_haiku.0063": {
+    "confabulation_at": [],
+    "loop_at": [],
+    "runaway_cost_at": [],
+    "stuck_at": [],
+    "thrash_at": []
+  },
+  "av31-or_claude_haiku-av31.rc.or_claude_haiku.0064": {
+    "confabulation_at": [],
+    "loop_at": [],
+    "runaway_cost_at": [],
+    "stuck_at": [],
+    "thrash_at": []
+  },
+  "av31-or_claude_haiku-av31.rc.or_claude_haiku.0065": {
+    "confabulation_at": [],
+    "loop_at": [],
+    "runaway_cost_at": [],
+    "stuck_at": [],
+    "thrash_at": []
+  },
+  "av31-or_claude_haiku-av31.rc.or_claude_haiku.0066": {
+    "confabulation_at": [],
+    "loop_at": [],
+    "runaway_cost_at": [],
+    "stuck_at": [],
+    "thrash_at": []
+  },
+  "av31-or_claude_haiku-av31.rc.or_claude_haiku.0067": {
+    "confabulation_at": [],
+    "loop_at": [],
+    "runaway_cost_at": [],
+    "stuck_at": [],
+    "thrash_at": []
+  },
+  "av31-or_claude_haiku-av31.rc.or_claude_haiku.0068": {
+    "confabulation_at": [],
+    "loop_at": [],
+    "runaway_cost_at": [],
+    "stuck_at": [],
+    "thrash_at": []
+  },
+  "av31-or_claude_haiku-av31.rc.or_claude_haiku.0069": {
+    "confabulation_at": [],
+    "loop_at": [],
+    "runaway_cost_at": [],
+    "stuck_at": [],
+    "thrash_at": []
+  },
+  "av31-or_claude_haiku-av31.rc.or_claude_haiku.0070": {
+    "confabulation_at": [],
+    "loop_at": [],
+    "runaway_cost_at": [],
+    "stuck_at": [],
+    "thrash_at": []
+  },
+  "av31-or_claude_haiku-av31.rc.or_claude_haiku.0071": {
+    "confabulation_at": [],
+    "loop_at": [],
+    "runaway_cost_at": [],
+    "stuck_at": [],
+    "thrash_at": []
+  },
+  "av31-or_claude_haiku-av31.rc.or_claude_haiku.0072": {
+    "confabulation_at": [],
+    "loop_at": [],
+    "runaway_cost_at": [],
+    "stuck_at": [],
+    "thrash_at": []
+  },
+  "av31-or_claude_sonnet-av31.bc.or_claude_sonnet.0001": {
+    "confabulation_at": [],
+    "loop_at": [
+      0,
+      2
+    ],
+    "runaway_cost_at": [],
+    "stuck_at": [
+      0
+    ],
+    "thrash_at": []
+  },
+  "av31-or_claude_sonnet-av31.bc.or_claude_sonnet.0002": {
+    "confabulation_at": [],
+    "loop_at": [
+      0,
+      2
+    ],
+    "runaway_cost_at": [],
+    "stuck_at": [
+      0
+    ],
+    "thrash_at": []
+  },
+  "av31-or_claude_sonnet-av31.bc.or_claude_sonnet.0003": {
+    "confabulation_at": [],
+    "loop_at": [
+      2
+    ],
+    "runaway_cost_at": [],
+    "stuck_at": [],
+    "thrash_at": []
+  },
+  "av31-or_claude_sonnet-av31.bc.or_claude_sonnet.0004": {
+    "confabulation_at": [],
+    "loop_at": [
+      2
+    ],
+    "runaway_cost_at": [],
+    "stuck_at": [],
+    "thrash_at": []
+  },
+  "av31-or_claude_sonnet-av31.bc.or_claude_sonnet.0005": {
+    "confabulation_at": [],
+    "loop_at": [
+      2
+    ],
+    "runaway_cost_at": [],
+    "stuck_at": [],
+    "thrash_at": []
+  },
+  "av31-or_claude_sonnet-av31.bc.or_claude_sonnet.0006": {
+    "confabulation_at": [],
+    "loop_at": [
+      2
+    ],
+    "runaway_cost_at": [],
+    "stuck_at": [],
+    "thrash_at": []
+  },
+  "av31-or_claude_sonnet-av31.rc.or_claude_sonnet.0001": {
+    "confabulation_at": [],
+    "loop_at": [
+      2
+    ],
+    "runaway_cost_at": [],
+    "stuck_at": [
+      2
+    ],
+    "thrash_at": []
+  },
+  "av31-or_claude_sonnet-av31.rc.or_claude_sonnet.0002": {
+    "confabulation_at": [],
+    "loop_at": [
+      2
+    ],
+    "runaway_cost_at": [],
+    "stuck_at": [
+      2
+    ],
+    "thrash_at": []
+  },
+  "av31-or_claude_sonnet-av31.rc.or_claude_sonnet.0003": {
+    "confabulation_at": [],
+    "loop_at": [
+      2
+    ],
+    "runaway_cost_at": [],
+    "stuck_at": [
+      2
+    ],
+    "thrash_at": []
+  },
+  "av31-or_claude_sonnet-av31.rc.or_claude_sonnet.0004": {
+    "confabulation_at": [],
+    "loop_at": [
+      2
+    ],
+    "runaway_cost_at": [],
+    "stuck_at": [
+      2
+    ],
+    "thrash_at": []
+  },
+  "av31-or_claude_sonnet-av31.rc.or_claude_sonnet.0005": {
+    "confabulation_at": [],
+    "loop_at": [
+      2
+    ],
+    "runaway_cost_at": [],
+    "stuck_at": [
+      2
+    ],
+    "thrash_at": []
+  },
+  "av31-or_claude_sonnet-av31.rc.or_claude_sonnet.0006": {
+    "confabulation_at": [],
+    "loop_at": [
+      2
+    ],
+    "runaway_cost_at": [],
+    "stuck_at": [
+      2
+    ],
+    "thrash_at": []
+  },
+  "av31-or_claude_sonnet-av31.rc.or_claude_sonnet.0007": {
+    "confabulation_at": [],
+    "loop_at": [
+      2
+    ],
+    "runaway_cost_at": [],
+    "stuck_at": [
+      2
+    ],
+    "thrash_at": []
+  },
+  "av31-or_claude_sonnet-av31.rc.or_claude_sonnet.0008": {
+    "confabulation_at": [],
+    "loop_at": [
+      2
+    ],
+    "runaway_cost_at": [],
+    "stuck_at": [
+      2
+    ],
+    "thrash_at": []
+  },
+  "av31-or_command_r_plus-av31.bc.or_command_r_plus.0001": {
+    "confabulation_at": [],
+    "loop_at": [
+      2
+    ],
+    "runaway_cost_at": [],
+    "stuck_at": [],
+    "thrash_at": []
+  },
+  "av31-or_command_r_plus-av31.bc.or_command_r_plus.0002": {
+    "confabulation_at": [],
+    "loop_at": [
+      2
+    ],
+    "runaway_cost_at": [],
+    "stuck_at": [],
+    "thrash_at": []
+  },
+  "av31-or_command_r_plus-av31.bc.or_command_r_plus.0003": {
+    "confabulation_at": [],
+    "loop_at": [
+      2
+    ],
+    "runaway_cost_at": [],
+    "stuck_at": [],
+    "thrash_at": []
+  },
+  "av31-or_command_r_plus-av31.bc.or_command_r_plus.0004": {
+    "confabulation_at": [],
+    "loop_at": [
+      2
+    ],
+    "runaway_cost_at": [],
+    "stuck_at": [],
+    "thrash_at": []
+  },
+  "av31-or_command_r_plus-av31.bc.or_command_r_plus.0005": {
+    "confabulation_at": [],
+    "loop_at": [
+      2
+    ],
+    "runaway_cost_at": [],
+    "stuck_at": [],
+    "thrash_at": []
+  },
+  "av31-or_command_r_plus-av31.bc.or_command_r_plus.0006": {
+    "confabulation_at": [],
+    "loop_at": [
+      2
+    ],
+    "runaway_cost_at": [],
+    "stuck_at": [],
+    "thrash_at": []
+  },
+  "av31-or_command_r_plus-av31.bc.or_command_r_plus.0007": {
+    "confabulation_at": [],
+    "loop_at": [],
+    "runaway_cost_at": [
+      5
+    ],
+    "stuck_at": [],
+    "thrash_at": []
+  },
+  "av31-or_command_r_plus-av31.bc.or_command_r_plus.0008": {
+    "confabulation_at": [],
+    "loop_at": [
+      2
+    ],
+    "runaway_cost_at": [],
+    "stuck_at": [],
+    "thrash_at": []
+  },
+  "av31-or_command_r_plus-av31.bc.or_command_r_plus.0009": {
+    "confabulation_at": [],
+    "loop_at": [
+      2
+    ],
+    "runaway_cost_at": [],
+    "stuck_at": [],
+    "thrash_at": []
+  },
+  "av31-or_command_r_plus-av31.bc.or_command_r_plus.0012": {
+    "confabulation_at": [],
+    "loop_at": [
+      4
+    ],
+    "runaway_cost_at": [],
+    "stuck_at": [],
+    "thrash_at": []
+  },
+  "av31-or_command_r_plus-av31.rc.or_command_r_plus.0049": {
+    "confabulation_at": [],
+    "loop_at": [],
+    "runaway_cost_at": [],
+    "stuck_at": [],
+    "thrash_at": []
+  },
+  "av31-or_command_r_plus-av31.rc.or_command_r_plus.0050": {
+    "confabulation_at": [],
+    "loop_at": [],
+    "runaway_cost_at": [],
+    "stuck_at": [],
+    "thrash_at": []
+  },
+  "av31-or_command_r_plus-av31.rc.or_command_r_plus.0051": {
+    "confabulation_at": [],
+    "loop_at": [],
+    "runaway_cost_at": [],
+    "stuck_at": [],
+    "thrash_at": []
+  },
+  "av31-or_command_r_plus-av31.rc.or_command_r_plus.0052": {
+    "confabulation_at": [],
+    "loop_at": [],
+    "runaway_cost_at": [],
+    "stuck_at": [],
+    "thrash_at": []
+  },
+  "av31-or_command_r_plus-av31.rc.or_command_r_plus.0053": {
+    "confabulation_at": [],
+    "loop_at": [],
+    "runaway_cost_at": [],
+    "stuck_at": [],
+    "thrash_at": []
+  },
+  "av31-or_command_r_plus-av31.rc.or_command_r_plus.0054": {
+    "confabulation_at": [],
+    "loop_at": [],
+    "runaway_cost_at": [],
+    "stuck_at": [],
+    "thrash_at": []
+  },
+  "av31-or_command_r_plus-av31.rc.or_command_r_plus.0055": {
+    "confabulation_at": [],
+    "loop_at": [],
+    "runaway_cost_at": [],
+    "stuck_at": [],
+    "thrash_at": []
+  },
+  "av31-or_command_r_plus-av31.rc.or_command_r_plus.0056": {
+    "confabulation_at": [],
+    "loop_at": [],
+    "runaway_cost_at": [],
+    "stuck_at": [],
+    "thrash_at": []
+  },
+  "av31-or_command_r_plus-av31.rc.or_command_r_plus.0057": {
+    "confabulation_at": [],
+    "loop_at": [],
+    "runaway_cost_at": [],
+    "stuck_at": [],
+    "thrash_at": []
+  },
+  "av31-or_command_r_plus-av31.rc.or_command_r_plus.0058": {
+    "confabulation_at": [],
+    "loop_at": [],
+    "runaway_cost_at": [],
+    "stuck_at": [],
+    "thrash_at": []
+  },
+  "av31-or_command_r_plus-av31.rc.or_command_r_plus.0059": {
+    "confabulation_at": [],
+    "loop_at": [],
+    "runaway_cost_at": [],
+    "stuck_at": [],
+    "thrash_at": []
+  },
+  "av31-or_command_r_plus-av31.rc.or_command_r_plus.0060": {
+    "confabulation_at": [],
+    "loop_at": [],
+    "runaway_cost_at": [],
+    "stuck_at": [],
+    "thrash_at": []
+  },
+  "av31-or_gemini_flash-av31.bc.or_gemini_flash.0091": {
+    "confabulation_at": [],
+    "loop_at": [
+      2
+    ],
+    "runaway_cost_at": [],
+    "stuck_at": [],
+    "thrash_at": []
+  },
+  "av31-or_gemini_flash-av31.bc.or_gemini_flash.0092": {
+    "confabulation_at": [],
+    "loop_at": [
+      2
+    ],
+    "runaway_cost_at": [],
+    "stuck_at": [],
+    "thrash_at": []
+  },
+  "av31-or_gemini_flash-av31.bc.or_gemini_flash.0093": {
+    "confabulation_at": [],
+    "loop_at": [
+      2
+    ],
+    "runaway_cost_at": [],
+    "stuck_at": [],
+    "thrash_at": []
+  },
+  "av31-or_gemini_flash-av31.bc.or_gemini_flash.0094": {
+    "confabulation_at": [],
+    "loop_at": [
+      2
+    ],
+    "runaway_cost_at": [],
+    "stuck_at": [],
+    "thrash_at": []
+  },
+  "av31-or_gemini_flash-av31.bc.or_gemini_flash.0095": {
+    "confabulation_at": [],
+    "loop_at": [
+      2
+    ],
+    "runaway_cost_at": [],
+    "stuck_at": [],
+    "thrash_at": []
+  },
+  "av31-or_gemini_flash-av31.bc.or_gemini_flash.0096": {
+    "confabulation_at": [],
+    "loop_at": [
+      2
+    ],
+    "runaway_cost_at": [],
+    "stuck_at": [],
+    "thrash_at": []
+  },
+  "av31-or_gemini_flash-av31.bc.or_gemini_flash.0097": {
+    "confabulation_at": [],
+    "loop_at": [
+      2
+    ],
+    "runaway_cost_at": [],
+    "stuck_at": [],
+    "thrash_at": []
+  },
+  "av31-or_gemini_flash-av31.bc.or_gemini_flash.0098": {
+    "confabulation_at": [],
+    "loop_at": [
+      2
+    ],
+    "runaway_cost_at": [],
+    "stuck_at": [],
+    "thrash_at": []
+  },
+  "av31-or_gemini_flash-av31.bc.or_gemini_flash.0099": {
+    "confabulation_at": [],
+    "loop_at": [
+      2
+    ],
+    "runaway_cost_at": [],
+    "stuck_at": [],
+    "thrash_at": []
+  },
+  "av31-or_gemini_flash-av31.bc.or_gemini_flash.0100": {
+    "confabulation_at": [],
+    "loop_at": [],
+    "runaway_cost_at": [],
+    "stuck_at": [],
+    "thrash_at": []
+  },
+  "av31-or_gemini_flash-av31.bc.or_gemini_flash.0101": {
+    "confabulation_at": [],
+    "loop_at": [
+      2
+    ],
+    "runaway_cost_at": [],
+    "stuck_at": [],
+    "thrash_at": []
+  },
+  "av31-or_gemini_flash-av31.bc.or_gemini_flash.0102": {
+    "confabulation_at": [],
+    "loop_at": [
+      2
+    ],
+    "runaway_cost_at": [],
+    "stuck_at": [],
+    "thrash_at": []
+  },
+  "av31-or_gemini_flash-av31.bc.or_gemini_flash.0103": {
+    "confabulation_at": [],
+    "loop_at": [],
+    "runaway_cost_at": [],
+    "stuck_at": [],
+    "thrash_at": []
+  },
+  "av31-or_gemini_flash-av31.bc.or_gemini_flash.0104": {
+    "confabulation_at": [],
+    "loop_at": [],
+    "runaway_cost_at": [],
+    "stuck_at": [
+      0
+    ],
+    "thrash_at": []
+  },
+  "av31-or_gemini_flash-av31.bc.or_gemini_flash.0107": {
+    "confabulation_at": [],
+    "loop_at": [],
+    "runaway_cost_at": [],
+    "stuck_at": [],
+    "thrash_at": []
+  },
+  "av31-or_gemini_flash-av31.bc.or_gemini_flash.0108": {
+    "confabulation_at": [],
+    "loop_at": [],
+    "runaway_cost_at": [],
+    "stuck_at": [],
+    "thrash_at": []
+  },
+  "av31-or_gemini_flash-av31.rc.or_gemini_flash.0091": {
+    "confabulation_at": [],
+    "loop_at": [
+      2
+    ],
+    "runaway_cost_at": [],
+    "stuck_at": [
+      2
+    ],
+    "thrash_at": []
+  },
+  "av31-or_gemini_flash-av31.rc.or_gemini_flash.0092": {
+    "confabulation_at": [],
+    "loop_at": [
+      2
+    ],
+    "runaway_cost_at": [],
+    "stuck_at": [
+      2
+    ],
+    "thrash_at": []
+  },
+  "av31-or_gemini_flash-av31.rc.or_gemini_flash.0093": {
+    "confabulation_at": [],
+    "loop_at": [
+      2
+    ],
+    "runaway_cost_at": [],
+    "stuck_at": [
+      2
+    ],
+    "thrash_at": []
+  },
+  "av31-or_gemini_flash-av31.rc.or_gemini_flash.0094": {
+    "confabulation_at": [],
+    "loop_at": [
+      2
+    ],
+    "runaway_cost_at": [],
+    "stuck_at": [
+      2
+    ],
+    "thrash_at": []
+  },
+  "av31-or_gemini_flash-av31.rc.or_gemini_flash.0095": {
+    "confabulation_at": [],
+    "loop_at": [
+      2
+    ],
+    "runaway_cost_at": [],
+    "stuck_at": [
+      2
+    ],
+    "thrash_at": []
+  },
+  "av31-or_gemini_flash-av31.rc.or_gemini_flash.0096": {
+    "confabulation_at": [],
+    "loop_at": [
+      2
+    ],
+    "runaway_cost_at": [],
+    "stuck_at": [
+      2
+    ],
+    "thrash_at": []
+  },
+  "av31-or_gemini_flash-av31.rc.or_gemini_flash.0097": {
+    "confabulation_at": [],
+    "loop_at": [
+      2
+    ],
+    "runaway_cost_at": [],
+    "stuck_at": [
+      2
+    ],
+    "thrash_at": []
+  },
+  "av31-or_gemini_flash-av31.rc.or_gemini_flash.0098": {
+    "confabulation_at": [],
+    "loop_at": [
+      2
+    ],
+    "runaway_cost_at": [],
+    "stuck_at": [
+      2
+    ],
+    "thrash_at": []
+  },
+  "av31-or_gemini_flash-av31.rc.or_gemini_flash.0099": {
+    "confabulation_at": [],
+    "loop_at": [
+      2
+    ],
+    "runaway_cost_at": [],
+    "stuck_at": [
+      2
+    ],
+    "thrash_at": []
+  },
+  "av31-or_gemini_flash-av31.rc.or_gemini_flash.0100": {
+    "confabulation_at": [],
+    "loop_at": [
+      2
+    ],
+    "runaway_cost_at": [],
+    "stuck_at": [
+      2
+    ],
+    "thrash_at": []
+  },
+  "av31-or_gemini_flash-av31.rc.or_gemini_flash.0101": {
+    "confabulation_at": [],
+    "loop_at": [
+      2
+    ],
+    "runaway_cost_at": [],
+    "stuck_at": [
+      2
+    ],
+    "thrash_at": []
+  },
+  "av31-or_gemini_flash-av31.rc.or_gemini_flash.0102": {
+    "confabulation_at": [],
+    "loop_at": [
+      2
+    ],
+    "runaway_cost_at": [],
+    "stuck_at": [
+      2
+    ],
+    "thrash_at": []
+  },
+  "av31-or_gemini_flash-av31.rc.or_gemini_flash.0103": {
+    "confabulation_at": [],
+    "loop_at": [
+      2
+    ],
+    "runaway_cost_at": [],
+    "stuck_at": [
+      2
+    ],
+    "thrash_at": []
+  },
+  "av31-or_gemini_flash-av31.rc.or_gemini_flash.0104": {
+    "confabulation_at": [],
+    "loop_at": [
+      2
+    ],
+    "runaway_cost_at": [],
+    "stuck_at": [
+      2
+    ],
+    "thrash_at": []
+  },
+  "av31-or_gemini_flash-av31.rc.or_gemini_flash.0105": {
+    "confabulation_at": [],
+    "loop_at": [],
+    "runaway_cost_at": [],
+    "stuck_at": [],
+    "thrash_at": []
+  },
+  "av31-or_gemini_flash-av31.rc.or_gemini_flash.0106": {
+    "confabulation_at": [],
+    "loop_at": [
+      2
+    ],
+    "runaway_cost_at": [],
+    "stuck_at": [
+      2
+    ],
+    "thrash_at": []
+  },
+  "av31-or_gemini_flash-av31.rc.or_gemini_flash.0107": {
+    "confabulation_at": [],
+    "loop_at": [
+      3
+    ],
+    "runaway_cost_at": [],
+    "stuck_at": [],
+    "thrash_at": []
+  },
+  "av31-or_gemini_flash-av31.rc.or_gemini_flash.0108": {
+    "confabulation_at": [],
+    "loop_at": [
+      3
+    ],
+    "runaway_cost_at": [],
+    "stuck_at": [],
+    "thrash_at": []
+  },
+  "av31-or_gpt4o-av31.bc.or_gpt4o.0009": {
+    "confabulation_at": [],
+    "loop_at": [
+      2
+    ],
+    "runaway_cost_at": [],
+    "stuck_at": [],
+    "thrash_at": []
+  },
+  "av31-or_gpt4o-av31.bc.or_gpt4o.0010": {
+    "confabulation_at": [],
+    "loop_at": [
+      2
+    ],
+    "runaway_cost_at": [],
+    "stuck_at": [],
+    "thrash_at": []
+  },
+  "av31-or_gpt4o-av31.bc.or_gpt4o.0011": {
+    "confabulation_at": [],
+    "loop_at": [
+      2
+    ],
+    "runaway_cost_at": [],
+    "stuck_at": [],
+    "thrash_at": []
+  },
+  "av31-or_gpt4o-av31.bc.or_gpt4o.0012": {
+    "confabulation_at": [],
+    "loop_at": [
+      2
+    ],
+    "runaway_cost_at": [],
+    "stuck_at": [],
+    "thrash_at": []
+  },
+  "av31-or_gpt4o-av31.bc.or_gpt4o.0013": {
+    "confabulation_at": [],
+    "loop_at": [
+      2
+    ],
+    "runaway_cost_at": [],
+    "stuck_at": [],
+    "thrash_at": []
+  },
+  "av31-or_gpt4o-av31.bc.or_gpt4o.0014": {
+    "confabulation_at": [],
+    "loop_at": [
+      2
+    ],
+    "runaway_cost_at": [],
+    "stuck_at": [],
+    "thrash_at": []
+  },
+  "av31-or_gpt4o-av31.rc.or_gpt4o.0009": {
+    "confabulation_at": [],
+    "loop_at": [
+      2
+    ],
+    "runaway_cost_at": [],
+    "stuck_at": [
+      2
+    ],
+    "thrash_at": []
+  },
+  "av31-or_gpt4o-av31.rc.or_gpt4o.0010": {
+    "confabulation_at": [],
+    "loop_at": [
+      2
+    ],
+    "runaway_cost_at": [],
+    "stuck_at": [
+      2
+    ],
+    "thrash_at": []
+  },
+  "av31-or_gpt4o-av31.rc.or_gpt4o.0011": {
+    "confabulation_at": [],
+    "loop_at": [
+      2
+    ],
+    "runaway_cost_at": [],
+    "stuck_at": [
+      2
+    ],
+    "thrash_at": []
+  },
+  "av31-or_gpt4o-av31.rc.or_gpt4o.0012": {
+    "confabulation_at": [],
+    "loop_at": [
+      2
+    ],
+    "runaway_cost_at": [],
+    "stuck_at": [
+      2
+    ],
+    "thrash_at": []
+  },
+  "av31-or_gpt4o-av31.rc.or_gpt4o.0013": {
+    "confabulation_at": [],
+    "loop_at": [
+      2
+    ],
+    "runaway_cost_at": [],
+    "stuck_at": [
+      2
+    ],
+    "thrash_at": []
+  },
+  "av31-or_gpt4o-av31.rc.or_gpt4o.0014": {
+    "confabulation_at": [],
+    "loop_at": [
+      2
+    ],
+    "runaway_cost_at": [],
+    "stuck_at": [
+      2
+    ],
+    "thrash_at": []
+  },
+  "av31-or_gpt4o-av31.rc.or_gpt4o.0015": {
+    "confabulation_at": [],
+    "loop_at": [
+      2
+    ],
+    "runaway_cost_at": [],
+    "stuck_at": [
+      2
+    ],
+    "thrash_at": []
+  },
+  "av31-or_gpt4o-av31.rc.or_gpt4o.0016": {
+    "confabulation_at": [],
+    "loop_at": [
+      2
+    ],
+    "runaway_cost_at": [],
+    "stuck_at": [
+      2
+    ],
+    "thrash_at": []
+  },
+  "av31-or_gpt4o_mini-av31.bc.or_gpt4o_mini.0073": {
+    "confabulation_at": [],
+    "loop_at": [
+      2
+    ],
+    "runaway_cost_at": [],
+    "stuck_at": [],
+    "thrash_at": []
+  },
+  "av31-or_gpt4o_mini-av31.bc.or_gpt4o_mini.0074": {
+    "confabulation_at": [],
+    "loop_at": [
+      2
+    ],
+    "runaway_cost_at": [],
+    "stuck_at": [],
+    "thrash_at": []
+  },
+  "av31-or_gpt4o_mini-av31.bc.or_gpt4o_mini.0075": {
+    "confabulation_at": [],
+    "loop_at": [
+      2
+    ],
+    "runaway_cost_at": [],
+    "stuck_at": [],
+    "thrash_at": []
+  },
+  "av31-or_gpt4o_mini-av31.bc.or_gpt4o_mini.0076": {
+    "confabulation_at": [],
+    "loop_at": [
+      2
+    ],
+    "runaway_cost_at": [],
+    "stuck_at": [],
+    "thrash_at": []
+  },
+  "av31-or_gpt4o_mini-av31.bc.or_gpt4o_mini.0077": {
+    "confabulation_at": [],
+    "loop_at": [
+      2
+    ],
+    "runaway_cost_at": [],
+    "stuck_at": [],
+    "thrash_at": []
+  },
+  "av31-or_gpt4o_mini-av31.bc.or_gpt4o_mini.0078": {
+    "confabulation_at": [],
+    "loop_at": [
+      2
+    ],
+    "runaway_cost_at": [],
+    "stuck_at": [],
+    "thrash_at": []
+  },
+  "av31-or_gpt4o_mini-av31.bc.or_gpt4o_mini.0079": {
+    "confabulation_at": [],
+    "loop_at": [
+      2
+    ],
+    "runaway_cost_at": [],
+    "stuck_at": [],
+    "thrash_at": []
+  },
+  "av31-or_gpt4o_mini-av31.bc.or_gpt4o_mini.0080": {
+    "confabulation_at": [],
+    "loop_at": [
+      2
+    ],
+    "runaway_cost_at": [],
+    "stuck_at": [],
+    "thrash_at": []
+  },
+  "av31-or_gpt4o_mini-av31.bc.or_gpt4o_mini.0081": {
+    "confabulation_at": [],
+    "loop_at": [
+      2
+    ],
+    "runaway_cost_at": [],
+    "stuck_at": [],
+    "thrash_at": []
+  },
+  "av31-or_gpt4o_mini-av31.bc.or_gpt4o_mini.0082": {
+    "confabulation_at": [],
+    "loop_at": [
+      2
+    ],
+    "runaway_cost_at": [],
+    "stuck_at": [],
+    "thrash_at": []
+  },
+  "av31-or_gpt4o_mini-av31.bc.or_gpt4o_mini.0083": {
+    "confabulation_at": [],
+    "loop_at": [
+      2
+    ],
+    "runaway_cost_at": [],
+    "stuck_at": [],
+    "thrash_at": []
+  },
+  "av31-or_gpt4o_mini-av31.bc.or_gpt4o_mini.0084": {
+    "confabulation_at": [],
+    "loop_at": [
+      2
+    ],
+    "runaway_cost_at": [],
+    "stuck_at": [],
+    "thrash_at": []
+  },
+  "av31-or_gpt4o_mini-av31.bc.or_gpt4o_mini.0085": {
+    "confabulation_at": [],
+    "loop_at": [
+      2
+    ],
+    "runaway_cost_at": [],
+    "stuck_at": [],
+    "thrash_at": []
+  },
+  "av31-or_gpt4o_mini-av31.bc.or_gpt4o_mini.0086": {
+    "confabulation_at": [],
+    "loop_at": [
+      2
+    ],
+    "runaway_cost_at": [],
+    "stuck_at": [],
+    "thrash_at": []
+  },
+  "av31-or_gpt4o_mini-av31.bc.or_gpt4o_mini.0089": {
+    "confabulation_at": [],
+    "loop_at": [
+      2
+    ],
+    "runaway_cost_at": [],
+    "stuck_at": [],
+    "thrash_at": []
+  },
+  "av31-or_gpt4o_mini-av31.bc.or_gpt4o_mini.0090": {
+    "confabulation_at": [],
+    "loop_at": [
+      2
+    ],
+    "runaway_cost_at": [],
+    "stuck_at": [],
+    "thrash_at": []
+  },
+  "av31-or_gpt4o_mini-av31.rc.or_gpt4o_mini.0073": {
+    "confabulation_at": [],
+    "loop_at": [
+      2
+    ],
+    "runaway_cost_at": [],
+    "stuck_at": [
+      2
+    ],
+    "thrash_at": []
+  },
+  "av31-or_gpt4o_mini-av31.rc.or_gpt4o_mini.0074": {
+    "confabulation_at": [],
+    "loop_at": [
+      2
+    ],
+    "runaway_cost_at": [],
+    "stuck_at": [
+      2
+    ],
+    "thrash_at": []
+  },
+  "av31-or_gpt4o_mini-av31.rc.or_gpt4o_mini.0075": {
+    "confabulation_at": [],
+    "loop_at": [
+      2
+    ],
+    "runaway_cost_at": [],
+    "stuck_at": [
+      2
+    ],
+    "thrash_at": []
+  },
+  "av31-or_gpt4o_mini-av31.rc.or_gpt4o_mini.0076": {
+    "confabulation_at": [],
+    "loop_at": [
+      2
+    ],
+    "runaway_cost_at": [],
+    "stuck_at": [
+      2
+    ],
+    "thrash_at": []
+  },
+  "av31-or_gpt4o_mini-av31.rc.or_gpt4o_mini.0077": {
+    "confabulation_at": [],
+    "loop_at": [
+      2
+    ],
+    "runaway_cost_at": [],
+    "stuck_at": [
+      2
+    ],
+    "thrash_at": []
+  },
+  "av31-or_gpt4o_mini-av31.rc.or_gpt4o_mini.0078": {
+    "confabulation_at": [],
+    "loop_at": [
+      2
+    ],
+    "runaway_cost_at": [],
+    "stuck_at": [
+      2
+    ],
+    "thrash_at": []
+  },
+  "av31-or_gpt4o_mini-av31.rc.or_gpt4o_mini.0079": {
+    "confabulation_at": [],
+    "loop_at": [
+      2
+    ],
+    "runaway_cost_at": [],
+    "stuck_at": [
+      2
+    ],
+    "thrash_at": []
+  },
+  "av31-or_gpt4o_mini-av31.rc.or_gpt4o_mini.0080": {
+    "confabulation_at": [],
+    "loop_at": [
+      2
+    ],
+    "runaway_cost_at": [],
+    "stuck_at": [
+      2
+    ],
+    "thrash_at": []
+  },
+  "av31-or_gpt4o_mini-av31.rc.or_gpt4o_mini.0081": {
+    "confabulation_at": [],
+    "loop_at": [
+      2
+    ],
+    "runaway_cost_at": [],
+    "stuck_at": [
+      2
+    ],
+    "thrash_at": []
+  },
+  "av31-or_gpt4o_mini-av31.rc.or_gpt4o_mini.0082": {
+    "confabulation_at": [],
+    "loop_at": [
+      2
+    ],
+    "runaway_cost_at": [],
+    "stuck_at": [
+      2
+    ],
+    "thrash_at": []
+  },
+  "av31-or_gpt4o_mini-av31.rc.or_gpt4o_mini.0083": {
+    "confabulation_at": [],
+    "loop_at": [
+      2
+    ],
+    "runaway_cost_at": [],
+    "stuck_at": [
+      2
+    ],
+    "thrash_at": []
+  },
+  "av31-or_gpt4o_mini-av31.rc.or_gpt4o_mini.0084": {
+    "confabulation_at": [],
+    "loop_at": [
+      2
+    ],
+    "runaway_cost_at": [],
+    "stuck_at": [
+      2
+    ],
+    "thrash_at": []
+  },
+  "av31-or_gpt4o_mini-av31.rc.or_gpt4o_mini.0085": {
+    "confabulation_at": [],
+    "loop_at": [
+      2
+    ],
+    "runaway_cost_at": [],
+    "stuck_at": [
+      2
+    ],
+    "thrash_at": []
+  },
+  "av31-or_gpt4o_mini-av31.rc.or_gpt4o_mini.0086": {
+    "confabulation_at": [],
+    "loop_at": [
+      2
+    ],
+    "runaway_cost_at": [],
+    "stuck_at": [
+      2
+    ],
+    "thrash_at": []
+  },
+  "av31-or_gpt4o_mini-av31.rc.or_gpt4o_mini.0087": {
+    "confabulation_at": [],
+    "loop_at": [
+      2
+    ],
+    "runaway_cost_at": [],
+    "stuck_at": [
+      2
+    ],
+    "thrash_at": []
+  },
+  "av31-or_gpt4o_mini-av31.rc.or_gpt4o_mini.0088": {
+    "confabulation_at": [],
+    "loop_at": [
+      2
+    ],
+    "runaway_cost_at": [],
+    "stuck_at": [
+      2
+    ],
+    "thrash_at": []
+  },
+  "av31-or_gpt4o_mini-av31.rc.or_gpt4o_mini.0089": {
+    "confabulation_at": [],
+    "loop_at": [
+      2
+    ],
+    "runaway_cost_at": [],
+    "stuck_at": [
+      2
+    ],
+    "thrash_at": []
+  },
+  "av31-or_gpt4o_mini-av31.rc.or_gpt4o_mini.0090": {
+    "confabulation_at": [],
+    "loop_at": [
+      2
+    ],
+    "runaway_cost_at": [],
+    "stuck_at": [
+      2
+    ],
+    "thrash_at": []
+  },
+  "av31-or_llama70b-av31.bc.or_llama70b.0025": {
+    "confabulation_at": [],
+    "loop_at": [],
+    "runaway_cost_at": [],
+    "stuck_at": [],
+    "thrash_at": []
+  },
+  "av31-or_llama70b-av31.bc.or_llama70b.0026": {
+    "confabulation_at": [],
+    "loop_at": [],
+    "runaway_cost_at": [],
+    "stuck_at": [
+      3
+    ],
+    "thrash_at": []
+  },
+  "av31-or_llama70b-av31.bc.or_llama70b.0027": {
+    "confabulation_at": [
+      5
+    ],
+    "loop_at": [],
+    "runaway_cost_at": [],
+    "stuck_at": [],
+    "thrash_at": []
+  },
+  "av31-or_llama70b-av31.bc.or_llama70b.0028": {
+    "confabulation_at": [],
+    "loop_at": [
+      2
+    ],
+    "runaway_cost_at": [],
+    "stuck_at": [],
+    "thrash_at": []
+  },
+  "av31-or_llama70b-av31.bc.or_llama70b.0029": {
+    "confabulation_at": [],
+    "loop_at": [
+      2
+    ],
+    "runaway_cost_at": [],
+    "stuck_at": [],
+    "thrash_at": []
+  },
+  "av31-or_llama70b-av31.bc.or_llama70b.0030": {
+    "confabulation_at": [],
+    "loop_at": [],
+    "runaway_cost_at": [],
+    "stuck_at": [],
+    "thrash_at": []
+  },
+  "av31-or_llama70b-av31.bc.or_llama70b.0031": {
+    "confabulation_at": [],
+    "loop_at": [
+      2
+    ],
+    "runaway_cost_at": [],
+    "stuck_at": [],
+    "thrash_at": []
+  },
+  "av31-or_llama70b-av31.bc.or_llama70b.0032": {
+    "confabulation_at": [],
+    "loop_at": [
+      2
+    ],
+    "runaway_cost_at": [],
+    "stuck_at": [],
+    "thrash_at": []
+  },
+  "av31-or_llama70b-av31.bc.or_llama70b.0033": {
+    "confabulation_at": [],
+    "loop_at": [
+      2
+    ],
+    "runaway_cost_at": [],
+    "stuck_at": [],
+    "thrash_at": []
+  },
+  "av31-or_llama70b-av31.bc.or_llama70b.0036": {
+    "confabulation_at": [],
+    "loop_at": [
+      3
+    ],
+    "runaway_cost_at": [],
+    "stuck_at": [],
+    "thrash_at": []
+  },
+  "av31-or_llama70b-av31.rc.or_llama70b.0025": {
+    "confabulation_at": [],
+    "loop_at": [
+      3
+    ],
+    "runaway_cost_at": [],
+    "stuck_at": [],
+    "thrash_at": []
+  },
+  "av31-or_llama70b-av31.rc.or_llama70b.0026": {
+    "confabulation_at": [],
+    "loop_at": [
+      2
+    ],
+    "runaway_cost_at": [],
+    "stuck_at": [
+      2
+    ],
+    "thrash_at": []
+  },
+  "av31-or_llama70b-av31.rc.or_llama70b.0027": {
+    "confabulation_at": [],
+    "loop_at": [],
+    "runaway_cost_at": [],
+    "stuck_at": [],
+    "thrash_at": []
+  },
+  "av31-or_llama70b-av31.rc.or_llama70b.0028": {
+    "confabulation_at": [],
+    "loop_at": [
+      4
+    ],
+    "runaway_cost_at": [],
+    "stuck_at": [],
+    "thrash_at": []
+  },
+  "av31-or_llama70b-av31.rc.or_llama70b.0029": {
+    "confabulation_at": [],
+    "loop_at": [
+      2
+    ],
+    "runaway_cost_at": [],
+    "stuck_at": [
+      2
+    ],
+    "thrash_at": []
+  },
+  "av31-or_llama70b-av31.rc.or_llama70b.0030": {
+    "confabulation_at": [],
+    "loop_at": [],
+    "runaway_cost_at": [],
+    "stuck_at": [],
+    "thrash_at": []
+  },
+  "av31-or_llama70b-av31.rc.or_llama70b.0031": {
+    "confabulation_at": [
+      5
+    ],
+    "loop_at": [],
+    "runaway_cost_at": [],
+    "stuck_at": [],
+    "thrash_at": []
+  },
+  "av31-or_llama70b-av31.rc.or_llama70b.0032": {
+    "confabulation_at": [],
+    "loop_at": [],
+    "runaway_cost_at": [],
+    "stuck_at": [],
+    "thrash_at": []
+  },
+  "av31-or_llama70b-av31.rc.or_llama70b.0033": {
+    "confabulation_at": [],
+    "loop_at": [
+      2
+    ],
+    "runaway_cost_at": [],
+    "stuck_at": [],
+    "thrash_at": []
+  },
+  "av31-or_llama70b-av31.rc.or_llama70b.0034": {
+    "confabulation_at": [],
+    "loop_at": [
+      2
+    ],
+    "runaway_cost_at": [],
+    "stuck_at": [
+      2
+    ],
+    "thrash_at": []
+  },
+  "av31-or_llama70b-av31.rc.or_llama70b.0035": {
+    "confabulation_at": [],
+    "loop_at": [],
+    "runaway_cost_at": [],
+    "stuck_at": [],
+    "thrash_at": []
+  },
+  "av31-or_llama70b-av31.rc.or_llama70b.0036": {
+    "confabulation_at": [],
+    "loop_at": [],
+    "runaway_cost_at": [],
+    "stuck_at": [],
+    "thrash_at": []
+  },
+  "av31-or_llama8b-av31.bc.or_llama8b.0109": {
+    "confabulation_at": [],
+    "loop_at": [],
+    "runaway_cost_at": [],
+    "stuck_at": [
+      3
+    ],
+    "thrash_at": []
+  },
+  "av31-or_llama8b-av31.bc.or_llama8b.0110": {
+    "confabulation_at": [],
+    "loop_at": [
+      2
+    ],
+    "runaway_cost_at": [],
+    "stuck_at": [],
+    "thrash_at": []
+  },
+  "av31-or_llama8b-av31.bc.or_llama8b.0111": {
+    "confabulation_at": [],
+    "loop_at": [
+      2
+    ],
+    "runaway_cost_at": [],
+    "stuck_at": [],
+    "thrash_at": []
+  },
+  "av31-or_llama8b-av31.bc.or_llama8b.0112": {
+    "confabulation_at": [],
+    "loop_at": [
+      2
+    ],
+    "runaway_cost_at": [],
+    "stuck_at": [],
+    "thrash_at": []
+  },
+  "av31-or_llama8b-av31.bc.or_llama8b.0113": {
+    "confabulation_at": [],
+    "loop_at": [
+      2
+    ],
+    "runaway_cost_at": [],
+    "stuck_at": [],
+    "thrash_at": []
+  },
+  "av31-or_llama8b-av31.bc.or_llama8b.0114": {
+    "confabulation_at": [],
+    "loop_at": [
+      2
+    ],
+    "runaway_cost_at": [],
+    "stuck_at": [],
+    "thrash_at": []
+  },
+  "av31-or_llama8b-av31.bc.or_llama8b.0115": {
+    "confabulation_at": [],
+    "loop_at": [],
+    "runaway_cost_at": [],
+    "stuck_at": [
+      3
+    ],
+    "thrash_at": []
+  },
+  "av31-or_llama8b-av31.bc.or_llama8b.0116": {
+    "confabulation_at": [],
+    "loop_at": [
+      3
+    ],
+    "runaway_cost_at": [],
+    "stuck_at": [],
+    "thrash_at": []
+  },
+  "av31-or_llama8b-av31.bc.or_llama8b.0117": {
+    "confabulation_at": [],
+    "loop_at": [
+      3
+    ],
+    "runaway_cost_at": [],
+    "stuck_at": [],
+    "thrash_at": []
+  },
+  "av31-or_llama8b-av31.bc.or_llama8b.0118": {
+    "confabulation_at": [],
+    "loop_at": [
+      3
+    ],
+    "runaway_cost_at": [],
+    "stuck_at": [],
+    "thrash_at": []
+  },
+  "av31-or_llama8b-av31.bc.or_llama8b.0119": {
+    "confabulation_at": [],
+    "loop_at": [
+      3
+    ],
+    "runaway_cost_at": [],
+    "stuck_at": [],
+    "thrash_at": []
+  },
+  "av31-or_llama8b-av31.bc.or_llama8b.0120": {
+    "confabulation_at": [],
+    "loop_at": [
+      2
+    ],
+    "runaway_cost_at": [],
+    "stuck_at": [],
+    "thrash_at": []
+  },
+  "av31-or_llama8b-av31.bc.or_llama8b.0121": {
+    "confabulation_at": [],
+    "loop_at": [],
+    "runaway_cost_at": [],
+    "stuck_at": [
+      5
+    ],
+    "thrash_at": []
+  },
+  "av31-or_llama8b-av31.bc.or_llama8b.0122": {
+    "confabulation_at": [],
+    "loop_at": [
+      2
+    ],
+    "runaway_cost_at": [],
+    "stuck_at": [],
+    "thrash_at": []
+  },
+  "av31-or_llama8b-av31.bc.or_llama8b.0125": {
+    "confabulation_at": [],
+    "loop_at": [
+      2
+    ],
+    "runaway_cost_at": [],
+    "stuck_at": [],
+    "thrash_at": []
+  },
+  "av31-or_llama8b-av31.bc.or_llama8b.0126": {
+    "confabulation_at": [],
+    "loop_at": [],
+    "runaway_cost_at": [],
+    "stuck_at": [],
+    "thrash_at": []
+  },
+  "av31-or_llama8b-av31.rc.or_llama8b.0109": {
+    "confabulation_at": [],
+    "loop_at": [],
+    "runaway_cost_at": [],
+    "stuck_at": [],
+    "thrash_at": []
+  },
+  "av31-or_llama8b-av31.rc.or_llama8b.0110": {
+    "confabulation_at": [],
+    "loop_at": [
+      2
+    ],
+    "runaway_cost_at": [],
+    "stuck_at": [
+      2
+    ],
+    "thrash_at": []
+  },
+  "av31-or_llama8b-av31.rc.or_llama8b.0111": {
+    "confabulation_at": [],
+    "loop_at": [
+      2
+    ],
+    "runaway_cost_at": [],
+    "stuck_at": [],
+    "thrash_at": []
+  },
+  "av31-or_llama8b-av31.rc.or_llama8b.0112": {
+    "confabulation_at": [],
+    "loop_at": [
+      5
+    ],
+    "runaway_cost_at": [],
+    "stuck_at": [],
+    "thrash_at": []
+  },
+  "av31-or_llama8b-av31.rc.or_llama8b.0113": {
+    "confabulation_at": [],
+    "loop_at": [
+      5
+    ],
+    "runaway_cost_at": [],
+    "stuck_at": [],
+    "thrash_at": []
+  },
+  "av31-or_llama8b-av31.rc.or_llama8b.0114": {
+    "confabulation_at": [],
+    "loop_at": [
+      4
+    ],
+    "runaway_cost_at": [],
+    "stuck_at": [],
+    "thrash_at": []
+  },
+  "av31-or_llama8b-av31.rc.or_llama8b.0115": {
+    "confabulation_at": [],
+    "loop_at": [],
+    "runaway_cost_at": [],
+    "stuck_at": [],
+    "thrash_at": []
+  },
+  "av31-or_llama8b-av31.rc.or_llama8b.0116": {
+    "confabulation_at": [],
+    "loop_at": [],
+    "runaway_cost_at": [],
+    "stuck_at": [
+      3
+    ],
+    "thrash_at": []
+  },
+  "av31-or_llama8b-av31.rc.or_llama8b.0117": {
+    "confabulation_at": [],
+    "loop_at": [
+      5
+    ],
+    "runaway_cost_at": [],
+    "stuck_at": [],
+    "thrash_at": []
+  },
+  "av31-or_llama8b-av31.rc.or_llama8b.0118": {
+    "confabulation_at": [],
+    "loop_at": [
+      5
+    ],
+    "runaway_cost_at": [],
+    "stuck_at": [],
+    "thrash_at": []
+  },
+  "av31-or_llama8b-av31.rc.or_llama8b.0119": {
+    "confabulation_at": [],
+    "loop_at": [
+      3
+    ],
+    "runaway_cost_at": [],
+    "stuck_at": [],
+    "thrash_at": []
+  },
+  "av31-or_llama8b-av31.rc.or_llama8b.0120": {
+    "confabulation_at": [],
+    "loop_at": [],
+    "runaway_cost_at": [],
+    "stuck_at": [],
+    "thrash_at": []
+  },
+  "av31-or_llama8b-av31.rc.or_llama8b.0121": {
+    "confabulation_at": [],
+    "loop_at": [
+      5
+    ],
+    "runaway_cost_at": [],
+    "stuck_at": [],
+    "thrash_at": []
+  },
+  "av31-or_llama8b-av31.rc.or_llama8b.0122": {
+    "confabulation_at": [
+      4
+    ],
+    "loop_at": [],
+    "runaway_cost_at": [],
+    "stuck_at": [],
+    "thrash_at": []
+  },
+  "av31-or_llama8b-av31.rc.or_llama8b.0123": {
+    "confabulation_at": [],
+    "loop_at": [],
+    "runaway_cost_at": [],
+    "stuck_at": [],
+    "thrash_at": []
+  },
+  "av31-or_llama8b-av31.rc.or_llama8b.0124": {
+    "confabulation_at": [],
+    "loop_at": [
+      5
+    ],
+    "runaway_cost_at": [],
+    "stuck_at": [],
+    "thrash_at": []
+  },
+  "av31-or_llama8b-av31.rc.or_llama8b.0125": {
+    "confabulation_at": [],
+    "loop_at": [],
+    "runaway_cost_at": [],
+    "stuck_at": [],
+    "thrash_at": []
+  },
+  "av31-or_llama8b-av31.rc.or_llama8b.0126": {
+    "confabulation_at": [],
+    "loop_at": [],
+    "runaway_cost_at": [],
+    "stuck_at": [],
+    "thrash_at": []
+  },
+  "av31-or_mistral_large-av31.bc.or_mistral_large.0017": {
+    "confabulation_at": [],
+    "loop_at": [],
+    "runaway_cost_at": [],
+    "stuck_at": [],
+    "thrash_at": []
+  },
+  "av31-or_mistral_large-av31.bc.or_mistral_large.0018": {
+    "confabulation_at": [
+      5
+    ],
+    "loop_at": [],
+    "runaway_cost_at": [],
+    "stuck_at": [],
+    "thrash_at": []
+  },
+  "av31-or_mistral_large-av31.bc.or_mistral_large.0019": {
+    "confabulation_at": [],
+    "loop_at": [
+      4
+    ],
+    "runaway_cost_at": [],
+    "stuck_at": [],
+    "thrash_at": []
+  },
+  "av31-or_mistral_large-av31.bc.or_mistral_large.0020": {
+    "confabulation_at": [],
+    "loop_at": [
+      5
+    ],
+    "runaway_cost_at": [],
+    "stuck_at": [],
+    "thrash_at": []
+  },
+  "av31-or_mistral_large-av31.bc.or_mistral_large.0021": {
+    "confabulation_at": [],
+    "loop_at": [
+      3
+    ],
+    "runaway_cost_at": [],
+    "stuck_at": [],
+    "thrash_at": []
+  },
+  "av31-or_mistral_large-av31.bc.or_mistral_large.0022": {
+    "confabulation_at": [],
+    "loop_at": [
+      2
+    ],
+    "runaway_cost_at": [],
+    "stuck_at": [],
+    "thrash_at": []
+  },
+  "av31-or_mistral_large-av31.rc.or_mistral_large.0017": {
+    "confabulation_at": [
+      5
+    ],
+    "loop_at": [],
+    "runaway_cost_at": [],
+    "stuck_at": [],
+    "thrash_at": []
+  },
+  "av31-or_mistral_large-av31.rc.or_mistral_large.0018": {
+    "confabulation_at": [],
+    "loop_at": [
+      2
+    ],
+    "runaway_cost_at": [],
+    "stuck_at": [
+      2
+    ],
+    "thrash_at": []
+  },
+  "av31-or_mistral_large-av31.rc.or_mistral_large.0019": {
+    "confabulation_at": [],
+    "loop_at": [],
+    "runaway_cost_at": [],
+    "stuck_at": [],
+    "thrash_at": []
+  },
+  "av31-or_mistral_large-av31.rc.or_mistral_large.0020": {
+    "confabulation_at": [],
+    "loop_at": [
+      2
+    ],
+    "runaway_cost_at": [],
+    "stuck_at": [],
+    "thrash_at": []
+  },
+  "av31-or_mistral_large-av31.rc.or_mistral_large.0021": {
+    "confabulation_at": [],
+    "loop_at": [],
+    "runaway_cost_at": [],
+    "stuck_at": [],
+    "thrash_at": []
+  },
+  "av31-or_mistral_large-av31.rc.or_mistral_large.0022": {
+    "confabulation_at": [],
+    "loop_at": [
+      4
+    ],
+    "runaway_cost_at": [],
+    "stuck_at": [],
+    "thrash_at": []
+  },
+  "av31-or_mistral_large-av31.rc.or_mistral_large.0023": {
+    "confabulation_at": [],
+    "loop_at": [],
+    "runaway_cost_at": [],
+    "stuck_at": [],
+    "thrash_at": []
+  },
+  "av31-or_mistral_large-av31.rc.or_mistral_large.0024": {
+    "confabulation_at": [],
+    "loop_at": [
+      4
+    ],
+    "runaway_cost_at": [],
+    "stuck_at": [],
+    "thrash_at": []
+  },
+  "av31-or_mixtral-av31.bc.or_mixtral.0127": {
+    "confabulation_at": [],
+    "loop_at": [],
+    "runaway_cost_at": [],
+    "stuck_at": [],
+    "thrash_at": []
+  },
+  "av31-or_mixtral-av31.bc.or_mixtral.0128": {
+    "confabulation_at": [],
+    "loop_at": [],
+    "runaway_cost_at": [
+      3
+    ],
+    "stuck_at": [],
+    "thrash_at": []
+  },
+  "av31-or_mixtral-av31.bc.or_mixtral.0129": {
+    "confabulation_at": [],
+    "loop_at": [],
+    "runaway_cost_at": [],
+    "stuck_at": [],
+    "thrash_at": []
+  },
+  "av31-or_mixtral-av31.bc.or_mixtral.0130": {
+    "confabulation_at": [],
+    "loop_at": [],
+    "runaway_cost_at": [],
+    "stuck_at": [],
+    "thrash_at": []
+  },
+  "av31-or_mixtral-av31.bc.or_mixtral.0131": {
+    "confabulation_at": [],
+    "loop_at": [
+      4
+    ],
+    "runaway_cost_at": [],
+    "stuck_at": [],
+    "thrash_at": []
+  },
+  "av31-or_mixtral-av31.bc.or_mixtral.0132": {
+    "confabulation_at": [],
+    "loop_at": [
+      4
+    ],
+    "runaway_cost_at": [],
+    "stuck_at": [],
+    "thrash_at": []
+  },
+  "av31-or_mixtral-av31.bc.or_mixtral.0133": {
+    "confabulation_at": [],
+    "loop_at": [],
+    "runaway_cost_at": [],
+    "stuck_at": [],
+    "thrash_at": []
+  },
+  "av31-or_mixtral-av31.bc.or_mixtral.0134": {
+    "confabulation_at": [],
+    "loop_at": [
+      4
+    ],
+    "runaway_cost_at": [],
+    "stuck_at": [],
+    "thrash_at": []
+  },
+  "av31-or_mixtral-av31.bc.or_mixtral.0135": {
+    "confabulation_at": [],
+    "loop_at": [
+      2
+    ],
+    "runaway_cost_at": [],
+    "stuck_at": [],
+    "thrash_at": []
+  },
+  "av31-or_mixtral-av31.bc.or_mixtral.0136": {
+    "confabulation_at": [],
+    "loop_at": [
+      2
+    ],
+    "runaway_cost_at": [],
+    "stuck_at": [],
+    "thrash_at": []
+  },
+  "av31-or_mixtral-av31.bc.or_mixtral.0137": {
+    "confabulation_at": [],
+    "loop_at": [
+      2
+    ],
+    "runaway_cost_at": [],
+    "stuck_at": [],
+    "thrash_at": []
+  },
+  "av31-or_mixtral-av31.bc.or_mixtral.0138": {
+    "confabulation_at": [],
+    "loop_at": [],
+    "runaway_cost_at": [],
+    "stuck_at": [],
+    "thrash_at": []
+  },
+  "av31-or_mixtral-av31.bc.or_mixtral.0139": {
+    "confabulation_at": [],
+    "loop_at": [],
+    "runaway_cost_at": [],
+    "stuck_at": [],
+    "thrash_at": []
+  },
+  "av31-or_mixtral-av31.bc.or_mixtral.0140": {
+    "confabulation_at": [],
+    "loop_at": [],
+    "runaway_cost_at": [],
+    "stuck_at": [],
+    "thrash_at": []
+  },
+  "av31-or_mixtral-av31.bc.or_mixtral.0143": {
+    "confabulation_at": [],
+    "loop_at": [],
+    "runaway_cost_at": [],
+    "stuck_at": [],
+    "thrash_at": []
+  },
+  "av31-or_mixtral-av31.bc.or_mixtral.0144": {
+    "confabulation_at": [],
+    "loop_at": [],
+    "runaway_cost_at": [],
+    "stuck_at": [],
+    "thrash_at": []
+  },
+  "av31-or_mixtral-av31.rc.or_mixtral.0127": {
+    "confabulation_at": [],
+    "loop_at": [],
+    "runaway_cost_at": [],
+    "stuck_at": [],
+    "thrash_at": []
+  },
+  "av31-or_mixtral-av31.rc.or_mixtral.0128": {
+    "confabulation_at": [],
+    "loop_at": [],
+    "runaway_cost_at": [],
+    "stuck_at": [],
+    "thrash_at": []
+  },
+  "av31-or_mixtral-av31.rc.or_mixtral.0129": {
+    "confabulation_at": [],
+    "loop_at": [
+      2
+    ],
+    "runaway_cost_at": [],
+    "stuck_at": [
+      2
+    ],
+    "thrash_at": []
+  },
+  "av31-or_mixtral-av31.rc.or_mixtral.0130": {
+    "confabulation_at": [],
+    "loop_at": [],
+    "runaway_cost_at": [
+      3
+    ],
+    "stuck_at": [],
+    "thrash_at": []
+  },
+  "av31-or_mixtral-av31.rc.or_mixtral.0131": {
+    "confabulation_at": [],
+    "loop_at": [
+      5
+    ],
+    "runaway_cost_at": [],
+    "stuck_at": [],
+    "thrash_at": []
+  },
+  "av31-or_mixtral-av31.rc.or_mixtral.0132": {
+    "confabulation_at": [],
+    "loop_at": [
+      2
+    ],
+    "runaway_cost_at": [],
+    "stuck_at": [],
+    "thrash_at": []
+  },
+  "av31-or_mixtral-av31.rc.or_mixtral.0133": {
+    "confabulation_at": [],
+    "loop_at": [
+      2
+    ],
+    "runaway_cost_at": [],
+    "stuck_at": [],
+    "thrash_at": []
+  },
+  "av31-or_mixtral-av31.rc.or_mixtral.0134": {
+    "confabulation_at": [],
+    "loop_at": [
+      2
+    ],
+    "runaway_cost_at": [],
+    "stuck_at": [],
+    "thrash_at": []
+  },
+  "av31-or_mixtral-av31.rc.or_mixtral.0135": {
+    "confabulation_at": [],
+    "loop_at": [
+      2
+    ],
+    "runaway_cost_at": [],
+    "stuck_at": [],
+    "thrash_at": []
+  },
+  "av31-or_mixtral-av31.rc.or_mixtral.0136": {
+    "confabulation_at": [
+      5
+    ],
+    "loop_at": [],
+    "runaway_cost_at": [],
+    "stuck_at": [],
+    "thrash_at": []
+  },
+  "av31-or_mixtral-av31.rc.or_mixtral.0137": {
+    "confabulation_at": [],
+    "loop_at": [],
+    "runaway_cost_at": [],
+    "stuck_at": [],
+    "thrash_at": []
+  },
+  "av31-or_mixtral-av31.rc.or_mixtral.0138": {
+    "confabulation_at": [],
+    "loop_at": [],
+    "runaway_cost_at": [],
+    "stuck_at": [],
+    "thrash_at": []
+  },
+  "av31-or_mixtral-av31.rc.or_mixtral.0139": {
+    "confabulation_at": [],
+    "loop_at": [
+      4
+    ],
+    "runaway_cost_at": [],
+    "stuck_at": [],
+    "thrash_at": []
+  },
+  "av31-or_mixtral-av31.rc.or_mixtral.0140": {
+    "confabulation_at": [],
+    "loop_at": [],
+    "runaway_cost_at": [],
+    "stuck_at": [],
+    "thrash_at": []
+  },
+  "av31-or_mixtral-av31.rc.or_mixtral.0141": {
+    "confabulation_at": [],
+    "loop_at": [],
+    "runaway_cost_at": [],
+    "stuck_at": [],
+    "thrash_at": []
+  },
+  "av31-or_mixtral-av31.rc.or_mixtral.0142": {
+    "confabulation_at": [],
+    "loop_at": [
+      4
+    ],
+    "runaway_cost_at": [],
+    "stuck_at": [],
+    "thrash_at": []
+  },
+  "av31-or_mixtral-av31.rc.or_mixtral.0143": {
+    "confabulation_at": [],
+    "loop_at": [],
+    "runaway_cost_at": [],
+    "stuck_at": [],
+    "thrash_at": []
+  },
+  "av31-or_mixtral-av31.rc.or_mixtral.0144": {
+    "confabulation_at": [],
+    "loop_at": [],
+    "runaway_cost_at": [],
+    "stuck_at": [],
+    "thrash_at": []
+  },
+  "av31-or_qwen72b-av31.bc.or_qwen72b.0037": {
+    "confabulation_at": [],
+    "loop_at": [
+      2
+    ],
+    "runaway_cost_at": [],
+    "stuck_at": [],
+    "thrash_at": []
+  },
+  "av31-or_qwen72b-av31.bc.or_qwen72b.0038": {
+    "confabulation_at": [],
+    "loop_at": [
+      3
+    ],
+    "runaway_cost_at": [],
+    "stuck_at": [],
+    "thrash_at": []
+  },
+  "av31-or_qwen72b-av31.bc.or_qwen72b.0039": {
+    "confabulation_at": [],
+    "loop_at": [],
+    "runaway_cost_at": [],
+    "stuck_at": [],
+    "thrash_at": []
+  },
+  "av31-or_qwen72b-av31.bc.or_qwen72b.0040": {
+    "confabulation_at": [],
+    "loop_at": [
+      5
+    ],
+    "runaway_cost_at": [],
+    "stuck_at": [],
+    "thrash_at": []
+  },
+  "av31-or_qwen72b-av31.bc.or_qwen72b.0041": {
+    "confabulation_at": [],
+    "loop_at": [
+      4
+    ],
+    "runaway_cost_at": [],
+    "stuck_at": [],
+    "thrash_at": []
+  },
+  "av31-or_qwen72b-av31.bc.or_qwen72b.0042": {
+    "confabulation_at": [],
+    "loop_at": [
+      3
+    ],
+    "runaway_cost_at": [],
+    "stuck_at": [],
+    "thrash_at": []
+  },
+  "av31-or_qwen72b-av31.bc.or_qwen72b.0043": {
+    "confabulation_at": [],
+    "loop_at": [
+      2
+    ],
+    "runaway_cost_at": [],
+    "stuck_at": [],
+    "thrash_at": []
+  },
+  "av31-or_qwen72b-av31.bc.or_qwen72b.0044": {
+    "confabulation_at": [],
+    "loop_at": [],
+    "runaway_cost_at": [],
+    "stuck_at": [
+      0
+    ],
+    "thrash_at": []
+  },
+  "av31-or_qwen72b-av31.bc.or_qwen72b.0045": {
+    "confabulation_at": [],
+    "loop_at": [
+      2
+    ],
+    "runaway_cost_at": [],
+    "stuck_at": [],
+    "thrash_at": []
+  },
+  "av31-or_qwen72b-av31.bc.or_qwen72b.0048": {
+    "confabulation_at": [],
+    "loop_at": [],
+    "runaway_cost_at": [],
+    "stuck_at": [],
+    "thrash_at": []
+  },
+  "av31-or_qwen72b-av31.rc.or_qwen72b.0037": {
+    "confabulation_at": [],
+    "loop_at": [],
+    "runaway_cost_at": [],
+    "stuck_at": [],
+    "thrash_at": []
+  },
+  "av31-or_qwen72b-av31.rc.or_qwen72b.0038": {
+    "confabulation_at": [],
+    "loop_at": [
+      2
+    ],
+    "runaway_cost_at": [],
+    "stuck_at": [
+      2
+    ],
+    "thrash_at": []
+  },
+  "av31-or_qwen72b-av31.rc.or_qwen72b.0039": {
+    "confabulation_at": [],
+    "loop_at": [],
+    "runaway_cost_at": [],
+    "stuck_at": [],
+    "thrash_at": []
+  },
+  "av31-or_qwen72b-av31.rc.or_qwen72b.0040": {
+    "confabulation_at": [],
+    "loop_at": [],
+    "runaway_cost_at": [],
+    "stuck_at": [],
+    "thrash_at": []
+  },
+  "av31-or_qwen72b-av31.rc.or_qwen72b.0041": {
+    "confabulation_at": [],
+    "loop_at": [],
+    "runaway_cost_at": [],
+    "stuck_at": [],
+    "thrash_at": []
+  },
+  "av31-or_qwen72b-av31.rc.or_qwen72b.0042": {
+    "confabulation_at": [],
+    "loop_at": [],
+    "runaway_cost_at": [],
+    "stuck_at": [],
+    "thrash_at": []
+  },
+  "av31-or_qwen72b-av31.rc.or_qwen72b.0043": {
+    "confabulation_at": [],
+    "loop_at": [
+      2
+    ],
+    "runaway_cost_at": [],
+    "stuck_at": [],
+    "thrash_at": []
+  },
+  "av31-or_qwen72b-av31.rc.or_qwen72b.0044": {
+    "confabulation_at": [],
+    "loop_at": [],
+    "runaway_cost_at": [],
+    "stuck_at": [],
+    "thrash_at": []
+  },
+  "av31-or_qwen72b-av31.rc.or_qwen72b.0045": {
+    "confabulation_at": [],
+    "loop_at": [
+      2
+    ],
+    "runaway_cost_at": [],
+    "stuck_at": [],
+    "thrash_at": []
+  },
+  "av31-or_qwen72b-av31.rc.or_qwen72b.0046": {
+    "confabulation_at": [],
+    "loop_at": [
+      3
+    ],
+    "runaway_cost_at": [],
+    "stuck_at": [],
+    "thrash_at": []
+  },
+  "av31-or_qwen72b-av31.rc.or_qwen72b.0047": {
+    "confabulation_at": [],
+    "loop_at": [],
+    "runaway_cost_at": [],
+    "stuck_at": [],
+    "thrash_at": []
+  },
+  "av31-or_qwen72b-av31.rc.or_qwen72b.0048": {
+    "confabulation_at": [],
+    "loop_at": [
+      2
+    ],
+    "runaway_cost_at": [],
+    "stuck_at": [
+      2
+    ],
+    "thrash_at": []
+  }
+}
