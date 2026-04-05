@@ -18,6 +18,7 @@ from agent_vitals.backtest import (
     _replay_trace,
     load_dataset,
     load_labels,
+    resolve_workflow_type,
     run_backtest,
 )
 from agent_vitals.config import VitalsConfig
@@ -216,6 +217,15 @@ class TestLoadDataset:
         assert ds.invalid_lines.get("t1") == 1
 
 
+class TestResolveWorkflowType:
+    def test_prefers_trace_markers(self) -> None:
+        assert resolve_workflow_type("av31-model.bc.trace", "real") == "build"
+        assert resolve_workflow_type("av31-model.rc.trace", "real") == "research"
+
+    def test_falls_back_to_default(self) -> None:
+        assert resolve_workflow_type("plain-trace-id", "synthetic") == "synthetic"
+
+
 # ---------------------------------------------------------------------------
 # run_backtest
 # ---------------------------------------------------------------------------
@@ -342,8 +352,8 @@ class TestRunBacktest:
 
 
 class TestReplayTraceOverlap:
-    def test_suppresses_stuck_for_pure_loop_overlap(self, monkeypatch: pytest.MonkeyPatch) -> None:
-        """Pure loop overlap should suppress stuck at trace level."""
+    def test_keeps_stuck_for_statistical_loop_overlap(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """Statistical loop overlap (findings_plateau) keeps stuck (av32-m02)."""
         snapshots = [_snapshot("t1", i) for i in range(3)]
         detections = iter(
             [
@@ -375,6 +385,120 @@ class TestReplayTraceOverlap:
             workflow_type="synthetic",
         )
         assert fired["loop"] is True
+        assert fired["stuck"] is True  # Stuck preserved: loop is statistical, not content-based
+
+    def test_suppresses_stuck_for_content_similarity_loop(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """Content similarity loop should suppress stuck at trace level (av32-m02)."""
+        snapshots = [_snapshot("t1", i) for i in range(3)]
+        detections = iter(
+            [
+                LoopDetectionResult(stuck_detected=True, stuck_trigger="coverage_stagnation"),
+                LoopDetectionResult(loop_detected=True, loop_trigger="content_similarity"),
+                LoopDetectionResult(),
+            ]
+        )
+        stop_signals = iter(
+            [
+                StopRuleSignals(False, True, False, False),
+                StopRuleSignals(True, False, False, False),
+                StopRuleSignals(False, False, False, False),
+            ]
+        )
+
+        monkeypatch.setattr(
+            "agent_vitals.backtest.detect_loop",
+            lambda *_args, **_kwargs: next(detections),
+        )
+        monkeypatch.setattr(
+            "agent_vitals.backtest.derive_stop_signals",
+            lambda *_args, **_kwargs: next(stop_signals),
+        )
+
+        fired = _replay_trace(
+            snapshots,
+            config=VitalsConfig(),
+            workflow_type="synthetic",
+        )
+        assert fired["loop"] is True
+        assert fired["stuck"] is False  # Content similarity is strong loop evidence
+
+    def test_keeps_stuck_when_overlap_priority_is_stuck(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """Detector-priority stuck overlaps should survive trace-level arbitration."""
+        snapshots = [_snapshot("t1", i) for i in range(4)]
+        detections = iter(
+            [
+                LoopDetectionResult(),
+                LoopDetectionResult(),
+                LoopDetectionResult(),
+                LoopDetectionResult(
+                    loop_detected=True,
+                    loop_confidence=0.95,
+                    loop_trigger="content_similarity",
+                    stuck_detected=True,
+                    stuck_confidence=0.92,
+                    stuck_trigger="short_run_zero_coverage",
+                    detector_priority="stuck",
+                ),
+            ]
+        )
+        stop_signals = iter(
+            [StopRuleSignals(False, False, False, False) for _ in range(4)]
+        )
+
+        monkeypatch.setattr(
+            "agent_vitals.backtest.detect_loop",
+            lambda *_args, **_kwargs: next(detections),
+        )
+        monkeypatch.setattr(
+            "agent_vitals.backtest.derive_stop_signals",
+            lambda *_args, **_kwargs: next(stop_signals),
+        )
+
+        fired = _replay_trace(
+            snapshots,
+            config=VitalsConfig(),
+            workflow_type="research",
+        )
+        assert fired["loop"] is True
+        assert fired["stuck"] is True
+
+    def test_confabulation_priority_does_not_count_secondary_stuck(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """Secondary stuck signals under confab priority should not count as stuck."""
+        snapshots = [_snapshot("t1", i) for i in range(3)]
+        detections = iter(
+            [
+                LoopDetectionResult(),
+                LoopDetectionResult(),
+                LoopDetectionResult(
+                    confabulation_detected=True,
+                    confabulation_confidence=0.85,
+                    confabulation_trigger="source_finding_ratio_low",
+                    stuck_detected=True,
+                    stuck_confidence=0.7,
+                    stuck_trigger="late_onset_stagnation",
+                    detector_priority="confabulation",
+                ),
+            ]
+        )
+        stop_signals = iter(
+            [StopRuleSignals(False, False, False, False) for _ in range(3)]
+        )
+
+        monkeypatch.setattr(
+            "agent_vitals.backtest.detect_loop",
+            lambda *_args, **_kwargs: next(detections),
+        )
+        monkeypatch.setattr(
+            "agent_vitals.backtest.derive_stop_signals",
+            lambda *_args, **_kwargs: next(stop_signals),
+        )
+
+        fired = _replay_trace(
+            snapshots,
+            config=VitalsConfig(),
+            workflow_type="unknown",
+        )
+        assert fired["confabulation"] is True
         assert fired["stuck"] is False
 
     def test_keeps_stuck_for_mixed_overlap_with_thrash(self, monkeypatch: pytest.MonkeyPatch) -> None:

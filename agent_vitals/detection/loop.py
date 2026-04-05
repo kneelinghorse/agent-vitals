@@ -7,17 +7,23 @@ that can be used for logging, calibration, and enforcement.
 from __future__ import annotations
 
 import math
-from dataclasses import dataclass
+from dataclasses import dataclass, replace as _dc_replace
 from statistics import mean
-from typing import Optional, Sequence
+from typing import TYPE_CHECKING, Optional, Sequence
 
 from ..config import VitalsConfig, get_vitals_config
 from ..schema import VitalsSnapshot
 from .adaptive_threshold import AdaptiveDirection, AdaptiveThreshold
+from .signal_mapping import classify_model_size, get_signal_mapping
+
+if TYPE_CHECKING:
+    from .signal_mapping import SignalMapping
 
 SHORT_RUN_MAX_STEPS = 4
 SHORT_RUN_MIN_FINDINGS = 3
 SHORT_RUN_OBJECTIVE_MAX = 3
+SHORT_RUN_ZERO_COVERAGE_MAX_FINDINGS = 6
+SHORT_RUN_ZERO_COVERAGE_MIN_SOURCES = 8
 # Legacy fallback; active window is now trace-length proportional.
 FINDINGS_PLATEAU_WINDOW = 4
 SOURCE_PRODUCTIVITY_MIN_SOURCES = 10
@@ -63,34 +69,82 @@ class LoopDetectionResult:
         }
 
 
-def detect_loop(
+@dataclass(slots=True)
+class _DetectionContext:
+    """Pre-computed signals shared across sub-detectors."""
+
+    cfg: VitalsConfig
+    series: list[VitalsSnapshot]
+    snapshot: VitalsSnapshot
+    consecutive: int
+    normalized_workflow: str
+    signal_map: SignalMapping
+
+    # Time series
+    findings_counts: list[int]
+    sources_counts: list[int]
+    sources_missing: bool
+    objectives_counts: list[int]
+    objectives_missing: bool
+    query_counts: list[int]
+    domain_counts: list[int]
+    coverage_scores: list[float]
+    token_totals: list[float]
+    completion_tokens: list[float]
+
+    # Deltas
+    findings_deltas: list[float]
+    loop_indices: list[int]
+    loop_index_deltas: list[float]
+    query_deltas: list[float]
+    domain_deltas: list[float]
+    coverage_deltas: list[float]
+    token_deltas: list[float]
+
+    # Current snapshot values
+    findings_count: int
+    sources_count: int
+    query_count: int
+    error_count: int
+    source_finding_ratio: Optional[float]
+    ratio_series: list[Optional[float]]
+    ratio_declining_steps: int
+    source_productive: bool
+    output_similarity: Optional[float]
+
+    # Adaptive alarms
+    dm_stagnation_alarm: bool
+    dm_stagnation_threshold: float
+    cv_stagnation_alarm: bool
+    cv_stagnation_threshold: float
+    token_variance_alarm: bool
+    dm_coverage_series: list[float]
+    cv_coverage_series: list[float]
+
+    # Verified source signals
+    verified_source_ratio: Optional[float]
+    verified_source_ratio_series: list[Optional[float]]
+
+    # Config-derived
+    ratio_floor: float
+    ratio_declining_required: int
+    sim_threshold: float
+
+
+def _prepare_context(
     snapshot: VitalsSnapshot,
-    history: Optional[Sequence[VitalsSnapshot]] = None,
-    *,
-    config: Optional[VitalsConfig] = None,
-    workflow_type: str = "unknown",
-) -> LoopDetectionResult:
-    """Analyze a vitals snapshot for loop/stuck indicators.
+    history: Optional[Sequence[VitalsSnapshot]],
+    cfg: VitalsConfig,
+    workflow_type: str,
+) -> Optional[_DetectionContext]:
+    """Build shared detection context. Returns None if insufficient data."""
 
-    Args:
-        snapshot: Current vitals snapshot.
-        history: Previous snapshots (oldest → newest). The current snapshot
-            should not be included.
-        config: Optional VitalsConfig override (defaults to env-derived config).
-        workflow_type: Workflow type hint ("research", "build", "unknown").
-
-    Returns:
-        LoopDetectionResult with detection flags, confidence, and triggers.
-    """
-
-    cfg = config or get_vitals_config()
     prior = list(history or [])
     series = prior + [snapshot]
     min_evidence_steps = max(1, int(cfg.min_evidence_steps))
     if len(series) < max(2, min_evidence_steps):
-        return LoopDetectionResult()
+        return None
 
-    # AV-28: adaptive loop threshold scales with trace length.
     consecutive = _proportional_window(
         trace_length=len(series),
         percentage=float(cfg.loop_consecutive_pct),
@@ -119,6 +173,19 @@ def detect_loop(
     domain_counts = [int(item.signals.unique_domains) for item in series]
     coverage_scores = [float(item.signals.coverage_score) for item in series]
     token_totals = [float(item.signals.total_tokens) for item in series]
+    completion_tokens = [float(item.signals.completion_tokens) for item in series]
+
+    model_size = classify_model_size(
+        completion_tokens,
+        explicit_class=str(cfg.model_size_class),
+    )
+    signal_map = get_signal_mapping(model_size)
+
+    # NOTE: burn_rate_multiplier_scale intentionally NOT applied here.
+    # The scale (2.0x for small models) was never validated against a corpus
+    # with small-model traces and causes false negatives on runaway_cost
+    # (bench: 42 FNs, recall 100%→69.8%).  The suppress_token_variance_flat
+    # flag handles the validated small-model FP concern independently.
 
     findings_deltas = _deltas(findings_counts)
     loop_indices = [int(item.loop_index) for item in series]
@@ -129,6 +196,7 @@ def detect_loop(
     token_deltas = _deltas(token_totals)
     findings_count = int(snapshot.signals.findings_count)
     sources_count = int(snapshot.signals.sources_count)
+    query_count = int(snapshot.signals.query_count)
     source_finding_ratio = _source_finding_ratio(
         sources_count=sources_count,
         findings_count=findings_count,
@@ -180,28 +248,88 @@ def detect_loop(
             config=cfg,
         )
 
-    loop_candidates: list[tuple[float, str]] = []
-    confab_candidates: list[tuple[float, str, tuple[str, ...]]] = []
+    sim_threshold = float(cfg.loop_similarity_threshold)
+    output_similarity = getattr(snapshot, "output_similarity", None)
+    error_count = int(snapshot.signals.error_count)
 
-    if len(findings_deltas) >= consecutive:
-        recent_findings = findings_deltas[-consecutive:]
+    # Verified source ratio: computed from verified/unverified counts if available.
+    verified_source_ratio = getattr(snapshot, "verified_source_ratio", None)
+    verified_source_ratio_series: list[Optional[float]] = [
+        getattr(item, "verified_source_ratio", None) for item in series
+    ]
+
+    return _DetectionContext(
+        cfg=cfg,
+        series=series,
+        snapshot=snapshot,
+        consecutive=consecutive,
+        normalized_workflow=normalized_workflow,
+        signal_map=signal_map,
+        findings_counts=findings_counts,
+        sources_counts=sources_counts,
+        sources_missing=sources_missing,
+        objectives_counts=objectives_counts,
+        objectives_missing=objectives_missing,
+        query_counts=query_counts,
+        domain_counts=domain_counts,
+        coverage_scores=coverage_scores,
+        token_totals=token_totals,
+        completion_tokens=completion_tokens,
+        findings_deltas=findings_deltas,
+        loop_indices=loop_indices,
+        loop_index_deltas=loop_index_deltas,
+        query_deltas=query_deltas,
+        domain_deltas=domain_deltas,
+        coverage_deltas=coverage_deltas,
+        token_deltas=token_deltas,
+        findings_count=findings_count,
+        sources_count=sources_count,
+        query_count=query_count,
+        error_count=error_count,
+        source_finding_ratio=source_finding_ratio,
+        ratio_series=ratio_series,
+        ratio_declining_steps=ratio_declining_steps,
+        source_productive=source_productive,
+        output_similarity=output_similarity,
+        dm_stagnation_alarm=dm_stagnation_alarm,
+        dm_stagnation_threshold=dm_stagnation_threshold,
+        cv_stagnation_alarm=cv_stagnation_alarm,
+        cv_stagnation_threshold=cv_stagnation_threshold,
+        token_variance_alarm=token_variance_alarm,
+        dm_coverage_series=dm_coverage_series,
+        cv_coverage_series=cv_coverage_series,
+        ratio_floor=ratio_floor,
+        verified_source_ratio=verified_source_ratio,
+        verified_source_ratio_series=verified_source_ratio_series,
+        ratio_declining_required=ratio_declining_required,
+        sim_threshold=sim_threshold,
+    )
+
+
+def _detect_loop_candidates(ctx: _DetectionContext) -> list[tuple[float, str]]:
+    """Detect loop candidates from findings plateaus, query repetition, and content similarity."""
+
+    candidates: list[tuple[float, str]] = []
+
+    if len(ctx.findings_deltas) >= ctx.consecutive:
+        recent_findings = ctx.findings_deltas[-ctx.consecutive:]
         plateau = all(delta <= 0.0 for delta in recent_findings)
         loop_progressing = (
-            len(loop_index_deltas) >= consecutive
-            and all(delta > 0.0 for delta in loop_index_deltas[-consecutive:])
+            len(ctx.loop_index_deltas) >= ctx.consecutive
+            and all(delta > 0.0 for delta in ctx.loop_index_deltas[-ctx.consecutive:])
         )
 
-        # Require token activity — plateau WITH active work = loop,
-        # plateau WITHOUT active work = stuck (not repeating, just idle).
         tokens_active = (
-            len(token_deltas) >= consecutive
-            and all(delta > 0.0 for delta in token_deltas[-consecutive:])
+            len(ctx.token_deltas) >= ctx.consecutive
+            and all(delta > 0.0 for delta in ctx.token_deltas[-ctx.consecutive:])
         )
 
         coverage_flat = False
-        if len(coverage_deltas) >= consecutive:
-            coverage_flat = all(abs(delta) <= 1e-3 for delta in coverage_deltas[-consecutive:])
-        coverage_nontrivial = coverage_scores[-1] >= 0.2
+        if len(ctx.coverage_deltas) >= ctx.consecutive:
+            coverage_flat = all(
+                abs(delta) <= 1e-3 for delta in ctx.coverage_deltas[-ctx.consecutive:]
+            )
+        coverage_nontrivial = ctx.coverage_scores[-1] >= 0.2
 
         if (
             plateau
@@ -209,79 +337,114 @@ def detect_loop(
             and tokens_active
             and loop_progressing
             and coverage_nontrivial
-            and not source_productive
+            and not ctx.source_productive
         ):
-            loop_candidates.append((0.85, "findings_plateau+coverage_flat"))
+            candidates.append((0.85, "findings_plateau+coverage_flat"))
         elif (
             plateau
             and tokens_active
             and loop_progressing
             and coverage_nontrivial
-            and not source_productive
+            and not ctx.source_productive
         ):
-            loop_candidates.append((0.75, "findings_plateau"))
+            candidates.append((0.75, "findings_plateau"))
 
         if (
             plateau
             and loop_progressing
-            and len(query_deltas) >= consecutive
-            and len(domain_deltas) >= consecutive
-            and all(delta > 0.0 for delta in query_deltas[-consecutive:])
-            and all(delta <= 0.0 for delta in domain_deltas[-consecutive:])
-            and max(domain_counts) > 0  # agent must have found domains to stagnate
+            and len(ctx.query_deltas) >= ctx.consecutive
+            and len(ctx.domain_deltas) >= ctx.consecutive
+            and all(delta > 0.0 for delta in ctx.query_deltas[-ctx.consecutive:])
+            and all(delta <= 0.0 for delta in ctx.domain_deltas[-ctx.consecutive:])
+            and max(ctx.domain_counts) > 0
         ):
-            loop_candidates.append((0.9, "query_repetition_proxy"))
+            candidates.append((0.9, "query_repetition_proxy"))
 
-    # Confabulation indicator: source-to-finding ratio and trajectory.
-    # Primary signal is low ratio; stagnation signals boost confidence.
+    # Content similarity gate
+    if ctx.output_similarity is not None:
+        similarity = float(ctx.output_similarity)
+        similarity_series = [
+            float(similarity_value)
+            for item in ctx.series
+            if (similarity_value := item.output_similarity) is not None
+        ]
+        similarity_alarm, similarity_threshold, _, _ = _adaptive_alarm_from_series(
+            values=similarity_series,
+            direction="increase",
+            fallback_threshold=ctx.sim_threshold,
+            config=ctx.cfg,
+        )
+        similarity_fixed_hit = similarity >= ctx.sim_threshold
+        if similarity_alarm or similarity_fixed_hit:
+            active_threshold = _clip01(min(similarity_threshold, ctx.sim_threshold))
+            confidence = 0.80 + 0.15 * min(
+                1.0,
+                (similarity - active_threshold) / max(1e-9, 1.0 - active_threshold),
+            )
+            candidates.append((confidence, "content_similarity"))
+
+    # Suppress loop when errors are present — error-induced plateaus are
+    # thrash behavior, not repetitive looping.
+    if ctx.error_count > 0:
+        candidates.clear()
+
+    return candidates
+
+
+def _detect_confabulation_candidates(
+    ctx: _DetectionContext,
+) -> list[tuple[float, str, tuple[str, ...]]]:
+    """Detect confabulation candidates from source-to-finding ratio and trajectory."""
+
+    candidates: list[tuple[float, str, tuple[str, ...]]] = []
+
     sources_stagnation = False
     unique_domains_stagnation = False
     if (
-        not sources_missing
-        and len(sources_deltas := _deltas(sources_counts)) >= SOURCES_STAGNATION_WINDOW
-        and len(findings_deltas) >= SOURCES_STAGNATION_WINDOW
-        and sources_counts
-        and max(sources_counts) > 0
-        and int(sources_counts[-1]) <= SOURCES_STAGNATION_MAX_SOURCES
+        not ctx.sources_missing
+        and len(sources_deltas := _deltas(ctx.sources_counts)) >= SOURCES_STAGNATION_WINDOW
+        and len(ctx.findings_deltas) >= SOURCES_STAGNATION_WINDOW
+        and ctx.sources_counts
+        and max(ctx.sources_counts) > 0
+        and int(ctx.sources_counts[-1]) <= SOURCES_STAGNATION_MAX_SOURCES
     ):
         recent_source_deltas = sources_deltas[-SOURCES_STAGNATION_WINDOW:]
-        recent_finding_deltas = findings_deltas[-SOURCES_STAGNATION_WINDOW:]
+        recent_finding_deltas = ctx.findings_deltas[-SOURCES_STAGNATION_WINDOW:]
         sources_flat = all(delta == 0.0 for delta in recent_source_deltas)
         findings_growing = sum(recent_finding_deltas) > 0.0 and all(
             delta >= 0.0 for delta in recent_finding_deltas
         )
         sources_stagnation = sources_flat and findings_growing
-        if sources_stagnation and len(domain_counts) >= UNIQUE_DOMAINS_STAGNATION_WINDOW:
-            recent_domains = domain_counts[-UNIQUE_DOMAINS_STAGNATION_WINDOW:]
+        if sources_stagnation and len(ctx.domain_counts) >= UNIQUE_DOMAINS_STAGNATION_WINDOW:
+            recent_domains = ctx.domain_counts[-UNIQUE_DOMAINS_STAGNATION_WINDOW:]
             unique_domains_stagnation = all(int(value) <= 1 for value in recent_domains)
 
-    has_source_evidence = bool(sources_counts) and max(sources_counts) > 0
+    has_source_evidence = bool(ctx.sources_counts) and max(ctx.sources_counts) > 0
     ratio_floor_breach = False
     ratio_spc_ready = False
-    if has_source_evidence and source_finding_ratio is not None:
+    if has_source_evidence and ctx.source_finding_ratio is not None:
         observed_ratio_risk = [
-            max(0.0, ratio_floor - float(value))
-            for value in ratio_series
+            max(0.0, ctx.ratio_floor - float(value))
+            for value in ctx.ratio_series
             if value is not None
         ]
         ratio_floor_breach, _, _, ratio_spc_ready = _adaptive_alarm_from_series(
             values=observed_ratio_risk,
             direction="increase",
             fallback_threshold=0.0,
-            config=cfg,
+            config=ctx.cfg,
         )
     ratio_decline_with_growth = False
     if (
         has_source_evidence
-        and source_finding_ratio is not None
-        and source_finding_ratio <= 1.0
-        and
-        ratio_declining_steps >= ratio_declining_required
-        and len(findings_deltas) >= ratio_declining_required
-        and len(loop_index_deltas) >= ratio_declining_required
+        and ctx.source_finding_ratio is not None
+        and ctx.source_finding_ratio <= 1.0
+        and ctx.ratio_declining_steps >= ctx.ratio_declining_required
+        and len(ctx.findings_deltas) >= ctx.ratio_declining_required
+        and len(ctx.loop_index_deltas) >= ctx.ratio_declining_required
     ):
-        recent_findings = findings_deltas[-ratio_declining_required:]
-        recent_loop_steps = loop_index_deltas[-ratio_declining_required:]
+        recent_findings = ctx.findings_deltas[-ctx.ratio_declining_required:]
+        recent_loop_steps = ctx.loop_index_deltas[-ctx.ratio_declining_required:]
         ratio_decline_with_growth = all(delta > 0.0 for delta in recent_findings) and all(
             delta > 0.0 for delta in recent_loop_steps
         )
@@ -297,7 +460,9 @@ def detect_loop(
             trigger_parts.append("source_finding_ratio_declining")
             signal_parts.append("source_finding_ratio_declining")
 
-        if "findings_count_delta" in set(getattr(snapshot, "cusum_alarm_metrics", []) or []):
+        if "findings_count_delta" in set(
+            getattr(ctx.snapshot, "cusum_alarm_metrics", []) or []
+        ):
             confab_confidence += 0.15
             signal_parts.append("cusum_findings_count_delta")
 
@@ -314,7 +479,7 @@ def detect_loop(
                 trigger_parts.append("unique_domains_stagnation")
                 signal_parts.append("unique_domains_stagnation")
 
-        confab_candidates.append(
+        candidates.append(
             (
                 min(0.95, confab_confidence),
                 "+".join(trigger_parts),
@@ -322,47 +487,292 @@ def detect_loop(
             )
         )
 
-    # Content similarity gate: high output similarity is an independent
-    # loop signal (agent producing near-identical outputs across iterations).
-    sim_threshold = float(cfg.loop_similarity_threshold)
-    output_similarity = getattr(snapshot, "output_similarity", None)
-    if output_similarity is not None:
-        similarity = float(output_similarity)
-        similarity_series = [
-            float(similarity_value)
-            for item in series
-            if (similarity_value := item.output_similarity) is not None
-        ]
-        similarity_alarm, similarity_threshold, _, _ = _adaptive_alarm_from_series(
-            values=similarity_series,
-            direction="increase",
-            fallback_threshold=sim_threshold,
-            config=cfg,
-        )
-        similarity_fixed_hit = similarity >= sim_threshold
-        if similarity_alarm or similarity_fixed_hit:
-            # Exact or near-exact repeat — strong loop signal
-            active_threshold = _clip01(min(similarity_threshold, sim_threshold))
-            confidence = 0.80 + 0.15 * min(
-                1.0,
-                (similarity - active_threshold) / max(1e-9, 1.0 - active_threshold),
+    # Verified source ratio: direct signal for high-volume source fabrication.
+    # When verified_source_ratio < 0.3 AND sources are growing, the agent is
+    # producing many unverified sources — a hallmark of frontier model
+    # confabulation (claude-sonnet fabricates plausible sources in volume).
+    _VERIFIED_RATIO_THRESHOLD = 0.3
+    _VERIFIED_MIN_SOURCES = 3
+    if (
+        ctx.verified_source_ratio is not None
+        and ctx.verified_source_ratio < _VERIFIED_RATIO_THRESHOLD
+        and ctx.sources_count >= _VERIFIED_MIN_SOURCES
+        and not ctx.sources_missing
+        and len(ctx.sources_counts) >= 2
+        and ctx.sources_counts[-1] > ctx.sources_counts[-2]
+    ):
+        # Scale confidence by how far below the threshold the ratio is.
+        ratio_gap = (_VERIFIED_RATIO_THRESHOLD - ctx.verified_source_ratio) / _VERIFIED_RATIO_THRESHOLD
+        confab_confidence = 0.70 + 0.20 * min(1.0, ratio_gap)
+        trigger_parts = ["verified_source_ratio_low"]
+        signal_parts = ["verified_source_ratio"]
+
+        # Boost if the ratio has been declining across steps.
+        valid_ratios = [r for r in ctx.verified_source_ratio_series if r is not None]
+        if len(valid_ratios) >= 2 and all(
+            valid_ratios[i] >= valid_ratios[i + 1] for i in range(len(valid_ratios) - 1)
+        ):
+            confab_confidence += 0.10
+            trigger_parts.append("verified_ratio_declining")
+            signal_parts.append("verified_source_ratio_declining")
+
+        candidates.append(
+            (
+                min(0.95, confab_confidence),
+                "+".join(trigger_parts),
+                tuple(dict.fromkeys(signal_parts)),
             )
-            loop_candidates.append((confidence, "content_similarity"))
+        )
 
-    # Suppress loop when errors are present — error-induced plateaus are
-    # thrash behavior, not repetitive looping.
-    error_count = int(snapshot.signals.error_count)
-    if error_count > 0:
-        loop_candidates.clear()
+    return candidates
 
-    loop_detected = False
+
+def _detect_stuck_candidates(ctx: _DetectionContext) -> list[tuple[float, str]]:
+    """Detect stuck candidates from coverage stagnation, zero progress, and burn rate."""
+
+    cfg = ctx.cfg
+    candidates: list[tuple[float, str]] = []
+
+    dm_coverage = float(ctx.snapshot.metrics.dm_coverage)
+    cv_coverage = float(ctx.snapshot.metrics.cv_coverage)
+    dm_low_signal = ctx.dm_stagnation_alarm or dm_coverage <= float(cfg.stuck_dm_threshold)
+    cv_low_signal = ctx.cv_stagnation_alarm or cv_coverage <= float(cfg.stuck_cv_threshold)
+    dm_reference_threshold = (
+        ctx.dm_stagnation_threshold if ctx.dm_stagnation_alarm else float(cfg.stuck_dm_threshold)
+    )
+    cv_reference_threshold = (
+        ctx.cv_stagnation_threshold if ctx.cv_stagnation_alarm else float(cfg.stuck_cv_threshold)
+    )
+
+    # Coverage stagnation: only evaluate once enough points exist for DM lookback.
+    dm_coverage_series = [float(item.metrics.dm_coverage) for item in ctx.series]
+    dm_zero_streak = 0
+    for value in reversed(dm_coverage_series):
+        if value == 0.0:
+            dm_zero_streak += 1
+        else:
+            break
+
+    if not ctx.source_productive and dm_zero_streak >= 5 and ctx.coverage_scores[-1] < 0.95:
+        candidates.append((0.75, "coverage_stagnation"))
+    elif not ctx.source_productive and len(ctx.series) >= 5 and ctx.coverage_scores[-1] < 0.95:
+        if dm_low_signal and cv_low_signal:
+            dm_factor = _relative_margin_below(dm_coverage, dm_reference_threshold)
+            cv_factor = _relative_margin_below(cv_coverage, cv_reference_threshold)
+            candidates.append(
+                (0.6 + 0.4 * (dm_factor + cv_factor) / 2.0, "coverage_stagnation")
+            )
+    elif not ctx.source_productive and len(ctx.series) >= 4 and ctx.coverage_scores[-1] < 0.95:
+        half_dm = float(cfg.stuck_dm_threshold) / 2.0
+        half_cv = float(cfg.stuck_cv_threshold) / 2.0
+        if dm_coverage <= half_dm and cv_coverage <= half_cv:
+            dm_factor = _relative_margin_below(dm_coverage, half_dm)
+            cv_factor = _relative_margin_below(cv_coverage, half_cv)
+            candidates.append(
+                (0.6 + 0.3 * (dm_factor + cv_factor) / 2.0, "coverage_stagnation")
+            )
+
+    # Zero progress
+    loop_index = int(ctx.snapshot.loop_index)
+    total_tokens = int(ctx.snapshot.signals.total_tokens)
+    if total_tokens == 0:
+        if loop_index >= 1 and ctx.findings_count <= 1:
+            candidates.append((0.80, "zero_progress"))
+        elif loop_index >= 0 and ctx.findings_count == 0:
+            candidates.append((0.80, "zero_progress"))
+
+    # Research-style hard stall
+    if (
+        ctx.normalized_workflow == "research"
+        and len(ctx.series) == SHORT_RUN_MAX_STEPS
+        and ctx.coverage_scores[-1] <= 0.0
+        and dm_coverage <= 0.0
+        and cv_coverage <= 0.0
+        and ctx.findings_count <= SHORT_RUN_ZERO_COVERAGE_MAX_FINDINGS
+        and ctx.sources_count >= SHORT_RUN_ZERO_COVERAGE_MIN_SOURCES
+        and ctx.query_count >= 2
+        and total_tokens > 0
+        and ctx.output_similarity is not None
+        and float(ctx.output_similarity) >= ctx.sim_threshold
+    ):
+        candidates.append((0.92, "short_run_zero_coverage"))
+
+    # Coverage flatline
+    if len(ctx.coverage_deltas) >= ctx.consecutive and ctx.coverage_scores[-1] < 0.95:
+        recent = ctx.coverage_deltas[-ctx.consecutive:]
+        loop_progressing = (
+            len(ctx.loop_index_deltas) >= ctx.consecutive
+            and all(delta > 0.0 for delta in ctx.loop_index_deltas[-ctx.consecutive:])
+        )
+        if (
+            cv_low_signal
+            and loop_progressing
+            and all(abs(delta) <= 1e-3 for delta in recent)
+        ):
+            candidates.append((0.65, "coverage_flat"))
+
+    # Findings plateau
+    plateau_window = _proportional_window(
+        trace_length=len(ctx.series),
+        percentage=float(cfg.findings_plateau_pct),
+        minimum=2,
+        fallback=FINDINGS_PLATEAU_WINDOW,
+    )
+    if (
+        len(ctx.series) >= (plateau_window + 1)
+        and len(ctx.findings_deltas) >= plateau_window
+        and len(ctx.loop_index_deltas) >= plateau_window
+        and len(ctx.token_deltas) >= plateau_window
+        and ctx.coverage_scores[-1] < 0.95
+    ):
+        recent_findings = ctx.findings_deltas[-plateau_window:]
+        recent_loop_deltas = ctx.loop_index_deltas[-plateau_window:]
+        recent_tokens = ctx.token_deltas[-plateau_window:]
+        if (
+            all(delta > 0.0 for delta in recent_loop_deltas)
+            and all(delta == 0.0 for delta in recent_findings)
+            and all(delta > 0.0 for delta in recent_tokens)
+        ):
+            candidates.append((0.7, "findings_plateau"))
+
+    # Sources-zero: research runs with no sources after 5+ steps.
+    if (
+        not ctx.sources_missing
+        and ctx.normalized_workflow == "research"
+        and len(ctx.series) >= 5
+        and ctx.sources_counts
+        and max(ctx.sources_counts) == 0
+    ):
+        candidates.append((0.8, "sources_zero"))
+
+    # Late-onset stagnation
+    stagnation_window = 2
+    if (
+        len(ctx.series) >= 5
+        and len(ctx.coverage_deltas) >= stagnation_window
+        and len(ctx.findings_deltas) >= stagnation_window
+        and len(ctx.token_deltas) >= stagnation_window
+        and not ctx.source_productive
+    ):
+        recent_coverage = ctx.coverage_deltas[-stagnation_window:]
+        recent_findings = ctx.findings_deltas[-stagnation_window:]
+        recent_tokens = ctx.token_deltas[-stagnation_window:]
+        coverage_regression = any(delta < 0.0 for delta in recent_coverage)
+        objectives_plateau = False
+        if not ctx.objectives_missing and len(ctx.objectives_counts) >= len(ctx.series):
+            objectives_deltas = _deltas(ctx.objectives_counts)
+            if len(objectives_deltas) >= stagnation_window:
+                objectives_plateau = all(
+                    delta <= 0.0 for delta in objectives_deltas[-stagnation_window:]
+                )
+        coverage_non_increasing = all(delta <= 0.0 for delta in recent_coverage)
+        findings_stalled = any(delta <= 0.0 for delta in recent_findings)
+        tokens_active = all(delta > 0.0 for delta in recent_tokens)
+        coverage_ready = 0.5 <= ctx.coverage_scores[-1] < 0.95
+        dm_low = dm_low_signal
+        if coverage_non_increasing and findings_stalled and tokens_active and coverage_ready:
+            if (coverage_regression and dm_low) or (
+                not coverage_regression and objectives_plateau
+            ):
+                candidates.append((0.7, "late_onset_stagnation"))
+
+    # Burn-rate anomaly — apply burn_rate_multiplier_scale in the stuck-enabled
+    # path to prevent FPs on medium/small models (e.g. LangGraph traces).
+    # The scale is NOT applied in _handle_stuck_disabled where it caused FNs.
+    burn_cfg = cfg
+    if ctx.signal_map.burn_rate_multiplier_scale != 1.0:
+        burn_cfg = _dc_replace(
+            cfg,
+            burn_rate_multiplier=cfg.burn_rate_multiplier
+            * ctx.signal_map.burn_rate_multiplier_scale,
+        )
+    build_runaway_confidence = _burn_rate_anomaly_confidence(
+        token_deltas=ctx.token_deltas,
+        findings_deltas=ctx.findings_deltas,
+        coverage_scores=ctx.coverage_scores,
+        cfg=burn_cfg,
+    )
+    if build_runaway_confidence is not None:
+        candidates.append((build_runaway_confidence, "burn_rate_anomaly"))
+
+    # Token usage variance flat
+    if (
+        ctx.token_variance_alarm
+        and ctx.coverage_scores[-1] < 0.95
+        and not ctx.source_productive
+        and not ctx.signal_map.suppress_token_variance_flat
+    ):
+        candidates.append((0.65, "token_usage_variance_flat"))
+
+    return candidates
+
+
+def _handle_stuck_disabled(
+    ctx: _DetectionContext,
+    loop_candidates: list[tuple[float, str]],
+    confab_candidates: list[tuple[float, str, tuple[str, ...]]],
+) -> LoopDetectionResult:
+    """Early-return path when stuck detection is disabled for this workflow."""
+
+    # Use min-baseline mode so that once a burn-rate spike enters the
+    # baseline, subsequent steps still detect the anomaly relative to the
+    # pre-spike minimum rather than the contaminated mean.
+    build_runaway_confidence = _burn_rate_anomaly_confidence(
+        token_deltas=ctx.token_deltas,
+        findings_deltas=ctx.findings_deltas,
+        coverage_scores=ctx.coverage_scores,
+        cfg=ctx.cfg,
+        baseline_mode="min",
+    )
+    build_runaway_detected = build_runaway_confidence is not None
+
+    # Gate burn_rate_anomaly on short traces: baseline from < 3 deltas is
+    # unreliable, producing FPs on healthy traces with normal token variance.
+    _BURN_RATE_MIN_STEPS = 4
+    if build_runaway_detected and len(ctx.series) < _BURN_RATE_MIN_STEPS:
+        build_runaway_detected = False
+        build_runaway_confidence = None
+
+    # Stagnation evidence: adaptive alarms, dm=0 streak, or static dm/cv
+    # threshold checks.  Without stuck detection active, stagnation is the
+    # best surrogate for stuck-like behavior — suppress both loop (filtered
+    # to content_similarity only) and burn_rate_anomaly (runaway).  Genuine
+    # runaway traces maintain normal dm/cv (burning tokens but advancing),
+    # so this does not affect true positives.
+    dm_coverage = float(ctx.snapshot.metrics.dm_coverage)
+    cv_coverage = float(ctx.snapshot.metrics.cv_coverage)
+    dm_zero_streak = 0
+    for value in reversed(ctx.dm_coverage_series):
+        if value == 0.0:
+            dm_zero_streak += 1
+        else:
+            break
+    strict_stagnation_evidence = (
+        ctx.dm_stagnation_alarm
+        or ctx.cv_stagnation_alarm
+        or (dm_zero_streak >= 5 and len(ctx.dm_coverage_series) >= 5)
+    ) and not ctx.source_productive
+    relaxed_stagnation_evidence = strict_stagnation_evidence or (
+        not ctx.source_productive
+        and dm_coverage <= float(ctx.cfg.stuck_dm_threshold)
+        and cv_coverage <= float(ctx.cfg.stuck_cv_threshold)
+    )
+
+    if relaxed_stagnation_evidence:
+        loop_candidates = [
+            (conf, trig) for conf, trig in loop_candidates if trig == "content_similarity"
+        ]
+        # Without stuck detection, low dm/cv is the best surrogate for
+        # stuck-like behavior.  Genuine runaway traces maintain normal dm/cv
+        # (tokens burn but coverage advances), so this preserves recall.
+        build_runaway_detected = False
+        build_runaway_confidence = None
+
+    loop_detected = bool(loop_candidates)
     loop_confidence = 0.0
-    loop_candidate_confidence = 0.0
     loop_trigger: Optional[str] = None
     if loop_candidates:
         loop_confidence, loop_trigger = max(loop_candidates, key=lambda item: item[0])
-        loop_candidate_confidence = loop_confidence
-        loop_detected = True
 
     confabulation_detected = False
     confabulation_confidence = 0.0
@@ -376,228 +786,108 @@ def detect_loop(
         ) = max(confab_candidates, key=lambda item: item[0])
         confabulation_detected = True
 
-    if not _stuck_enabled_for_workflow(normalized_workflow, cfg.workflow_stuck_enabled):
-        # Build workflows can skip stuck detection; thrash covers deterministic failures.
-        detector_priority = "confabulation" if confabulation_detected else ("loop" if loop_detected else None)
-        if confabulation_detected:
+    # --- Co-occurrence arbitration (ported from _resolve_detections) ---
+
+    # Confabulation overlap: high-confidence confab suppresses runaway.
+    if confabulation_detected and confabulation_confidence >= 0.85 and build_runaway_detected:
+        build_runaway_detected = False
+        build_runaway_confidence = None
+
+    # Loop-runaway arbitration: when both fire, loop with content_similarity
+    # wins unconditionally (direct observation of output repetition is
+    # definitive loop evidence).  Without content_similarity, loop needs
+    # significantly higher confidence to override runaway.
+    if loop_detected and build_runaway_detected:
+        _has_content_sim = loop_trigger == "content_similarity"
+        runaway_conf = build_runaway_confidence or 0.0
+        if _has_content_sim:
+            build_runaway_detected = False
+            build_runaway_confidence = None
+        elif loop_confidence >= runaway_conf + 0.10:
+            build_runaway_detected = False
+            build_runaway_confidence = None
+        else:
+            # Runaway wins — suppress loop.
             loop_detected = False
             loop_confidence = 0.0
             loop_trigger = None
-        return LoopDetectionResult(
-            loop_detected=loop_detected,
-            loop_confidence=_clip01(loop_confidence),
-            loop_trigger=loop_trigger,
-            confabulation_detected=confabulation_detected,
-            confabulation_confidence=_clip01(confabulation_confidence),
-            confabulation_trigger=confabulation_trigger,
-            confabulation_signals=confabulation_signals,
-            stuck_detected=False,
-            stuck_confidence=0.0,
-            stuck_trigger=None,
-            detector_priority=detector_priority,
-        )
 
-    stuck_candidates: list[tuple[float, str]] = []
+    # Error-count suppression: errors with loop co-occurrence suppress runaway.
+    if ctx.error_count > 0 and loop_detected and build_runaway_detected:
+        build_runaway_detected = False
+        build_runaway_confidence = None
 
-    dm_coverage = float(snapshot.metrics.dm_coverage)
-    cv_coverage = float(snapshot.metrics.cv_coverage)
-    dm_low_signal = dm_stagnation_alarm or dm_coverage <= float(cfg.stuck_dm_threshold)
-    cv_low_signal = cv_stagnation_alarm or cv_coverage <= float(cfg.stuck_cv_threshold)
-    dm_reference_threshold = (
-        dm_stagnation_threshold if dm_stagnation_alarm else float(cfg.stuck_dm_threshold)
+    detector_priority = (
+        "confabulation"
+        if confabulation_detected
+        else ("loop" if loop_detected else ("runaway_cost" if build_runaway_detected else None))
     )
-    cv_reference_threshold = (
-        cv_stagnation_threshold if cv_stagnation_alarm else float(cfg.stuck_cv_threshold)
+    if confabulation_detected:
+        loop_detected = False
+        loop_confidence = 0.0
+        loop_trigger = None
+
+    return LoopDetectionResult(
+        loop_detected=loop_detected,
+        loop_confidence=_clip01(loop_confidence),
+        loop_trigger=loop_trigger,
+        confabulation_detected=confabulation_detected,
+        confabulation_confidence=_clip01(confabulation_confidence),
+        confabulation_trigger=confabulation_trigger,
+        confabulation_signals=confabulation_signals,
+        stuck_detected=build_runaway_detected,
+        stuck_confidence=_clip01(build_runaway_confidence or 0.0),
+        stuck_trigger="burn_rate_anomaly" if build_runaway_detected else None,
+        detector_priority=detector_priority,
     )
 
-    # Coverage stagnation: only evaluate once enough points exist for DM lookback.
-    # Grace period of 5 steps to eliminate FPs on slow-converging models.
-    # When dm_coverage is 0.0 for 5+ consecutive steps, treat as sufficient evidence of stuck.
-    dm_coverage_series = [float(item.metrics.dm_coverage) for item in series]
-    dm_zero_streak = 0
-    for value in reversed(dm_coverage_series):
-        if value == 0.0:
-            dm_zero_streak += 1
-        else:
-            break
 
-    if not source_productive and dm_zero_streak >= 5 and coverage_scores[-1] < 0.95:
-        # Strict dm_coverage=0.0 gate after grace period: stuck regardless of cv_coverage.
-        # Suppress when coverage is near-maximum (convergence, not stuck).
-        stuck_candidates.append((0.75, "coverage_stagnation"))
-    elif not source_productive and len(series) >= 5 and coverage_scores[-1] < 0.95:
-        # Standard check: require both dm and cv below thresholds.
-        # Suppress when coverage is near-maximum (convergence, not stuck).
-        if dm_low_signal and cv_low_signal:
-            dm_factor = _relative_margin_below(dm_coverage, dm_reference_threshold)
-            cv_factor = _relative_margin_below(cv_coverage, cv_reference_threshold)
-            stuck_candidates.append((0.6 + 0.4 * (dm_factor + cv_factor) / 2.0, "coverage_stagnation"))
-    elif not source_productive and len(series) >= 4 and coverage_scores[-1] < 0.95:
-        # Short-run severe stagnation — DM/CV both well below half-threshold.
-        half_dm = float(cfg.stuck_dm_threshold) / 2.0
-        half_cv = float(cfg.stuck_cv_threshold) / 2.0
-        if dm_coverage <= half_dm and cv_coverage <= half_cv:
-            dm_factor = _relative_margin_below(dm_coverage, half_dm)
-            cv_factor = _relative_margin_below(cv_coverage, half_cv)
-            stuck_candidates.append((0.6 + 0.3 * (dm_factor + cv_factor) / 2.0, "coverage_stagnation"))
+def _resolve_detections(
+    ctx: _DetectionContext,
+    loop_candidates: list[tuple[float, str]],
+    confab_candidates: list[tuple[float, str, tuple[str, ...]]],
+    stuck_candidates: list[tuple[float, str]],
+) -> LoopDetectionResult:
+    """Cross-detector arbitration: suppression, priority resolution, and final result."""
 
-    # Zero progress: early detection for fixture-like failures with no activity.
-    loop_index = int(snapshot.loop_index)
-    total_tokens = int(snapshot.signals.total_tokens)
-    if total_tokens == 0:
-        if loop_index >= 1 and findings_count <= 1:
-            stuck_candidates.append((0.80, "zero_progress"))
-        elif loop_index >= 0 and findings_count == 0:
-            stuck_candidates.append((0.80, "zero_progress"))
+    # Resolve loop candidates
+    loop_detected = False
+    loop_confidence = 0.0
+    loop_candidate_confidence = 0.0
+    loop_trigger: Optional[str] = None
+    if loop_candidates:
+        loop_confidence, loop_trigger = max(loop_candidates, key=lambda item: item[0])
+        loop_candidate_confidence = loop_confidence
+        loop_detected = True
 
-    # AV-20: short_run_objective_gap DISABLED.
-    # The len(series)==N equality check fires on every trace passing through step N,
-    # not just genuinely short runs. This caused FPs on all healthy traces at step N-1.
-    # Thrash detection via derive_stop_signals (error_count threshold) catches the
-    # retry_thrash cases this was designed for, with no recall loss.
+    # Resolve confabulation candidates
+    confabulation_detected = False
+    confabulation_confidence = 0.0
+    confabulation_trigger: Optional[str] = None
+    confabulation_signals: tuple[str, ...] = ()
+    if confab_candidates:
+        (
+            confabulation_confidence,
+            confabulation_trigger,
+            confabulation_signals,
+        ) = max(confab_candidates, key=lambda item: item[0])
+        confabulation_detected = True
 
-    # Coverage flatline: repeated zero deltas with low variation suggests stagnation.
-    # Suppress when coverage is near-maximum — flat coverage at 1.0 is convergence, not stuck.
-    if len(coverage_deltas) >= consecutive and coverage_scores[-1] < 0.95:
-        recent = coverage_deltas[-consecutive:]
-        loop_progressing = (
-            len(loop_index_deltas) >= consecutive
-            and all(delta > 0.0 for delta in loop_index_deltas[-consecutive:])
-        )
-        if (
-            cv_low_signal
-            and loop_progressing
-            and all(abs(delta) <= 1e-3 for delta in recent)
-        ):
-            stuck_candidates.append((0.65, "coverage_flat"))
-
-    # Findings plateau: no new findings for consecutive steps despite continued token usage.
-    # Suppress when coverage is near-maximum — findings plateau at full coverage is convergence.
-    plateau_window = _proportional_window(
-        trace_length=len(series),
-        percentage=float(cfg.findings_plateau_pct),
-        minimum=2,
-        fallback=FINDINGS_PLATEAU_WINDOW,
-    )
-    if (
-        len(series) >= (plateau_window + 1)
-        and len(findings_deltas) >= plateau_window
-        and len(loop_index_deltas) >= plateau_window
-        and len(token_deltas) >= plateau_window
-        and coverage_scores[-1] < 0.95
-    ):
-        recent_findings = findings_deltas[-plateau_window:]
-        recent_loop_deltas = loop_index_deltas[-plateau_window:]
-        recent_tokens = token_deltas[-plateau_window:]
-        if (
-            all(delta > 0.0 for delta in recent_loop_deltas)
-            and all(delta == 0.0 for delta in recent_findings)
-            and all(delta > 0.0 for delta in recent_tokens)
-        ):
-            stuck_candidates.append((0.7, "findings_plateau"))
-
-    # Sources-zero: research runs with no sources after 5+ steps.
-    if (
-        not sources_missing
-        and normalized_workflow == "research"
-        and len(series) >= 5
-        and sources_counts
-        and max(sources_counts) == 0
-    ):
-        stuck_candidates.append((0.8, "sources_zero"))
-
-    # Late-onset stagnation: coverage flattens/regresses with no findings gain.
-    stagnation_window = 2
-    if (
-        len(series) >= 5
-        and len(coverage_deltas) >= stagnation_window
-        and len(findings_deltas) >= stagnation_window
-        and len(token_deltas) >= stagnation_window
-        and not source_productive
-    ):
-        recent_coverage = coverage_deltas[-stagnation_window:]
-        recent_findings = findings_deltas[-stagnation_window:]
-        recent_tokens = token_deltas[-stagnation_window:]
-        coverage_regression = any(delta < 0.0 for delta in recent_coverage)
-        objectives_plateau = False
-        if not objectives_missing and len(objectives_counts) >= len(series):
-            objectives_deltas = _deltas(objectives_counts)
-            if len(objectives_deltas) >= stagnation_window:
-                objectives_plateau = all(delta <= 0.0 for delta in objectives_deltas[-stagnation_window:])
-        coverage_non_increasing = all(delta <= 0.0 for delta in recent_coverage)
-        findings_stalled = any(delta <= 0.0 for delta in recent_findings)
-        tokens_active = all(delta > 0.0 for delta in recent_tokens)
-        # Suppress late-onset stagnation when coverage is near-maximum.
-        coverage_ready = 0.5 <= coverage_scores[-1] < 0.95
-        dm_low = dm_low_signal
-        if coverage_non_increasing and findings_stalled and tokens_active and coverage_ready:
-            if (coverage_regression and dm_low) or (not coverage_regression and objectives_plateau):
-                stuck_candidates.append((0.7, "late_onset_stagnation"))
-
-    # Token burn rate anomaly: tokens per new finding spikes vs baseline.
-    # Apply token_scale_factor to normalize token counts before burn rate comparison.
-    # Suppress when coverage is near-maximum — token burn at full coverage is expected.
-    scale = max(0.01, float(cfg.token_scale_factor))
-    if len(token_deltas) >= 1 and len(findings_deltas) >= 1 and coverage_scores[-1] < 0.95:
-        current_tokens = token_deltas[-1] * scale
-        current_findings = findings_deltas[-1]
-
-        baseline_ratios: list[float] = []
-        baseline_token_deltas: list[float] = []
-        for index in range(0, len(findings_deltas) - 1):  # exclude current step
-            d_findings = findings_deltas[index]
-            d_tokens = token_deltas[index] * scale
-            if d_tokens <= 0.0:
-                continue
-            baseline_token_deltas.append(d_tokens)
-            if d_findings > 0.0:
-                baseline_ratios.append(d_tokens / d_findings)
-
-        if baseline_ratios and current_tokens > 0.0:
-            baseline = float(mean(baseline_ratios))
-            if baseline > 0.0:
-                ratio = math.inf if current_findings <= 0.0 else float(current_tokens / current_findings)
-                if ratio > float(cfg.burn_rate_multiplier) * baseline:
-                    if current_findings <= 0.0 and baseline_token_deltas:
-                        token_baseline = float(mean(baseline_token_deltas))
-                        token_threshold = float(cfg.burn_rate_multiplier) * token_baseline
-                        if current_tokens <= token_threshold:
-                            pass
-                        else:
-                            factor = min(
-                                1.0,
-                                float(ratio / (float(cfg.burn_rate_multiplier) * baseline)),
-                            )
-                            stuck_candidates.append(
-                                (min(1.0, 0.7 + 0.3 * factor), "burn_rate_anomaly")
-                            )
-                    else:
-                        factor = min(
-                            1.0,
-                            float(ratio / (float(cfg.burn_rate_multiplier) * baseline)),
-                        )
-                        stuck_candidates.append((min(1.0, 0.7 + 0.3 * factor), "burn_rate_anomaly"))
-
-    if token_variance_alarm and coverage_scores[-1] < 0.95 and not source_productive:
-        stuck_candidates.append((0.65, "token_usage_variance_flat"))
-
-    # If loop signals exist (including "near miss" signals below the full
-    # loop threshold), suppress stagnation-style stuck triggers. This avoids
-    # misclassifying early loop formation as stuck.
+    # Loop signal hint suppresses stagnation-style stuck triggers.
     loop_signal_hint = _has_loop_signal_hint(
         loop_candidates=loop_candidates,
-        findings_deltas=findings_deltas,
-        token_deltas=token_deltas,
-        query_deltas=query_deltas,
-        domain_deltas=domain_deltas,
-        domain_counts=domain_counts,
-        coverage_scores=coverage_scores,
-        output_similarity=output_similarity,
-        sim_threshold=sim_threshold,
-        consecutive=consecutive,
+        findings_deltas=ctx.findings_deltas,
+        token_deltas=ctx.token_deltas,
+        query_deltas=ctx.query_deltas,
+        domain_deltas=ctx.domain_deltas,
+        domain_counts=ctx.domain_counts,
+        coverage_scores=ctx.coverage_scores,
+        output_similarity=ctx.output_similarity,
+        sim_threshold=ctx.sim_threshold,
+        consecutive=ctx.consecutive,
     )
     if stuck_candidates and loop_signal_hint:
-        low_coverage = bool(coverage_scores) and float(coverage_scores[-1]) < 0.2
+        low_coverage = bool(ctx.coverage_scores) and float(ctx.coverage_scores[-1]) < 0.2
         stuck_candidates = [
             (conf, trigger)
             for conf, trigger in stuck_candidates
@@ -607,14 +897,14 @@ def detect_loop(
             )
         ]
 
-    # Low output similarity confirms stuck: the agent is producing varied
-    # outputs (not repeating) but still making no progress — flailing.
-    if output_similarity is not None and stuck_candidates:
-        similarity = float(output_similarity)
-        low_sim_threshold = 1.0 - sim_threshold  # e.g., 0.2 when threshold is 0.8
+    # Low output similarity confirms stuck
+    if ctx.output_similarity is not None and stuck_candidates:
+        similarity = float(ctx.output_similarity)
+        low_sim_threshold = 1.0 - ctx.sim_threshold
         if similarity <= low_sim_threshold:
-            # Boost the best stuck candidate confidence by up to 0.10
-            boost = 0.10 * min(1.0, (low_sim_threshold - similarity) / max(1e-9, low_sim_threshold))
+            boost = 0.10 * min(
+                1.0, (low_sim_threshold - similarity) / max(1e-9, low_sim_threshold)
+            )
             best = max(stuck_candidates, key=lambda item: item[0])
             adjusted: list[tuple[float, str]] = []
             for conf, trigger in stuck_candidates:
@@ -624,24 +914,27 @@ def detect_loop(
                     adjusted.append((conf, trigger))
             stuck_candidates = adjusted
 
-    # Cross-detector suppression: when the primary failure mode is already
-    # identified as loop or thrash (error-induced), suppress overlapping stuck
-    # triggers that are symptoms rather than independent diagnoses.  Keep only
-    # triggers that represent genuinely independent stuck conditions.
-    # Priority rule: loop candidates at confidence >= 0.5 take precedence.
+    # Cross-detector suppression: error-induced or loop co-occurrence
     _INDEPENDENT_STUCK_TRIGGERS = {"zero_progress", "sources_zero"}
-    if coverage_scores and float(coverage_scores[-1]) < 0.2:
+    if ctx.coverage_scores and float(ctx.coverage_scores[-1]) < 0.2:
         _INDEPENDENT_STUCK_TRIGGERS.add("coverage_stagnation")
-    if stuck_candidates and (loop_candidate_confidence >= 0.5 or error_count > 0):
+    _INDEPENDENT_STUCK_TRIGGERS.add("short_run_zero_coverage")
+    if stuck_candidates and ctx.error_count > 0:
         stuck_candidates = [
             (conf, trigger)
             for conf, trigger in stuck_candidates
             if trigger in _INDEPENDENT_STUCK_TRIGGERS
         ]
+    elif stuck_candidates and loop_candidate_confidence >= 0.5:
+        has_content_similarity = any(trig == "content_similarity" for _, trig in loop_candidates)
+        if has_content_similarity:
+            stuck_candidates = [
+                (conf, trigger)
+                for conf, trigger in stuck_candidates
+                if trigger in _INDEPENDENT_STUCK_TRIGGERS
+            ]
 
-    # Confabulation overlap handling: keep coverage-stagnation available for
-    # mixed-mode traces, but apply a confidence penalty at high confabulation
-    # confidence so confabulation still has priority.
+    # Confabulation overlap handling
     if confabulation_detected and confabulation_confidence >= 0.85:
         adjusted_candidates: list[tuple[float, str]] = []
         for conf, trigger in stuck_candidates:
@@ -658,15 +951,13 @@ def detect_loop(
         stuck_confidence, stuck_trigger = max(stuck_candidates, key=lambda item: item[0])
         stuck_detected = True
 
-    # Burn-rate anomaly is an exclusive runaway-cost signal. Keep the trigger
-    # so stop-rule derivation can emit runaway_cost, but suppress stuck.
-    runaway_cost_from_stuck = bool(
-        stuck_detected and stuck_trigger == "burn_rate_anomaly"
-    )
+    # Burn-rate anomaly is an exclusive runaway-cost signal.
+    runaway_cost_from_stuck = bool(stuck_detected and stuck_trigger == "burn_rate_anomaly")
     if runaway_cost_from_stuck:
         stuck_detected = False
         stuck_confidence = 0.0
 
+    # Co-occurrence priority resolution (av32-m02)
     detector_priority = None
     if confabulation_detected:
         loop_detected = False
@@ -674,7 +965,19 @@ def detect_loop(
         loop_trigger = None
         detector_priority = "confabulation"
     elif loop_detected and stuck_detected:
-        if loop_confidence >= stuck_confidence:
+        _has_content_sim = (
+            any(trig == "content_similarity" for _, trig in loop_candidates)
+            if loop_candidates
+            else False
+        )
+        if stuck_trigger == "short_run_zero_coverage":
+            detector_priority = "stuck"
+        elif _has_content_sim and loop_confidence >= stuck_confidence:
+            stuck_detected = False
+            stuck_confidence = 0.0
+            stuck_trigger = None
+            detector_priority = "loop"
+        elif loop_confidence >= stuck_confidence + 0.10:
             stuck_detected = False
             stuck_confidence = 0.0
             stuck_trigger = None
@@ -704,6 +1007,41 @@ def detect_loop(
         stuck_trigger=stuck_trigger,
         detector_priority=detector_priority,
     )
+
+
+def detect_loop(
+    snapshot: VitalsSnapshot,
+    history: Optional[Sequence[VitalsSnapshot]] = None,
+    *,
+    config: Optional[VitalsConfig] = None,
+    workflow_type: str = "unknown",
+) -> LoopDetectionResult:
+    """Analyze a vitals snapshot for loop/stuck indicators.
+
+    Args:
+        snapshot: Current vitals snapshot.
+        history: Previous snapshots (oldest -> newest). The current snapshot
+            should not be included.
+        config: Optional VitalsConfig override (defaults to env-derived config).
+        workflow_type: Workflow type hint ("research", "build", "unknown").
+
+    Returns:
+        LoopDetectionResult with detection flags, confidence, and triggers.
+    """
+
+    cfg = config or get_vitals_config()
+    ctx = _prepare_context(snapshot, history, cfg, workflow_type)
+    if ctx is None:
+        return LoopDetectionResult()
+
+    loop_candidates = _detect_loop_candidates(ctx)
+    confab_candidates = _detect_confabulation_candidates(ctx)
+
+    if not _stuck_enabled_for_workflow(ctx.normalized_workflow, ctx.cfg.workflow_stuck_enabled):
+        return _handle_stuck_disabled(ctx, loop_candidates, confab_candidates)
+
+    stuck_candidates = _detect_stuck_candidates(ctx)
+    return _resolve_detections(ctx, loop_candidates, confab_candidates, stuck_candidates)
 
 
 # Backwards-compatible alias
@@ -852,6 +1190,69 @@ def _proportional_window(
     return floor_fallback
 
 
+def _burn_rate_anomaly_confidence(
+    *,
+    token_deltas: Sequence[float],
+    findings_deltas: Sequence[float],
+    coverage_scores: Sequence[float],
+    cfg: VitalsConfig,
+    baseline_mode: str = "mean",
+) -> float | None:
+    """Return runaway-confidence when burn rate spikes against recent baseline.
+
+    Args:
+        baseline_mode: ``"mean"`` (default) averages all prior ratios.
+            ``"min"`` uses the lowest prior ratio, which resists spike
+            contamination — once a burn-rate spike enters the baseline,
+            ``mean`` inflates the threshold and masks subsequent spikes.
+    """
+
+    if not token_deltas or not findings_deltas or not coverage_scores:
+        return None
+    if coverage_scores[-1] >= 0.95:
+        return None
+
+    scale = max(0.01, float(cfg.token_scale_factor))
+    current_tokens = token_deltas[-1] * scale
+    current_findings = findings_deltas[-1]
+    if current_tokens <= 0.0:
+        return None
+
+    baseline_ratios: list[float] = []
+    baseline_token_deltas: list[float] = []
+    for index in range(0, len(findings_deltas) - 1):
+        baseline_tokens = token_deltas[index] * scale
+        baseline_findings = findings_deltas[index]
+        if baseline_tokens <= 0.0:
+            continue
+        baseline_token_deltas.append(baseline_tokens)
+        if baseline_findings > 0.0:
+            baseline_ratios.append(baseline_tokens / baseline_findings)
+
+    if not baseline_ratios:
+        return None
+
+    baseline = float(min(baseline_ratios) if baseline_mode == "min" else mean(baseline_ratios))
+    if baseline <= 0.0:
+        return None
+
+    ratio = math.inf if current_findings <= 0.0 else float(current_tokens / current_findings)
+    multiplier = float(cfg.burn_rate_multiplier)
+    if ratio <= multiplier * baseline:
+        return None
+
+    if current_findings <= 0.0 and baseline_token_deltas:
+        token_baseline = float(
+            min(baseline_token_deltas) if baseline_mode == "min" else mean(baseline_token_deltas)
+        )
+        token_threshold = multiplier * token_baseline
+        if current_tokens <= token_threshold:
+            return None
+
+    factor = min(1.0, float(ratio / (multiplier * baseline)))
+    return min(1.0, 0.7 + 0.3 * factor)
+
+
 def _normalize_workflow_type(value: str) -> str:
     candidate = str(value or "").strip().lower()
     if candidate in {"research", "build", "unknown", "synthetic"}:
@@ -896,7 +1297,9 @@ def _has_loop_signal_hint(
     if coverage_ready and len(findings_deltas) >= hint_window and len(token_deltas) >= hint_window:
         recent_findings = findings_deltas[-hint_window:]
         recent_tokens = token_deltas[-hint_window:]
-        if all(delta <= 0.0 for delta in recent_findings) and all(delta > 0.0 for delta in recent_tokens):
+        if all(delta <= 0.0 for delta in recent_findings) and all(
+            delta > 0.0 for delta in recent_tokens
+        ):
             return True
 
     if (
@@ -908,7 +1311,9 @@ def _has_loop_signal_hint(
     ):
         recent_queries = query_deltas[-hint_window:]
         recent_domains = domain_deltas[-hint_window:]
-        if all(delta > 0.0 for delta in recent_queries) and all(delta <= 0.0 for delta in recent_domains):
+        if all(delta > 0.0 for delta in recent_queries) and all(
+            delta <= 0.0 for delta in recent_domains
+        ):
             return True
 
     if output_similarity is not None:

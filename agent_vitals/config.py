@@ -51,6 +51,15 @@ VITALS_SPC_WARMUP_STEPS_ENV = "VITALS_SPC_WARMUP_STEPS"
 VITALS_SPC_COOLDOWN_STEPS_ENV = "VITALS_SPC_COOLDOWN_STEPS"
 VITALS_SPC_WMA_DECAY_ENV = "VITALS_SPC_WMA_DECAY"
 WORKFLOW_STUCK_ENABLED_ENV = "WORKFLOW_STUCK_ENABLED"
+VITALS_MODEL_SIZE_CLASS_ENV = "VITALS_MODEL_SIZE_CLASS"
+VITALS_THRASH_ERROR_THRESHOLD_ENV = "VITALS_THRASH_ERROR_THRESHOLD"
+
+VITALS_CUSUM_K_SIGMA_ENV = "VITALS_CUSUM_K_SIGMA"
+VITALS_CUSUM_H_SIGMA_ENV = "VITALS_CUSUM_H_SIGMA"
+VITALS_CUSUM_WARMUP_STEPS_ENV = "VITALS_CUSUM_WARMUP_STEPS"
+VITALS_CUSUM_MIN_SIGMA_SIMILARITY_ENV = "VITALS_CUSUM_MIN_SIGMA_SIMILARITY"
+VITALS_CUSUM_MIN_SIGMA_TOKENS_ENV = "VITALS_CUSUM_MIN_SIGMA_TOKENS"
+VITALS_CUSUM_MIN_SIGMA_FINDINGS_ENV = "VITALS_CUSUM_MIN_SIGMA_FINDINGS"
 
 VITALS_TH_ENTER_WARNING_ENV = "VITALS_TH_ENTER_WARNING"
 VITALS_TH_EXIT_WARNING_ENV = "VITALS_TH_EXIT_WARNING"
@@ -78,14 +87,22 @@ DEFAULT_SOURCE_FINDING_RATIO_DECLINING_STEPS = 3
 DEFAULT_LOOP_CONSECUTIVE_COUNT = 3
 DEFAULT_STUCK_DM_THRESHOLD = 0.15
 DEFAULT_STUCK_CV_THRESHOLD = 0.3
-DEFAULT_BURN_RATE_MULTIPLIER = 3.0
+DEFAULT_BURN_RATE_MULTIPLIER = 2.5
 DEFAULT_TOKEN_SCALE_FACTOR = 1.0
 DEFAULT_SPC_K_SIGMA = 3.0
 DEFAULT_SPC_WINDOW_SIZE = 5
 DEFAULT_SPC_WARMUP_STEPS = 2
 DEFAULT_SPC_COOLDOWN_STEPS = 1
 DEFAULT_SPC_WMA_DECAY = 0.7
+DEFAULT_THRASH_ERROR_THRESHOLD = 1
+DEFAULT_CUSUM_K_SIGMA = 0.5
+DEFAULT_CUSUM_H_SIGMA = 4.0
+DEFAULT_CUSUM_WARMUP_STEPS = 2
+DEFAULT_CUSUM_MIN_SIGMA_SIMILARITY = 0.05
+DEFAULT_CUSUM_MIN_SIGMA_TOKENS = 25.0
+DEFAULT_CUSUM_MIN_SIGMA_FINDINGS = 0.5
 DEFAULT_WORKFLOW_STUCK_ENABLED = "research-only"
+DEFAULT_MODEL_SIZE_CLASS = "auto"
 
 DEFAULT_TH_ENTER_WARNING = 0.4
 DEFAULT_TH_EXIT_WARNING = 0.6
@@ -104,6 +121,11 @@ _PROFILE_OVERRIDABLE_FLOAT_FIELDS = (
     "token_scale_factor",
     "spc_k_sigma",
     "spc_wma_decay",
+    "cusum_k_sigma",
+    "cusum_h_sigma",
+    "cusum_min_sigma_similarity",
+    "cusum_min_sigma_tokens",
+    "cusum_min_sigma_findings",
     "th_enter_warning",
     "th_exit_warning",
     "th_enter_critical",
@@ -112,11 +134,13 @@ _PROFILE_OVERRIDABLE_FLOAT_FIELDS = (
 _PROFILE_OVERRIDABLE_INT_FIELDS = (
     "loop_consecutive_count",
     "source_finding_ratio_declining_steps",
+    "thrash_error_threshold",
     "spc_window_size",
     "spc_warmup_steps",
     "spc_cooldown_steps",
+    "cusum_warmup_steps",
 )
-_PROFILE_OVERRIDABLE_STR_FIELDS = ("workflow_stuck_enabled",)
+_PROFILE_OVERRIDABLE_STR_FIELDS = ("workflow_stuck_enabled", "model_size_class")
 
 # Mapping from adapter class names to framework profile keys.
 ADAPTER_FRAMEWORK_MAP: dict[str, str] = {
@@ -151,13 +175,21 @@ class ThresholdProfile:
     stuck_dm_threshold: Optional[float] = None
     stuck_cv_threshold: Optional[float] = None
     burn_rate_multiplier: Optional[float] = None
+    thrash_error_threshold: Optional[int] = None
     token_scale_factor: Optional[float] = None
     spc_k_sigma: Optional[float] = None
     spc_wma_decay: Optional[float] = None
     spc_window_size: Optional[int] = None
     spc_warmup_steps: Optional[int] = None
     spc_cooldown_steps: Optional[int] = None
+    cusum_k_sigma: Optional[float] = None
+    cusum_h_sigma: Optional[float] = None
+    cusum_warmup_steps: Optional[int] = None
+    cusum_min_sigma_similarity: Optional[float] = None
+    cusum_min_sigma_tokens: Optional[float] = None
+    cusum_min_sigma_findings: Optional[float] = None
     workflow_stuck_enabled: Optional[str] = None
+    model_size_class: Optional[str] = None
     th_enter_warning: Optional[float] = None
     th_exit_warning: Optional[float] = None
     th_enter_critical: Optional[float] = None
@@ -217,13 +249,21 @@ class VitalsConfig:
     stuck_dm_threshold: float = DEFAULT_STUCK_DM_THRESHOLD
     stuck_cv_threshold: float = DEFAULT_STUCK_CV_THRESHOLD
     burn_rate_multiplier: float = DEFAULT_BURN_RATE_MULTIPLIER
+    thrash_error_threshold: int = DEFAULT_THRASH_ERROR_THRESHOLD
     token_scale_factor: float = DEFAULT_TOKEN_SCALE_FACTOR
     spc_k_sigma: float = DEFAULT_SPC_K_SIGMA
     spc_window_size: int = DEFAULT_SPC_WINDOW_SIZE
     spc_warmup_steps: int = DEFAULT_SPC_WARMUP_STEPS
     spc_cooldown_steps: int = DEFAULT_SPC_COOLDOWN_STEPS
     spc_wma_decay: float = DEFAULT_SPC_WMA_DECAY
+    cusum_k_sigma: float = DEFAULT_CUSUM_K_SIGMA
+    cusum_h_sigma: float = DEFAULT_CUSUM_H_SIGMA
+    cusum_warmup_steps: int = DEFAULT_CUSUM_WARMUP_STEPS
+    cusum_min_sigma_similarity: float = DEFAULT_CUSUM_MIN_SIGMA_SIMILARITY
+    cusum_min_sigma_tokens: float = DEFAULT_CUSUM_MIN_SIGMA_TOKENS
+    cusum_min_sigma_findings: float = DEFAULT_CUSUM_MIN_SIGMA_FINDINGS
     workflow_stuck_enabled: str = DEFAULT_WORKFLOW_STUCK_ENABLED
+    model_size_class: str = DEFAULT_MODEL_SIZE_CLASS
 
     th_enter_warning: float = DEFAULT_TH_ENTER_WARNING
     th_exit_warning: float = DEFAULT_TH_EXIT_WARNING
@@ -314,6 +354,11 @@ class VitalsConfig:
             "token_scale_factor",
             "spc_k_sigma",
             "spc_wma_decay",
+            "cusum_k_sigma",
+            "cusum_h_sigma",
+            "cusum_min_sigma_similarity",
+            "cusum_min_sigma_tokens",
+            "cusum_min_sigma_findings",
             "th_enter_warning",
             "th_exit_warning",
             "th_enter_critical",
@@ -331,9 +376,11 @@ class VitalsConfig:
             "loop_consecutive_count",
             "min_evidence_steps",
             "source_finding_ratio_declining_steps",
+            "thrash_error_threshold",
             "spc_window_size",
             "spc_warmup_steps",
             "spc_cooldown_steps",
+            "cusum_warmup_steps",
             "jsonl_max_bytes",
             "history_size",
         ):
@@ -343,7 +390,7 @@ class VitalsConfig:
                 except (TypeError, ValueError):
                     pass
 
-        for key in ("workflow_stuck_enabled", "jsonl_layout", "otlp_endpoint"):
+        for key in ("workflow_stuck_enabled", "model_size_class", "jsonl_layout", "otlp_endpoint"):
             if key in data:
                 text = str(data[key]).strip()
                 if text:
@@ -455,6 +502,9 @@ class VitalsConfig:
             burn_rate_multiplier=_yaml_float(
                 "burn_rate_multiplier", DEFAULT_BURN_RATE_MULTIPLIER
             ),
+            thrash_error_threshold=_yaml_int(
+                "thrash_error_threshold", DEFAULT_THRASH_ERROR_THRESHOLD
+            ),
             token_scale_factor=_yaml_float(
                 "token_scale_factor", DEFAULT_TOKEN_SCALE_FACTOR
             ),
@@ -473,8 +523,29 @@ class VitalsConfig:
             spc_cooldown_steps=_yaml_int(
                 "spc_cooldown_steps", DEFAULT_SPC_COOLDOWN_STEPS
             ),
+            cusum_k_sigma=_yaml_float(
+                "cusum_k_sigma", DEFAULT_CUSUM_K_SIGMA
+            ),
+            cusum_h_sigma=_yaml_float(
+                "cusum_h_sigma", DEFAULT_CUSUM_H_SIGMA
+            ),
+            cusum_warmup_steps=_yaml_int(
+                "cusum_warmup_steps", DEFAULT_CUSUM_WARMUP_STEPS
+            ),
+            cusum_min_sigma_similarity=_yaml_float(
+                "cusum_min_sigma_similarity", DEFAULT_CUSUM_MIN_SIGMA_SIMILARITY
+            ),
+            cusum_min_sigma_tokens=_yaml_float(
+                "cusum_min_sigma_tokens", DEFAULT_CUSUM_MIN_SIGMA_TOKENS
+            ),
+            cusum_min_sigma_findings=_yaml_float(
+                "cusum_min_sigma_findings", DEFAULT_CUSUM_MIN_SIGMA_FINDINGS
+            ),
             workflow_stuck_enabled=_yaml_str(
                 "workflow_stuck_enabled", DEFAULT_WORKFLOW_STUCK_ENABLED
+            ),
+            model_size_class=_yaml_str(
+                "model_size_class", DEFAULT_MODEL_SIZE_CLASS
             ),
             th_enter_warning=_yaml_float(
                 "th_enter_warning", DEFAULT_TH_ENTER_WARNING
@@ -518,13 +589,21 @@ class VitalsConfig:
                 ("stuck_dm_threshold", VITALS_STUCK_DM_THRESHOLD_ENV),
                 ("stuck_cv_threshold", VITALS_STUCK_CV_THRESHOLD_ENV),
                 ("burn_rate_multiplier", VITALS_BURN_RATE_MULTIPLIER_ENV),
+                ("thrash_error_threshold", VITALS_THRASH_ERROR_THRESHOLD_ENV),
                 ("token_scale_factor", VITALS_TOKEN_SCALE_FACTOR_ENV),
                 ("spc_k_sigma", VITALS_SPC_K_SIGMA_ENV),
                 ("spc_window_size", VITALS_SPC_WINDOW_SIZE_ENV),
                 ("spc_warmup_steps", VITALS_SPC_WARMUP_STEPS_ENV),
                 ("spc_cooldown_steps", VITALS_SPC_COOLDOWN_STEPS_ENV),
                 ("spc_wma_decay", VITALS_SPC_WMA_DECAY_ENV),
+                ("cusum_k_sigma", VITALS_CUSUM_K_SIGMA_ENV),
+                ("cusum_h_sigma", VITALS_CUSUM_H_SIGMA_ENV),
+                ("cusum_warmup_steps", VITALS_CUSUM_WARMUP_STEPS_ENV),
+                ("cusum_min_sigma_similarity", VITALS_CUSUM_MIN_SIGMA_SIMILARITY_ENV),
+                ("cusum_min_sigma_tokens", VITALS_CUSUM_MIN_SIGMA_TOKENS_ENV),
+                ("cusum_min_sigma_findings", VITALS_CUSUM_MIN_SIGMA_FINDINGS_ENV),
                 ("workflow_stuck_enabled", WORKFLOW_STUCK_ENABLED_ENV),
+                ("model_size_class", VITALS_MODEL_SIZE_CLASS_ENV),
                 ("th_enter_warning", VITALS_TH_ENTER_WARNING_ENV),
                 ("th_exit_warning", VITALS_TH_EXIT_WARNING_ENV),
                 ("th_enter_critical", VITALS_TH_ENTER_CRITICAL_ENV),
@@ -629,6 +708,11 @@ class VitalsConfig:
             default=DEFAULT_BURN_RATE_MULTIPLIER,
             min_value=1.0,
         )
+        thrash_error_threshold = _parse_int(
+            VITALS_THRASH_ERROR_THRESHOLD_ENV,
+            default=DEFAULT_THRASH_ERROR_THRESHOLD,
+            min_value=0,
+        )
         token_scale_factor = _parse_float(
             VITALS_TOKEN_SCALE_FACTOR_ENV,
             default=DEFAULT_TOKEN_SCALE_FACTOR,
@@ -660,9 +744,43 @@ class VitalsConfig:
             min_value=0.01,
             max_value=1.0,
         )
+        cusum_k_sigma = _parse_float(
+            VITALS_CUSUM_K_SIGMA_ENV,
+            default=DEFAULT_CUSUM_K_SIGMA,
+            min_value=0.01,
+        )
+        cusum_h_sigma = _parse_float(
+            VITALS_CUSUM_H_SIGMA_ENV,
+            default=DEFAULT_CUSUM_H_SIGMA,
+            min_value=0.1,
+        )
+        cusum_warmup_steps = _parse_int(
+            VITALS_CUSUM_WARMUP_STEPS_ENV,
+            default=DEFAULT_CUSUM_WARMUP_STEPS,
+            min_value=1,
+        )
+        cusum_min_sigma_similarity = _parse_float(
+            VITALS_CUSUM_MIN_SIGMA_SIMILARITY_ENV,
+            default=DEFAULT_CUSUM_MIN_SIGMA_SIMILARITY,
+            min_value=0.0,
+        )
+        cusum_min_sigma_tokens = _parse_float(
+            VITALS_CUSUM_MIN_SIGMA_TOKENS_ENV,
+            default=DEFAULT_CUSUM_MIN_SIGMA_TOKENS,
+            min_value=0.0,
+        )
+        cusum_min_sigma_findings = _parse_float(
+            VITALS_CUSUM_MIN_SIGMA_FINDINGS_ENV,
+            default=DEFAULT_CUSUM_MIN_SIGMA_FINDINGS,
+            min_value=0.0,
+        )
         workflow_stuck_enabled = _parse_workflow_stuck_enabled(
             WORKFLOW_STUCK_ENABLED_ENV,
             default=DEFAULT_WORKFLOW_STUCK_ENABLED,
+        )
+        model_size_class = _parse_model_size_class(
+            VITALS_MODEL_SIZE_CLASS_ENV,
+            default=DEFAULT_MODEL_SIZE_CLASS,
         )
 
         th_enter_warning = _parse_float(
@@ -715,13 +833,21 @@ class VitalsConfig:
             stuck_dm_threshold=stuck_dm_threshold,
             stuck_cv_threshold=stuck_cv_threshold,
             burn_rate_multiplier=burn_rate_multiplier,
+            thrash_error_threshold=thrash_error_threshold,
             token_scale_factor=token_scale_factor,
             spc_k_sigma=spc_k_sigma,
             spc_window_size=spc_window_size,
             spc_warmup_steps=spc_warmup_steps,
             spc_cooldown_steps=spc_cooldown_steps,
             spc_wma_decay=spc_wma_decay,
+            cusum_k_sigma=cusum_k_sigma,
+            cusum_h_sigma=cusum_h_sigma,
+            cusum_warmup_steps=cusum_warmup_steps,
+            cusum_min_sigma_similarity=cusum_min_sigma_similarity,
+            cusum_min_sigma_tokens=cusum_min_sigma_tokens,
+            cusum_min_sigma_findings=cusum_min_sigma_findings,
             workflow_stuck_enabled=workflow_stuck_enabled,
+            model_size_class=model_size_class,
             th_enter_warning=th_enter_warning,
             th_exit_warning=th_exit_warning,
             th_enter_critical=th_enter_critical,
@@ -744,9 +870,14 @@ class VitalsConfig:
 
 
 def get_vitals_config() -> VitalsConfig:
-    """Return a VitalsConfig instance built from the current environment."""
+    """Return the effective vitals config from YAML plus env overrides.
 
-    return VitalsConfig.from_env()
+    This keeps runtime behavior aligned with the documented loading order:
+    bundled thresholds file first, then environment overrides for deployment-
+    specific adjustments.
+    """
+
+    return VitalsConfig.from_yaml(allow_env_override=True)
 
 
 def _normalize(value: Optional[str]) -> Optional[str]:
@@ -823,6 +954,17 @@ def _parse_workflow_stuck_enabled(env_name: str, *, default: str) -> str:
     }
     if text in mapping:
         return mapping[text]
+    logger.warning("Invalid %s=%r; using default=%s", env_name, raw, default)
+    return default
+
+
+def _parse_model_size_class(env_name: str, *, default: str) -> str:
+    raw = _normalize(os.getenv(env_name))
+    if raw is None:
+        return default
+    text = raw.strip().lower()
+    if text in ("auto", "small", "medium", "large"):
+        return text
     logger.warning("Invalid %s=%r; using default=%s", env_name, raw, default)
     return default
 

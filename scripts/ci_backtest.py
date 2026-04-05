@@ -15,9 +15,16 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-from agent_vitals.backtest import ConfusionCounts, Dataset, _replay_trace, load_dataset
+from agent_vitals.backtest import (
+    ConfusionCounts,
+    Dataset,
+    _replay_trace,
+    load_dataset,
+    resolve_workflow_type,
+)
 from agent_vitals.ci_gate import evaluate_hard_gate, evaluate_promotion, metrics_with_ci
 from agent_vitals.config import VitalsConfig
+from agent_vitals.stratified import stratified_report
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -108,6 +115,24 @@ def _convert_real_labels(raw_labels: dict[str, Any], trace_keys: set[str]) -> La
     return labels
 
 
+def _extract_workflow_overrides(
+    raw_labels: dict[str, Any],
+    trace_keys: set[str],
+) -> dict[str, str]:
+    """Return explicit per-trace workflow hints for non-marked corpora."""
+
+    overrides: dict[str, str] = {}
+    for key, entry_any in raw_labels.items():
+        entry = entry_any if isinstance(entry_any, dict) else {}
+        mission_id = str(entry.get("mission_id", key))
+        if mission_id not in trace_keys:
+            continue
+        workflow = str(entry.get("workflow") or "").strip().lower()
+        if workflow == "build":
+            overrides[mission_id] = "build"
+    return overrides
+
+
 def _init_counts() -> dict[str, ConfusionCounts]:
     return {
         "loop": ConfusionCounts(),
@@ -126,9 +151,15 @@ def _evaluate(
     workflow_type: str,
     config: VitalsConfig,
     counts: dict[str, ConfusionCounts],
+    workflow_overrides: dict[str, str] | None = None,
 ) -> None:
     for trace_id, snapshots in dataset.traces.items():
         expected = labels.get(trace_id) or _empty_onsets()
+        trace_workflow = resolve_workflow_type(
+            trace_id,
+            workflow_type,
+            declared_workflow=(workflow_overrides or {}).get(trace_id),
+        )
 
         loop_expected = bool(expected.get("loop_at"))
         confab_expected = bool(expected.get("confabulation_at"))
@@ -137,7 +168,7 @@ def _evaluate(
         runaway_expected = bool(expected.get("runaway_cost_at"))
         any_expected = loop_expected or confab_expected or stuck_expected or thrash_expected or runaway_expected
 
-        fired = _replay_trace(snapshots, config=config, workflow_type=workflow_type)
+        fired = _replay_trace(snapshots, config=config, workflow_type=trace_workflow)
 
         counts["loop"].record(predicted=fired["loop"], expected=loop_expected)
         counts["confabulation"].record(predicted=fired["confabulation"], expected=confab_expected)
@@ -196,6 +227,7 @@ def main() -> int:
 
     synth_labels = _convert_synth_labels(synth_raw, set(synth_ds.traces.keys()))
     real_labels = _convert_real_labels(real_raw, set(real_ds.traces.keys()))
+    real_workflow_overrides = _extract_workflow_overrides(real_raw, set(real_ds.traces.keys()))
 
     synth_unlabeled = sorted(set(synth_ds.traces.keys()) - set(synth_labels.keys()))
     real_unlabeled = sorted(set(real_ds.traces.keys()) - set(real_labels.keys()))
@@ -218,12 +250,33 @@ def main() -> int:
         av31_unlabeled = sorted(set(av31_ds.traces.keys()) - set(av31_labels.keys()))
 
     cfg = VitalsConfig.from_yaml(allow_env_override=False)
-    counts = _init_counts()
 
-    _evaluate(synth_ds, synth_labels, workflow_type="synthetic", config=cfg, counts=counts)
-    _evaluate(real_ds, real_labels, workflow_type="real", config=cfg, counts=counts)
+    # Per-corpus evaluation for stratified reporting (av32-m03).
+    synth_counts = _init_counts()
+    real_counts = _init_counts()
+    av31_counts = _init_counts()
+
+    _evaluate(synth_ds, synth_labels, workflow_type="synthetic", config=cfg, counts=synth_counts)
+    _evaluate(
+        real_ds,
+        real_labels,
+        workflow_type="real",
+        config=cfg,
+        counts=real_counts,
+        workflow_overrides=real_workflow_overrides,
+    )
     if av31_ds is not None:
-        _evaluate(av31_ds, av31_labels, workflow_type="real", config=cfg, counts=counts)
+        _evaluate(av31_ds, av31_labels, workflow_type="real", config=cfg, counts=av31_counts)
+
+    # Combined counts from per-corpus totals.
+    counts = _init_counts()
+    for name in counts:
+        for corpus_cc in (synth_counts, real_counts, av31_counts):
+            cc = corpus_cc[name]
+            counts[name].tp += cc.tp
+            counts[name].fp += cc.fp
+            counts[name].fn += cc.fn
+            counts[name].tn += cc.tn
 
     runtime_s = time.perf_counter() - t0
 
@@ -233,6 +286,36 @@ def main() -> int:
         if name != "vitals.any"
     }
     composite = metrics_with_ci(counts["vitals.any"])
+
+    # Merge all labels for distribution analysis.
+    all_labels: Labels = {}
+    all_labels.update(synth_labels)
+    all_labels.update(real_labels)
+    all_labels.update(av31_labels)
+
+    detector_counts = {
+        name: cc for name, cc in counts.items() if name != "vitals.any"
+    }
+    stratified = stratified_report(
+        detectors,
+        detector_counts,
+        all_labels,
+        min_positives=args.detector_min_positives,
+    )
+
+    # Per-corpus metrics.
+    per_corpus_metrics: dict[str, dict[str, Any]] = {}
+    for corpus_name, corpus_counts in [
+        ("synthetic", synth_counts),
+        ("real", real_counts),
+        ("av31", av31_counts),
+    ]:
+        per_corpus_metrics[corpus_name] = {
+            name: metrics_with_ci(cc)
+            for name, cc in corpus_counts.items()
+            if name != "vitals.any"
+        }
+    stratified["per_corpus"] = per_corpus_metrics
 
     composite_gate_pass = (
         composite["precision"] >= args.composite_min_precision
@@ -314,6 +397,7 @@ def main() -> int:
             "composite_passed": composite_gate_pass,
             "hard_detector_failures": hard_gate_failures,
         },
+        "stratified": stratified,
     }
 
     args.output.parent.mkdir(parents=True, exist_ok=True)
@@ -359,6 +443,27 @@ def main() -> int:
                 f"reasons={'; '.join(decision['reasons']) if decision['reasons'] else 'meets_promotion_criteria'}"
             ),
         )
+
+    # Stratified evaluation annotations (av32-m03).
+    macro = stratified["macro_average"]
+    micro = stratified["micro_average"]
+    print(
+        f"Stratified: macro(P={macro['precision']:.3f} R={macro['recall']:.3f} "
+        f"F1={macro['f1']:.3f} n={macro['detector_count']}) "
+        f"micro(P={micro['precision']:.3f} R={micro['recall']:.3f} F1={micro['f1']:.3f})"
+    )
+    dist = stratified["label_distribution"]
+    _annotate(
+        "notice",
+        "backtest:label_distribution",
+        (
+            f"total={dist['total_traces']} healthy={dist['healthy']} "
+            + " ".join(f"{k}={v}" for k, v in dist["per_detector"].items())
+            + f" imbalance_ratio={dist['imbalance_ratio']}"
+        ),
+    )
+    for name, warn in stratified.get("sample_warnings", {}).items():
+        _annotate("warning", f"backtest:sample_warning:{name}", warn["message"])
 
     if synth_unlabeled or real_unlabeled:
         _annotate(

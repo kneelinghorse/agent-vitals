@@ -12,6 +12,7 @@ from typing import Any, Mapping, Optional
 
 DEFAULT_THRASH_ERROR_THRESHOLD = 1
 DEFAULT_RUNAWAY_TRIGGER = "burn_rate_anomaly"
+DEFAULT_MIN_STEPS_FOR_THRASH = 3
 
 
 @dataclass(frozen=True, slots=True)
@@ -54,6 +55,8 @@ def derive_stop_signals(
     *,
     thrash_error_threshold: int = DEFAULT_THRASH_ERROR_THRESHOLD,
     runaway_trigger: str = DEFAULT_RUNAWAY_TRIGGER,
+    min_steps_for_thrash: int = DEFAULT_MIN_STEPS_FOR_THRASH,
+    step_count: Optional[int] = None,
 ) -> StopRuleSignals:
     """Compute stop-rule signals from a snapshot payload.
 
@@ -61,6 +64,11 @@ def derive_stop_signals(
         snapshot: Dict-like payload or model instance with vitals fields.
         thrash_error_threshold: Error-count threshold to flag thrash.
         runaway_trigger: Stuck trigger string that maps to runaway cost.
+        min_steps_for_thrash: Minimum segment/trace steps required before
+            thrash evaluation applies.  Segments shorter than this are
+            treated as segmentation artifacts (not real thrash).
+        step_count: Total number of steps in the trace/segment.  When
+            provided and below *min_steps_for_thrash*, thrash is suppressed.
 
     Returns:
         StopRuleSignals with per-mode detection flags.
@@ -72,8 +80,16 @@ def derive_stop_signals(
     explicit_thrash = _read_optional_flag(snapshot, "thrash_detected")
     explicit_runaway = _read_optional_flag(snapshot, "runaway_cost_detected")
 
+    # Suppress thrash on short segments — single-step and 2-step segments
+    # are segmentation artifacts, not real behavioral thrash (av32-m01).
+    short_segment = (
+        step_count is not None and step_count < min_steps_for_thrash
+    )
+
     thrash_detected = False
-    if explicit_thrash is not None:
+    if short_segment:
+        pass  # Excluded: segment too short for meaningful thrash detection
+    elif explicit_thrash is not None:
         thrash_detected = bool(explicit_thrash)
     elif thrash_error_threshold > 0:
         error_count = _read_error_count(snapshot)
@@ -159,6 +175,7 @@ def _coerce_int(value: Any) -> Optional[int]:
 
 
 __all__ = [
+    "DEFAULT_MIN_STEPS_FOR_THRASH",
     "DEFAULT_RUNAWAY_TRIGGER",
     "DEFAULT_THRASH_ERROR_THRESHOLD",
     "StopRuleSignals",

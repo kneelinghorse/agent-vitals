@@ -258,7 +258,7 @@ class TestYAMLProfileLoading:
         assert config.loop_consecutive_pct == 0.5
         assert config.for_framework("langgraph").loop_consecutive_pct == 0.4
         assert config.for_framework("crewai").loop_consecutive_pct == 0.5
-        assert config.for_framework("dspy").loop_consecutive_pct == 0.6
+        assert config.for_framework("dspy").loop_consecutive_pct == 0.7
 
 
 # ---------------------------------------------------------------------------

@@ -1,6 +1,9 @@
 """Tests for agent_vitals.config module."""
 
-from agent_vitals.config import VitalsConfig
+from pathlib import Path
+
+import agent_vitals.config as config_module
+from agent_vitals.config import VitalsConfig, get_vitals_config
 
 
 class TestVitalsConfig:
@@ -16,7 +19,8 @@ class TestVitalsConfig:
         assert cfg.loop_consecutive_count == 3
         assert cfg.stuck_dm_threshold == 0.15
         assert cfg.stuck_cv_threshold == 0.3
-        assert cfg.burn_rate_multiplier == 3.0
+        assert cfg.burn_rate_multiplier == 2.5
+        assert cfg.thrash_error_threshold == 1
         assert cfg.token_scale_factor == 1.0
         assert cfg.spc_k_sigma == 3.0
         assert cfg.spc_window_size == 5
@@ -95,6 +99,57 @@ class TestVitalsConfig:
         assert cfg.spc_wma_decay == 0.7
         assert cfg.stuck_dm_threshold == 0.15
 
+    def test_get_vitals_config_uses_yaml_thresholds(self, tmp_path, monkeypatch) -> None:
+        """get_vitals_config should load threshold values from YAML."""
+        yaml_path = tmp_path / "thresholds.yaml"
+        yaml_path.write_text(
+            "\n".join(
+                [
+                    "loop_consecutive_pct: 0.42",
+                    "stuck_cv_threshold: 0.55",
+                    "profiles:",
+                    "  langgraph:",
+                    "    loop_consecutive_pct: 0.33",
+                ]
+            ),
+            encoding="utf-8",
+        )
+
+        monkeypatch.setattr(config_module, "THRESHOLDS_YAML_PATH", yaml_path)
+        for env_name in (
+            "VITALS_LOOP_CONSECUTIVE_PCT",
+            "VITALS_STUCK_CV_THRESHOLD",
+        ):
+            monkeypatch.delenv(env_name, raising=False)
+
+        cfg = get_vitals_config()
+
+        assert cfg.loop_consecutive_pct == 0.42
+        assert cfg.stuck_cv_threshold == 0.55
+        assert cfg.for_framework("langgraph").loop_consecutive_pct == 0.33
+
+    def test_get_vitals_config_env_overrides_yaml(self, tmp_path, monkeypatch) -> None:
+        """Explicit env vars should still override YAML-loaded thresholds."""
+        yaml_path = tmp_path / "thresholds.yaml"
+        yaml_path.write_text(
+            "\n".join(
+                [
+                    "loop_consecutive_pct: 0.42",
+                    "stuck_cv_threshold: 0.55",
+                ]
+            ),
+            encoding="utf-8",
+        )
+
+        monkeypatch.setattr(config_module, "THRESHOLDS_YAML_PATH", yaml_path)
+        monkeypatch.setenv("VITALS_STUCK_CV_THRESHOLD", "0.91")
+        monkeypatch.delenv("VITALS_LOOP_CONSECUTIVE_PCT", raising=False)
+
+        cfg = get_vitals_config()
+
+        assert cfg.loop_consecutive_pct == 0.42
+        assert cfg.stuck_cv_threshold == 0.91
+
 
 class TestVitalsConfigFromDict:
     """Tests for VitalsConfig.from_dict edge cases."""
@@ -109,6 +164,80 @@ class TestVitalsConfigFromDict:
         assert cfg.stuck_dm_threshold == 0.25
 
     def test_path_coercion(self) -> None:
-        from pathlib import Path
         cfg = VitalsConfig.from_dict({"jsonl_dir": "/tmp/vitals"})
         assert cfg.jsonl_dir == Path("/tmp/vitals")
+
+
+class TestCUSUMConfig:
+    """Tests for CUSUM tracker config params."""
+
+    def test_cusum_defaults(self) -> None:
+        cfg = VitalsConfig()
+        assert cfg.cusum_k_sigma == 0.5
+        assert cfg.cusum_h_sigma == 4.0
+        assert cfg.cusum_warmup_steps == 2
+        assert cfg.cusum_min_sigma_similarity == 0.05
+        assert cfg.cusum_min_sigma_tokens == 25.0
+        assert cfg.cusum_min_sigma_findings == 0.5
+
+    def test_cusum_from_dict(self) -> None:
+        cfg = VitalsConfig.from_dict({
+            "cusum_k_sigma": 1.0,
+            "cusum_h_sigma": 5.0,
+            "cusum_warmup_steps": 3,
+            "cusum_min_sigma_similarity": 0.1,
+            "cusum_min_sigma_tokens": 50.0,
+            "cusum_min_sigma_findings": 1.0,
+        })
+        assert cfg.cusum_k_sigma == 1.0
+        assert cfg.cusum_h_sigma == 5.0
+        assert cfg.cusum_warmup_steps == 3
+        assert cfg.cusum_min_sigma_similarity == 0.1
+        assert cfg.cusum_min_sigma_tokens == 50.0
+        assert cfg.cusum_min_sigma_findings == 1.0
+
+    def test_cusum_from_yaml(self) -> None:
+        """Bundled thresholds.yaml includes CUSUM params."""
+        cfg = VitalsConfig.from_yaml(allow_env_override=False)
+        assert cfg.cusum_k_sigma == 0.5
+        assert cfg.cusum_h_sigma == 4.0
+        assert cfg.cusum_warmup_steps == 2
+        assert cfg.cusum_min_sigma_similarity == 0.05
+        assert cfg.cusum_min_sigma_tokens == 25.0
+        assert cfg.cusum_min_sigma_findings == 0.5
+
+    def test_cusum_profile_override(self) -> None:
+        """Framework profiles can override CUSUM params."""
+        from agent_vitals.config import ThresholdProfile
+
+        profiles = (ThresholdProfile(
+            framework="custom",
+            cusum_k_sigma=0.8,
+            cusum_h_sigma=3.0,
+            cusum_warmup_steps=5,
+            cusum_min_sigma_similarity=0.02,
+        ),)
+        cfg = VitalsConfig(framework_profiles=profiles)
+        resolved = cfg.for_framework("custom")
+        assert resolved.cusum_k_sigma == 0.8
+        assert resolved.cusum_h_sigma == 3.0
+        assert resolved.cusum_warmup_steps == 5
+        assert resolved.cusum_min_sigma_similarity == 0.02
+        # Non-overridden fields keep defaults
+        assert resolved.cusum_min_sigma_tokens == 25.0
+        assert resolved.cusum_min_sigma_findings == 0.5
+
+
+def test_version_matches_pyproject() -> None:
+    """agent_vitals.__version__ should match the version in pyproject.toml."""
+    import tomllib
+
+    import agent_vitals
+
+    pyproject_path = Path(__file__).resolve().parent.parent / "pyproject.toml"
+    with open(pyproject_path, "rb") as fh:
+        pyproject = tomllib.load(fh)
+    expected = pyproject["project"]["version"]
+    assert agent_vitals.__version__ == expected, (
+        f"__version__={agent_vitals.__version__!r} != pyproject.toml version={expected!r}"
+    )

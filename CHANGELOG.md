@@ -5,6 +5,59 @@ All notable changes to the `agent-vitals` package.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+## [1.11.0] - 2026-04-05
+
+### Added
+- **Verified source ratio confabulation signal** (`verified_source_ratio`):
+  new `verified_sources_count` and `unverified_sources_count` fields on `RawSignals`
+  enable ground-truth confabulation detection for frontier models (claude-sonnet,
+  gpt-4o) that defeat the existing `source_finding_ratio` heuristic by producing
+  fake sources in high volume.
+- **Model-size-aware signal normalization** (`signal_mapping.py`): auto-classify
+  traces as small/medium/large based on token variance, with per-size threshold
+  adjustments. `burn_rate_multiplier_scale` applied in stuck-enabled path for
+  FP protection on medium/small models.
+- **Stratified corpus utilities** (`stratified.py`): helpers for corpus
+  stratification and per-profile backtest evaluation.
+- **Stop-rule signal derivation** (`stop_rule.py`): `derive_stop_signals()`
+  extracts actionable stop signals from `VitalsSnapshot` for downstream consumers.
+
+### Changed
+- Backtest evaluation now infers per-trace workflow from corpus ids (`.bc.`/`.rc.`)
+  so mixed AV-31 corpora score build and research traces with the correct stuck-detection mode.
+- `_handle_stuck_disabled` now uses min-baseline mode for `burn_rate_anomaly`
+  confidence, preventing spike contamination on multi-step DSPy traces.
+  (S03 burn_rate regression fix.)
+- `burn_rate_multiplier_scale` is path-specific: applied in `_detect_stuck_candidates`
+  (stuck-enabled) for FP protection, NOT applied in `_handle_stuck_disabled`
+  (stuck-disabled) to preserve recall.
+
+### Fixed
+- **AV-32 stuck/loop co-occurrence**: added a narrow `short_run_zero_coverage`
+  stuck signal for research traces that hit repeated-output, zero-coverage stalls,
+  and preserved that signal through loop arbitration via `detector_priority`.
+- **burn_rate_anomaly regression** (S03): removed speculative `burn_rate_multiplier_scale`
+  from `_prepare_context()` that doubled the threshold on small-model traces,
+  causing 42 FNs on DSPy runaway_cost. Added min-baseline mode and path-specific
+  scale to resolve without regressing LangGraph.
+- **DSPy runaway_cost co-occurrence FPs** (S04): ported cross-detector arbitration
+  from `_resolve_detections` to `_handle_stuck_disabled`. Four suppression rules:
+  relaxed stagnation suppresses runaway, confabulation overlap, loop-runaway
+  confidence arbitration (content_similarity wins unconditionally), error-count
+  suppression. DSPy P_lb 0.693 → 0.814 on 862-trace bench corpus.
+- DeepSearch backtest imports now delegate to the shared `agent_vitals.backtest`
+  implementation so package CI, legacy DeepSearch tests, and the AV-31 report
+  all evaluate the same replay logic.
+
+### Validation
+- All 4 framework profiles pass all enabled gates on 862-trace bench corpus.
+- DSPy runaway_cost: P_lb=0.814 (was 0.693), R_lb=0.973 (unchanged).
+- Default: P_lb=0.832, CrewAI: P_lb=0.940, LangGraph: P_lb=0.808 (no regressions).
+- Loop hard gate maintained: P=0.986 [0.960], R=1.000 [0.982].
+- Local: 505 tests, 90% coverage, lint clean.
+
 ## [1.10.0] - 2026-03-14
 
 ### Added

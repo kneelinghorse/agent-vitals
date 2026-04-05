@@ -31,7 +31,12 @@ from .schema import (
     VitalsSnapshot,
 )
 
-__version__ = "1.8.0"
+try:
+    from importlib.metadata import version as _pkg_version
+
+    __version__ = _pkg_version("agent-vitals")
+except Exception:
+    __version__ = "0.0.0"
 
 __all__ = [
     "AdapterError",

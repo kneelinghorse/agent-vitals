@@ -64,6 +64,12 @@ class RawSignals(BaseModel):
     unique_domains: int = Field(default=0, ge=0)
     refinement_count: int = Field(default=0, ge=0)
 
+    # Verified source signals for confabulation detection.
+    # When provided, verified_source_ratio = verified / (verified + unverified)
+    # enables detection of high-volume source fabrication by frontier models.
+    verified_sources_count: Optional[int] = Field(default=None, ge=0)
+    unverified_sources_count: Optional[int] = Field(default=None, ge=0)
+
     convergence_delta: float = Field(default=0.0)
     error_count: int = Field(..., ge=0)
 
@@ -135,6 +141,8 @@ class VitalsSnapshot(BaseModel):
     source_finding_ratio: Optional[float] = Field(default=None, ge=0.0)
     ratio_trend: RatioTrend = Field(default="insufficient_data")
     ratio_declining_steps: int = Field(default=0, ge=0)
+
+    verified_source_ratio: Optional[float] = Field(default=None, ge=0.0, le=1.0)
 
     output_similarity: Optional[float] = Field(default=None, ge=0.0, le=1.0)
     output_fingerprint: Optional[str] = Field(default=None)

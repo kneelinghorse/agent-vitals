@@ -24,7 +24,7 @@ from typing import Any, Mapping, Optional, Sequence
 from .config import VitalsConfig
 from .detection.loop import detect_loop
 from .schema import VitalsSnapshot
-from .detection.stop_rule import derive_stop_signals
+from .detection.stop_rule import DEFAULT_MIN_STEPS_FOR_THRASH, derive_stop_signals
 
 
 # ---------------------------------------------------------------------------
@@ -318,6 +318,10 @@ def _replay_trace(
     stuck_fired = False
     thrash_fired = False
     runaway_fired = False
+    best_loop_trigger: str | None = None
+    best_loop_confidence = 0.0
+    has_content_similarity = False
+    preserve_stuck_overlap = False
 
     history: list[VitalsSnapshot] = []
     for snapshot in snapshots:
@@ -335,13 +339,31 @@ def _replay_trace(
                 "stuck_trigger": detection.stuck_trigger,
                 "error_count": int(snapshot.signals.error_count),
             },
+            thrash_error_threshold=config.thrash_error_threshold,
         )
+
+        # Track best loop trigger for co-occurrence resolution (av32-m02).
+        if detection.loop_detected and detection.loop_confidence > best_loop_confidence:
+            best_loop_confidence = detection.loop_confidence
+            best_loop_trigger = detection.loop_trigger
+        if detection.loop_detected and detection.loop_trigger == "content_similarity":
+            has_content_similarity = True
+        if (
+            detection.loop_detected
+            and detection.stuck_detected
+            and detection.detector_priority == "stuck"
+        ):
+            preserve_stuck_overlap = True
 
         if detection.loop_detected:
             loop_fired = True
         if detection.confabulation_detected:
             confabulation_fired = True
-        if detection.stuck_detected:
+        if (
+            detection.stuck_detected
+            and detection.detector_priority != "confabulation"
+            and detection.stuck_trigger != "burn_rate_anomaly"
+        ):
             stuck_fired = True
         if stop_signals.thrash_detected:
             thrash_fired = True
@@ -350,10 +372,20 @@ def _replay_trace(
 
         history.append(snapshot)
 
-    # Trace-level overlap handling: suppress stuck on pure loop-style traces,
-    # but keep stuck when mixed failure modes include thrash/runaway.
+    # Suppress thrash on short segments — segmentation artifacts (av32-m01).
+    if len(snapshots) < DEFAULT_MIN_STEPS_FOR_THRASH:
+        thrash_fired = False
+
+    # Trace-level co-occurrence resolution (av32-m02):
+    # Only suppress stuck when loop has strong content-based evidence.
+    # For statistical loop signals, keep both — stuck is often the root
+    # cause with loop as a symptom (av-31: 96/107 co-occurrences → stuck).
     if stuck_fired and loop_fired and not (thrash_fired or runaway_fired):
-        stuck_fired = False
+        if (
+            (has_content_similarity or best_loop_trigger == "content_similarity")
+            and not preserve_stuck_overlap
+        ):
+            stuck_fired = False
 
     any_fired = loop_fired or confabulation_fired or stuck_fired or thrash_fired or runaway_fired
     return {
@@ -407,6 +439,7 @@ def run_backtest(
             "thrash_at": set(),
             "runaway_cost_at": set(),
         }
+        trace_workflow = resolve_workflow_type(mission_id, workflow_type)
         loop_expected = bool(expected.get("loop_at"))
         confabulation_expected = bool(expected.get("confabulation_at"))
         stuck_expected = bool(expected.get("stuck_at"))
@@ -420,7 +453,7 @@ def run_backtest(
             or runaway_expected
         )
 
-        fired = _replay_trace(snapshots, config=cfg, workflow_type=workflow_type)
+        fired = _replay_trace(snapshots, config=cfg, workflow_type=trace_workflow)
 
         loop_counts.record(predicted=fired["loop"], expected=loop_expected)
         confabulation_counts.record(
@@ -472,6 +505,23 @@ def run_backtest(
 # Helpers
 # ---------------------------------------------------------------------------
 
+def resolve_workflow_type(
+    trace_id: str,
+    default_workflow: str,
+    declared_workflow: str | None = None,
+) -> str:
+    """Infer per-trace workflow when corpus ids embed or declare build markers."""
+
+    normalized = trace_id.strip().lower()
+    if ".bc." in normalized:
+        return "build"
+    if ".rc." in normalized:
+        return "research"
+    declared = str(declared_workflow or "").strip().lower()
+    if declared == "build":
+        return "build"
+    return default_workflow
+
 def _coerce_int_set(value: Any) -> set[int]:
     if not isinstance(value, Sequence) or isinstance(value, (str, bytes, bytearray)):
         return set()
@@ -492,5 +542,6 @@ __all__ = [
     "Labels",
     "load_dataset",
     "load_labels",
+    "resolve_workflow_type",
     "run_backtest",
 ]

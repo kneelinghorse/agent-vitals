@@ -81,29 +81,29 @@ class AgentVitals:
         self._health_state: HealthState = "healthy"
         self._metrics_engine = TemporalMetrics()
         self._recent_output_texts: list[str] = []
-        # AV-28 CUSUM defaults: standard SPC initialization
-        # (k=0.5*sigma, H=4*sigma) from warmup baseline. Metric-specific
-        # min_sigma floors reduce false alarms on low-variance streams.
+        # AV-28 CUSUM: standard SPC initialization
+        # (k=k_sigma*sigma, H=h_sigma*sigma) from warmup baseline.
+        # Metric-specific min_sigma floors reduce false alarms on low-variance streams.
         self._cusum_output_similarity = CUSUMTracker(
             direction="increase",
-            k_sigma=0.5,
-            h_sigma=4.0,
-            warmup_steps=2,
-            min_sigma=0.05,
+            k_sigma=float(self._config.cusum_k_sigma),
+            h_sigma=float(self._config.cusum_h_sigma),
+            warmup_steps=int(self._config.cusum_warmup_steps),
+            min_sigma=float(self._config.cusum_min_sigma_similarity),
         )
         self._cusum_token_usage_delta = CUSUMTracker(
             direction="decrease",
-            k_sigma=0.5,
-            h_sigma=4.0,
-            warmup_steps=2,
-            min_sigma=25.0,
+            k_sigma=float(self._config.cusum_k_sigma),
+            h_sigma=float(self._config.cusum_h_sigma),
+            warmup_steps=int(self._config.cusum_warmup_steps),
+            min_sigma=float(self._config.cusum_min_sigma_tokens),
         )
         self._cusum_findings_count_delta = CUSUMTracker(
             direction="increase",
-            k_sigma=0.5,
-            h_sigma=4.0,
-            warmup_steps=2,
-            min_sigma=0.5,
+            k_sigma=float(self._config.cusum_k_sigma),
+            h_sigma=float(self._config.cusum_h_sigma),
+            warmup_steps=int(self._config.cusum_warmup_steps),
+            min_sigma=float(self._config.cusum_min_sigma_findings),
         )
 
     @classmethod
@@ -149,6 +149,9 @@ class AgentVitals:
         refinement_count: int = 0,
         convergence_delta: float = 0.0,
         confidence_score: float = 0.0,
+        # Verified source signals for confabulation detection
+        verified_sources_count: Optional[int] = None,
+        unverified_sources_count: Optional[int] = None,
         # Content-based similarity detection
         output_text: Optional[str] = None,
     ) -> VitalsSnapshot:
@@ -191,6 +194,8 @@ class AgentVitals:
             refinement_count=refinement_count,
             convergence_delta=convergence_delta,
             error_count=error_count,
+            verified_sources_count=verified_sources_count,
+            unverified_sources_count=unverified_sources_count,
         )
         return self._process_signals(signals, output_text=output_text)
 
@@ -418,6 +423,7 @@ class AgentVitals:
         ratio_trend, ratio_declining_steps = self._compute_ratio_trend(
             source_finding_ratio=source_finding_ratio
         )
+        verified_source_ratio = self._compute_verified_source_ratio(signals)
 
         # Build snapshot (without detection results yet, but WITH similarity)
         snapshot = VitalsSnapshot(
@@ -435,6 +441,7 @@ class AgentVitals:
             source_finding_ratio=source_finding_ratio,
             ratio_trend=ratio_trend,
             ratio_declining_steps=ratio_declining_steps,
+            verified_source_ratio=verified_source_ratio,
             output_similarity=output_similarity,
             output_fingerprint=output_fingerprint,
         )
@@ -463,6 +470,7 @@ class AgentVitals:
             source_finding_ratio=source_finding_ratio,
             ratio_trend=ratio_trend,
             ratio_declining_steps=ratio_declining_steps,
+            verified_source_ratio=verified_source_ratio,
             output_similarity=output_similarity,
             output_fingerprint=output_fingerprint,
             loop_detected=detection.loop_detected,
@@ -513,6 +521,18 @@ class AgentVitals:
         if findings <= 0:
             return None
         return max(0.0, float(int(sources_count)) / float(findings))
+
+    @staticmethod
+    def _compute_verified_source_ratio(signals: RawSignals) -> Optional[float]:
+        """Return verified / (verified + unverified), or None when unavailable."""
+        verified = signals.verified_sources_count
+        unverified = signals.unverified_sources_count
+        if verified is None or unverified is None:
+            return None
+        total = int(verified) + int(unverified)
+        if total <= 0:
+            return None
+        return max(0.0, min(1.0, float(int(verified)) / float(total)))
 
     def _compute_ratio_trend(
         self,

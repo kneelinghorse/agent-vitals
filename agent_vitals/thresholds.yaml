@@ -36,7 +36,11 @@ loop_consecutive_count: 3
 # --- Stuck Detection ---
 stuck_dm_threshold: 0.15
 stuck_cv_threshold: 0.3
-burn_rate_multiplier: 3.0
+burn_rate_multiplier: 2.5
+
+# Error-count threshold for thrash detection via stop rule.
+# When error_count >= this value, thrash is flagged. Set 0 to disable.
+thrash_error_threshold: 1
 
 # Token normalization scale factor for models with different tokenization.
 # Set < 1.0 for large models that produce more tokens per step (e.g. 0.5 for 120B models).
@@ -46,6 +50,17 @@ token_scale_factor: 1.0
 # Workflow scope for stuck detection.
 # Options: research-only | build-only | all | none
 workflow_stuck_enabled: research-only
+
+# --- CUSUM Change-Point Detection ---
+# CUSUMTracker params for the three metric trackers in AgentVitals.
+# k = k_sigma * sigma, H = h_sigma * sigma (standard SPC parameterization).
+# min_sigma floors reduce false alarms on low-variance streams.
+cusum_k_sigma: 0.5
+cusum_h_sigma: 4.0
+cusum_warmup_steps: 2
+cusum_min_sigma_similarity: 0.05
+cusum_min_sigma_tokens: 25.0
+cusum_min_sigma_findings: 0.5
 
 # --- SPC Adaptive Thresholding ---
 # AdaptiveThreshold uses WMA control limits after warmup:
@@ -79,13 +94,13 @@ profiles:
   # More lenient loop detection — agent handoffs look like repetition.
   crewai:
     loop_consecutive_pct: 0.5
-    burn_rate_multiplier: 4.0
+    burn_rate_multiplier: 3.0
     token_scale_factor: 0.7
 
   # DSPy: optimization loops are naturally repetitive. Very lenient loop
   # detection, tighter stuck threshold, disable stuck detection entirely
   # (DSPy has its own termination logic).
   dspy:
-    loop_consecutive_pct: 0.6
+    loop_consecutive_pct: 0.7
     stuck_dm_threshold: 0.1
     workflow_stuck_enabled: none
