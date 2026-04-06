@@ -621,10 +621,19 @@ def _detect_causal_confabulation(
         total_sources = last.signals.sources_count
         verified_ratio = total_verified / max(1, total_sources)
 
+        # Streaming gate: latest verified window must also be weak so we
+        # only fire when the trace is currently in a verified-decoupling
+        # state.  Real LLM traces can transiently fluctuate when the model
+        # cites a real paper after fabricated ones; bench's one-shot
+        # evaluation never sees those transients but our per-step replay
+        # does.  Without this gate, transient early weakness sticks via
+        # "confabulation_fired = any step".
+        latest_verified = verified_scores[-1] if verified_scores[-1] is not None else 1.0
         verified_decoupling = (
             verified_baseline_strength <= float(cfg.causal_confab_verified_link_floor)
             and verified_ratio <= float(cfg.causal_confab_verified_ratio_gate)
             and total_sources >= int(cfg.causal_confab_verified_min_sources)
+            and latest_verified <= float(cfg.causal_confab_verified_link_floor)
         )
 
     # Trigger selection priority: structural_break > persistent_low > verified_decoupling.
