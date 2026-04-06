@@ -49,6 +49,14 @@ causal_confab_low_link_threshold: 0.2
 causal_confab_source_bootstrap_cap: 10
 causal_confab_low_link_ratio_gate: 0.3
 
+# Path 3: verified source decoupling (real LLM confabulation via DOI verification).
+# Only fires when verified_sources_count is present on snapshots.
+causal_confab_verified_link_floor: 0.5
+causal_confab_verified_weak_threshold: 0.25
+causal_confab_verified_drop_threshold: 0.15
+causal_confab_verified_ratio_gate: 0.3
+causal_confab_verified_min_sources: 10
+
 # Legacy absolute threshold retained for backward compatibility only.
 loop_consecutive_count: 3
 

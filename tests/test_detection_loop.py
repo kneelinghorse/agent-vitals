@@ -386,14 +386,19 @@ def test_ratio_floor_confidence_boosts_with_sources_stagnation(
 def test_confabulation_priority_does_not_clear_stuck_signal(
     vitals_snapshot_healthy: dict,
 ) -> None:
-    """Confabulation can be primary while still preserving a stuck diagnosis."""
+    """Confabulation can be primary while still preserving a stuck diagnosis.
+
+    Uses a trace where findings grow rapidly (5→10→15→20) while sources stay
+    flat at 1, dropping the source-finding ratio below the causal Path 2
+    low_link_ratio_gate (0.3). Coverage stagnation gives the stuck diagnosis.
+    """
     config = VitalsConfig()
     history = [
         _make_snapshot(
             vitals_snapshot_healthy,
             loop_index=0,
-            findings_count=2,
-            sources_count=3,
+            findings_count=5,
+            sources_count=1,
             coverage_score=0.1,
             total_tokens=1000,
             query_count=1,
@@ -404,8 +409,8 @@ def test_confabulation_priority_does_not_clear_stuck_signal(
         _make_snapshot(
             vitals_snapshot_healthy,
             loop_index=1,
-            findings_count=4,
-            sources_count=3,
+            findings_count=10,
+            sources_count=1,
             coverage_score=0.1,
             total_tokens=2000,
             query_count=2,
@@ -416,8 +421,8 @@ def test_confabulation_priority_does_not_clear_stuck_signal(
         _make_snapshot(
             vitals_snapshot_healthy,
             loop_index=2,
-            findings_count=6,
-            sources_count=3,
+            findings_count=15,
+            sources_count=1,
             coverage_score=0.1,
             total_tokens=3000,
             query_count=3,
@@ -429,8 +434,8 @@ def test_confabulation_priority_does_not_clear_stuck_signal(
     current = _make_snapshot(
         vitals_snapshot_healthy,
         loop_index=3,
-        findings_count=8,
-        sources_count=3,
+        findings_count=20,
+        sources_count=1,
         coverage_score=0.1,
         total_tokens=4200,
         query_count=4,
@@ -447,42 +452,47 @@ def test_confabulation_priority_does_not_clear_stuck_signal(
 
 
 def test_ratio_declining_trajectory_triggers_confab(vitals_snapshot_healthy: dict) -> None:
-    """Three consecutive ratio declines with findings growth should trigger confab."""
-    config = VitalsConfig(source_finding_ratio_declining_steps=3, source_finding_ratio_floor=0.3)
+    """Findings growth with flat sources should trigger causal Path 2 confab.
+
+    The legacy SFR declining trajectory test: under the new causal detector
+    this is caught by persistent_low_causal_link (sources never grow → link
+    strength stays at 0, small bootstrap, final ratio drops below gate).
+    """
+    config = VitalsConfig()
     history = [
         _make_snapshot(
             vitals_snapshot_healthy,
             loop_index=1,
-            findings_count=5,
-            sources_count=7,
+            findings_count=10,
+            sources_count=2,
             coverage_score=0.3,
             total_tokens=1000,
             query_count=1,
-            unique_domains=3,
+            unique_domains=1,
             dm_coverage=0.3,
             cv_coverage=0.3,
         ),
         _make_snapshot(
             vitals_snapshot_healthy,
             loop_index=2,
-            findings_count=10,
-            sources_count=7,
+            findings_count=20,
+            sources_count=2,
             coverage_score=0.35,
             total_tokens=2000,
             query_count=2,
-            unique_domains=4,
+            unique_domains=1,
             dm_coverage=0.3,
             cv_coverage=0.3,
         ),
         _make_snapshot(
             vitals_snapshot_healthy,
             loop_index=3,
-            findings_count=15,
-            sources_count=7,
+            findings_count=30,
+            sources_count=2,
             coverage_score=0.4,
             total_tokens=3200,
             query_count=3,
-            unique_domains=5,
+            unique_domains=1,
             dm_coverage=0.3,
             cv_coverage=0.3,
         ),
@@ -490,20 +500,19 @@ def test_ratio_declining_trajectory_triggers_confab(vitals_snapshot_healthy: dic
     current = _make_snapshot(
         vitals_snapshot_healthy,
         loop_index=4,
-        findings_count=20,
-        sources_count=7,
+        findings_count=40,
+        sources_count=2,
         coverage_score=0.45,
         total_tokens=4600,
         query_count=4,
-        unique_domains=6,
+        unique_domains=1,
         dm_coverage=0.3,
         cv_coverage=0.3,
     )
 
     result = detect_loop(current, history, config=config)
     assert result.confabulation_detected is True
-    assert result.confabulation_trigger == "source_finding_ratio_declining"
-    assert result.confabulation_confidence == pytest.approx(0.6)
+    assert result.confabulation_trigger == "persistent_low_causal_link"
     assert result.detector_priority == "confabulation"
 
 
@@ -1851,14 +1860,20 @@ def test_stuck_disabled_runaway_fires_with_healthy_dm_cv(
 def test_verified_source_ratio_low_triggers_confabulation(
     vitals_snapshot_healthy: dict,
 ) -> None:
-    """Low verified_source_ratio with growing sources should trigger confabulation."""
+    """Low verified/total ratio with growing sources triggers Path 3 confab.
+
+    The new causal Path 3 (verified_source_decoupling) detects when verified
+    source growth lags total source growth across all windows. Final verified
+    ratio must be <= 0.3 and total sources >= 10.
+    """
     config = VitalsConfig()
-    # Trace where sources are growing but most are unverified (ratio < 0.3).
+    # Findings and sources grow in lockstep but verified sources stay flat
+    # → verified link strength is persistently low (no growth tracking).
     history = [
         _make_snapshot(
             vitals_snapshot_healthy,
             loop_index=i,
-            findings_count=(i + 1) * 3,
+            findings_count=(i + 1) * 5,
             sources_count=(i + 1) * 5,
             coverage_score=0.5,
             total_tokens=1000 * (i + 1),
@@ -1866,30 +1881,28 @@ def test_verified_source_ratio_low_triggers_confabulation(
             unique_domains=i + 1,
             dm_coverage=0.5,
             cv_coverage=0.5,
-            verified_source_ratio=0.2,
+            verified_sources_count=1,
+            unverified_sources_count=(i + 1) * 5 - 1,
         )
         for i in range(4)
     ]
     current = _make_snapshot(
         vitals_snapshot_healthy,
         loop_index=4,
-        findings_count=15,
-        sources_count=30,
+        findings_count=25,
+        sources_count=25,
         coverage_score=0.5,
         total_tokens=5000,
         query_count=5,
         unique_domains=5,
         dm_coverage=0.5,
         cv_coverage=0.5,
-        verified_source_ratio=0.15,
+        verified_sources_count=1,
+        unverified_sources_count=24,
     )
     result = detect_loop(current, history, config=config)
-    assert result.confabulation_detected is True, (
-        "Low verified_source_ratio with growing sources should trigger confabulation"
-    )
-    assert result.confabulation_trigger is not None
-    assert "verified_source_ratio_low" in result.confabulation_trigger
-    assert "verified_source_ratio" in result.confabulation_signals
+    assert result.confabulation_detected is True
+    assert result.confabulation_trigger == "verified_source_decoupling"
 
 
 def test_verified_source_ratio_none_no_effect(
@@ -1972,13 +1985,13 @@ def test_verified_source_ratio_high_no_confabulation(
 def test_verified_source_ratio_declining_boosts_confidence(
     vitals_snapshot_healthy: dict,
 ) -> None:
-    """Declining verified_source_ratio should boost confabulation confidence."""
+    """Declining verified count vs growing total sources triggers Path 3."""
     config = VitalsConfig()
     history = [
         _make_snapshot(
             vitals_snapshot_healthy,
             loop_index=i,
-            findings_count=(i + 1) * 3,
+            findings_count=(i + 1) * 5,
             sources_count=(i + 1) * 5,
             coverage_score=0.5,
             total_tokens=1000 * (i + 1),
@@ -1986,27 +1999,28 @@ def test_verified_source_ratio_declining_boosts_confidence(
             unique_domains=i + 1,
             dm_coverage=0.5,
             cv_coverage=0.5,
-            verified_source_ratio=0.25 - i * 0.05,
+            verified_sources_count=2,
+            unverified_sources_count=(i + 1) * 5 - 2,
         )
         for i in range(4)
     ]
     current = _make_snapshot(
         vitals_snapshot_healthy,
         loop_index=4,
-        findings_count=15,
-        sources_count=30,
+        findings_count=25,
+        sources_count=25,
         coverage_score=0.5,
         total_tokens=5000,
         query_count=5,
         unique_domains=5,
         dm_coverage=0.5,
         cv_coverage=0.5,
-        verified_source_ratio=0.05,
+        verified_sources_count=1,
+        unverified_sources_count=24,
     )
     result = detect_loop(current, history, config=config)
     assert result.confabulation_detected is True
-    assert "verified_ratio_declining" in (result.confabulation_trigger or "")
-    assert "verified_source_ratio_declining" in result.confabulation_signals
+    assert result.confabulation_trigger == "verified_source_decoupling"
 
 
 # ---------------------------------------------------------------------------
@@ -2078,88 +2092,11 @@ class TestWindowedRatioDeclines:
         assert _windowed_ratio_declines(ratios=ratios, loop_indices=indices, window=5) == 0
 
 
-def test_windowed_decline_triggers_confab(vitals_snapshot_healthy: dict) -> None:
-    """Non-consecutive declines within window should trigger confab detection.
-
-    This is the key behavioral change from bench: a plateau step no longer
-    breaks the declining trajectory signal.
-    """
-    config = VitalsConfig(
-        source_finding_ratio_declining_steps=3,
-        source_finding_ratio_floor=0.3,
-        source_finding_ratio_decline_window=5,
-    )
-    # Findings grow every step (required for ratio_decline_with_growth gate).
-    # Sources bump at step 3, causing a ratio *rise* that breaks consecutive
-    # declines but not windowed declines.
-    # Ratios: 7/5=1.4, 7/10=0.7, 7/15=0.47, 9/20=0.45 (rise from sources bump),
-    #         9/25=0.36 → declines: 1→2, 2→3, 4→5 = 3 in window of 5
-    history = [
-        _make_snapshot(
-            vitals_snapshot_healthy,
-            loop_index=1,
-            findings_count=5,
-            sources_count=7,
-            coverage_score=0.3,
-            total_tokens=1000,
-            query_count=1,
-            unique_domains=3,
-            dm_coverage=0.3,
-            cv_coverage=0.3,
-        ),
-        _make_snapshot(
-            vitals_snapshot_healthy,
-            loop_index=2,
-            findings_count=10,
-            sources_count=7,
-            coverage_score=0.35,
-            total_tokens=2000,
-            query_count=2,
-            unique_domains=4,
-            dm_coverage=0.3,
-            cv_coverage=0.3,
-        ),
-        _make_snapshot(
-            vitals_snapshot_healthy,
-            loop_index=3,
-            findings_count=15,
-            sources_count=7,
-            coverage_score=0.35,
-            total_tokens=3000,
-            query_count=3,
-            unique_domains=4,
-            dm_coverage=0.3,
-            cv_coverage=0.3,
-        ),
-        _make_snapshot(
-            vitals_snapshot_healthy,
-            loop_index=4,
-            findings_count=20,
-            sources_count=9,  # sources bump — ratio rises 0.47→0.45, breaks consecutive
-            coverage_score=0.4,
-            total_tokens=4000,
-            query_count=4,
-            unique_domains=5,
-            dm_coverage=0.3,
-            cv_coverage=0.3,
-        ),
-    ]
-    current = _make_snapshot(
-        vitals_snapshot_healthy,
-        loop_index=5,
-        findings_count=25,
-        sources_count=9,
-        coverage_score=0.45,
-        total_tokens=5000,
-        query_count=5,
-        unique_domains=6,
-        dm_coverage=0.3,
-        cv_coverage=0.3,
-    )
-
-    result = detect_loop(current, history, config=config)
-    assert result.confabulation_detected is True
-    assert "source_finding_ratio_declining" in (result.confabulation_trigger or "")
+# Note: the windowed-ratio-declines integration test has been removed.
+# The legacy SFR/declining-ratio confab path is now suppressed when the
+# causal detector is eligible (sufficient history + source data). The
+# _windowed_ratio_declines() helper is still tested directly in
+# TestWindowedRatioDeclines above.
 
 
 # ---------------------------------------------------------------------------

@@ -467,48 +467,111 @@ def _causal_link_strength(
     return link, partial_corr, response_ratio
 
 
+def _verified_count(snapshot: VitalsSnapshot) -> int:
+    """Safely get verified_sources_count, treating None as 0."""
+    return int(snapshot.signals.verified_sources_count or 0)
+
+
+def _unverified_count(snapshot: VitalsSnapshot) -> int:
+    """Safely get unverified_sources_count, treating None as 0."""
+    return int(snapshot.signals.unverified_sources_count or 0)
+
+
+def _has_verified_data(window: Sequence[VitalsSnapshot]) -> bool:
+    """Check if the window has meaningful verified source counts."""
+    total_verified = sum(_verified_count(s) for s in window)
+    total_sources = sum(s.signals.sources_count for s in window)
+    return total_sources > 0 and (
+        total_verified > 0 or any(_unverified_count(s) > 0 for s in window)
+    )
+
+
+def _verified_link_strength(
+    snapshots: Sequence[VitalsSnapshot],
+) -> Optional[float]:
+    """Compute verified->sources link strength for a window.
+
+    Returns None when verified data is unavailable or there is no source growth.
+    """
+    if not _has_verified_data(snapshots):
+        return None
+
+    verified = [_verified_count(s) for s in snapshots]
+    sources = [s.signals.sources_count for s in snapshots]
+    tokens = [s.signals.total_tokens for s in snapshots]
+
+    v_deltas = [max(0, c - p) for p, c in zip(verified, verified[1:])]
+    s_deltas = [max(0, c - p) for p, c in zip(sources, sources[1:])]
+    t_deltas = [max(0, c - p) for p, c in zip(tokens, tokens[1:])]
+
+    total_s = sum(s_deltas)
+    if total_s == 0:
+        return None
+
+    v_response = sum(v_deltas) / max(1, total_s)
+    v_resid = _causal_residualize(v_deltas, t_deltas)
+    s_resid = _causal_residualize(s_deltas, t_deltas)
+    corr = _causal_pearson(v_resid, s_resid)
+
+    if corr is None:
+        return min(1.0, v_response)
+    norm_corr = (corr + 1.0) / 2.0
+    return max(0.0, min(1.0, norm_corr * min(1.0, v_response)))
+
+
 def _detect_causal_confabulation(
     ctx: _DetectionContext,
-) -> Optional[tuple[float, str, tuple[str, ...]]]:
+) -> tuple[bool, Optional[tuple[float, str, tuple[str, ...]]]]:
     """Detect confabulation via rolling causal source-link degradation.
 
-    Returns a candidate tuple (confidence, trigger, signals) or None.
+    Returns (eligible, candidate). When eligible is True the causal detector
+    ran and produced a definitive result — callers should NOT also run the
+    legacy SFR-threshold path (which causes double-counting and FPs).
+    When eligible is False, the causal detector could not attempt detection
+    (insufficient history, no source data) and the legacy path should run.
     """
     cfg = ctx.cfg
     window_size = int(cfg.causal_confab_window_size)
     snapshots = ctx.all_snapshots
 
-    # Guard: skip if no source evidence (sources_count always 0).
+    # Ineligibility: skip when there's no source evidence at all.
     if ctx.sources_missing or not ctx.sources_counts or max(ctx.sources_counts) == 0:
-        return None
+        return False, None
 
+    # Ineligibility: trace too short for causal windowing.
     if len(snapshots) < window_size:
-        return None
+        return False, None
 
-    # Score rolling windows.
+    # Score rolling windows. Track both the primary findings->sources link and
+    # the verified->sources link for Path 3.
     link_scores: list[float] = []
+    verified_scores: list[Optional[float]] = []
+    window_starts: list[int] = []
     for end in range(window_size, len(snapshots) + 1):
         window = snapshots[end - window_size: end]
         link, _, _ = _causal_link_strength(window)
         link_scores.append(link)
+        verified_scores.append(_verified_link_strength(window))
+        window_starts.append(int(window[0].loop_index))
 
     if not link_scores:
-        return None
+        return False, None
 
-    # Baseline: strongest of first 2 windows (early trace).
+    # The detector is now eligible — it WILL produce a definitive answer
+    # (either fire or explicitly not fire). The legacy SFR path must not run.
     baseline_strength = max(link_scores[:2])
-    # Weakest: min of windows[1:] (post-baseline).
     comparison = link_scores[1:] or link_scores
     weakest_strength = min(comparison)
     structural_drop = max(0.0, baseline_strength - weakest_strength)
 
-    # Final source-finding ratio.
+    # Final source-finding ratio: prefer the snapshot's stored ratio, fall
+    # back to a fresh sources/findings calculation (matches bench reference).
     last = snapshots[-1]
     if last.source_finding_ratio is not None:
         final_ratio = float(last.source_finding_ratio)
     else:
-        findings = max(1, last.signals.findings_count)
-        final_ratio = float(last.signals.sources_count) / float(findings)
+        findings_denom = max(1, last.signals.findings_count)
+        final_ratio = float(last.signals.sources_count) / float(findings_denom)
 
     initial_sources = snapshots[0].signals.sources_count
 
@@ -526,6 +589,32 @@ def _detect_causal_confabulation(
         and final_ratio <= float(cfg.causal_confab_low_link_ratio_gate)
     )
 
+    # Path 3: Verified source decoupling (real LLM confabulation).
+    # Findings and sources may grow in lockstep so Paths 1-2 never fire,
+    # but DOI verification reveals that verified sources persistently lag.
+    verified_decoupling = False
+    verified_baseline_strength = 0.0
+    verified_weakest_strength = 0.0
+    verified_drop = 0.0
+    verified_present = [v for v in verified_scores if v is not None]
+    if verified_present:
+        verified_baseline_strength = max(verified_present)
+        verified_weakest_strength = min(verified_present)
+        verified_drop = max(0.0, verified_baseline_strength - verified_weakest_strength)
+
+        total_verified = _verified_count(last)
+        total_sources = last.signals.sources_count
+        verified_ratio = total_verified / max(1, total_sources)
+
+        verified_decoupling = (
+            verified_baseline_strength <= float(cfg.causal_confab_verified_link_floor)
+            and verified_ratio <= float(cfg.causal_confab_verified_ratio_gate)
+            and total_sources >= int(cfg.causal_confab_verified_min_sources)
+        )
+
+    # Trigger selection priority: structural_break > persistent_low > verified_decoupling.
+    trigger: Optional[str]
+    confidence: float
     if structural_break:
         trigger = "causal_link_break"
         baseline_term = min(
@@ -555,8 +644,35 @@ def _detect_causal_confabulation(
             final_ratio / max(float(cfg.causal_confab_low_link_ratio_gate), _CAUSAL_EPSILON),
         )
         confidence = min(1.0, 0.4 + 0.4 * low_link_term + 0.2 * ratio_term)
+    elif verified_decoupling:
+        trigger = "verified_source_decoupling"
+        weak_term = 1.0 - min(
+            1.0,
+            verified_weakest_strength / max(
+                float(cfg.causal_confab_verified_weak_threshold), _CAUSAL_EPSILON
+            ),
+        )
+        ratio_term = 1.0 - min(
+            1.0,
+            final_ratio / max(
+                float(cfg.causal_confab_verified_ratio_gate), _CAUSAL_EPSILON
+            ),
+        )
+        drop_term = (
+            min(
+                1.0,
+                verified_drop / max(
+                    float(cfg.causal_confab_verified_drop_threshold), _CAUSAL_EPSILON
+                ),
+            )
+            if verified_drop > 0
+            else 0.0
+        )
+        confidence = min(1.0, 0.4 + 0.3 * weak_term + 0.15 * drop_term + 0.15 * ratio_term)
     else:
-        return None
+        # Eligible but no detection — return (True, None) so callers know to
+        # suppress the legacy SFR path.
+        return True, None
 
     signal_parts: list[str] = [
         trigger,
@@ -564,7 +680,9 @@ def _detect_causal_confabulation(
         f"structural_drop={structural_drop:.3f}",
         f"baseline={baseline_strength:.3f}",
     ]
-    return (confidence, trigger, tuple(signal_parts))
+    if trigger == "verified_source_decoupling":
+        signal_parts.append(f"verified_link={verified_weakest_strength:.3f}")
+    return True, (confidence, trigger, tuple(signal_parts))
 
 
 def _detect_confabulation_candidates(
@@ -572,17 +690,23 @@ def _detect_confabulation_candidates(
 ) -> list[tuple[float, str, tuple[str, ...]]]:
     """Detect confabulation candidates from source-to-finding ratio and trajectory.
 
-    The causal detector is tried first.  If it fires, it takes priority.  The
-    legacy SFR-threshold path runs as a fallback for short traces or when the
-    causal path does not trigger.
+    The causal detector is tried first. When *eligible* (sufficient history
+    and source data) the causal detector owns the verdict — its result is the
+    only confab candidate produced. The legacy SFR-threshold path runs only
+    when causal is ineligible (short trace or no source data). This is the
+    integration model bench validated against: bench reports F1=0.950 with
+    Path 3 enabled when the legacy path is suppressed.
     """
 
     candidates: list[tuple[float, str, tuple[str, ...]]] = []
 
     # Primary path: causal confabulation detector.
-    causal = _detect_causal_confabulation(ctx)
+    causal_eligible, causal = _detect_causal_confabulation(ctx)
     if causal is not None:
         candidates.append(causal)
+    if causal_eligible:
+        # Causal owns the verdict — skip legacy paths entirely.
+        return candidates
 
     sources_stagnation = False
     unique_domains_stagnation = False
