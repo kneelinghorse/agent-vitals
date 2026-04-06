@@ -315,6 +315,7 @@ def _replay_trace(
 
     loop_fired = False
     confabulation_fired = False
+    final_confabulation_detected = False
     stuck_fired = False
     thrash_fired = False
     runaway_fired = False
@@ -359,6 +360,11 @@ def _replay_trace(
             loop_fired = True
         if detection.confabulation_detected:
             confabulation_fired = True
+        # Track the final-step confabulation verdict for whole-trace
+        # adjudication (av-s06-m01). Overwritten each iteration so the
+        # value after the loop is the verdict from the last snapshot,
+        # which the bench reference uses as its one-shot evaluation.
+        final_confabulation_detected = detection.confabulation_detected
         if (
             detection.stuck_detected
             and detection.detector_priority != "confabulation"
@@ -371,6 +377,26 @@ def _replay_trace(
             runaway_fired = True
 
         history.append(snapshot)
+
+    # Final-step adjudication for causal confabulation (av-s06-m01).
+    # Streaming per-step replay aggregates ``confabulation_fired`` with
+    # any-step semantics, but the bench reference evaluates the whole trace
+    # once at the tail. The two semantics diverge on Path 3
+    # (verified_source_decoupling) when an early window is weak but later
+    # windows recover — the streaming detector locks in a positive at the
+    # weak step and never re-evaluates.
+    #
+    # The final iteration of the loop above already calls
+    # ``detect_loop(snapshots[-1], snapshots[:-1], ...)``, which is exactly
+    # the bench-equivalent one-shot evaluation. We capture its
+    # ``confabulation_detected`` flag in ``final_confabulation_detected`` and,
+    # if the streaming aggregation said "yes" but the final-step verdict says
+    # "no", the final-step verdict wins for trace-level reporting.
+    #
+    # Per-snapshot ``confabulation_detected`` fields are intentionally NOT
+    # modified — early-warning consumers still see the streaming behaviour.
+    if confabulation_fired and not final_confabulation_detected:
+        confabulation_fired = False
 
     # Suppress thrash on short segments — segmentation artifacts (av32-m01).
     if len(snapshots) < DEFAULT_MIN_STEPS_FOR_THRASH:

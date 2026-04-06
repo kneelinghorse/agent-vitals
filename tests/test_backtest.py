@@ -536,3 +536,88 @@ class TestReplayTraceOverlap:
         assert fired["loop"] is True
         assert fired["thrash"] is True
         assert fired["stuck"] is True
+
+    def test_final_step_adjudication_overrides_transient_confab(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Final-step verdict overrides streaming any-step confab (av-s06-m01).
+
+        Simulates a Path 3 transient: an early window is weak (confab fires),
+        later windows recover (final-step verdict says no confab). The
+        trace-level label must reflect the final-step verdict.
+        """
+        snapshots = [_snapshot("t1", i) for i in range(4)]
+        detections = iter(
+            [
+                LoopDetectionResult(),
+                LoopDetectionResult(
+                    confabulation_detected=True,
+                    confabulation_confidence=0.75,
+                    confabulation_trigger="verified_source_decoupling",
+                ),
+                LoopDetectionResult(),
+                # Final iteration: bench-equivalent one-shot verdict says no.
+                LoopDetectionResult(),
+            ]
+        )
+        stop_signals = iter(
+            [StopRuleSignals(False, False, False, False) for _ in range(4)]
+        )
+
+        monkeypatch.setattr(
+            "agent_vitals.backtest.detect_loop",
+            lambda *_args, **_kwargs: next(detections),
+        )
+        monkeypatch.setattr(
+            "agent_vitals.backtest.derive_stop_signals",
+            lambda *_args, **_kwargs: next(stop_signals),
+        )
+
+        fired = _replay_trace(
+            snapshots,
+            config=VitalsConfig(),
+            workflow_type="research",
+        )
+        assert fired["confabulation"] is False
+        assert fired["any"] is False
+
+    def test_final_step_adjudication_preserves_persistent_confab(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Final-step adjudication must NOT suppress confab when the
+        whole-trace verdict still fires at the tail (av-s06-m01)."""
+        snapshots = [_snapshot("t1", i) for i in range(3)]
+        detections = iter(
+            [
+                LoopDetectionResult(),
+                LoopDetectionResult(
+                    confabulation_detected=True,
+                    confabulation_confidence=0.7,
+                    confabulation_trigger="verified_source_decoupling",
+                ),
+                LoopDetectionResult(
+                    confabulation_detected=True,
+                    confabulation_confidence=0.8,
+                    confabulation_trigger="verified_source_decoupling",
+                ),
+            ]
+        )
+        stop_signals = iter(
+            [StopRuleSignals(False, False, False, False) for _ in range(3)]
+        )
+
+        monkeypatch.setattr(
+            "agent_vitals.backtest.detect_loop",
+            lambda *_args, **_kwargs: next(detections),
+        )
+        monkeypatch.setattr(
+            "agent_vitals.backtest.derive_stop_signals",
+            lambda *_args, **_kwargs: next(stop_signals),
+        )
+
+        fired = _replay_trace(
+            snapshots,
+            config=VitalsConfig(),
+            workflow_type="research",
+        )
+        assert fired["confabulation"] is True
