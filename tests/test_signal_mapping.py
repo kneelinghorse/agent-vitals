@@ -14,10 +14,6 @@ import pytest
 from agent_vitals.config import VitalsConfig
 from agent_vitals.detection.loop import detect_loop
 from agent_vitals.detection.signal_mapping import (
-    MEDIUM_MODEL_CV_THRESHOLD,
-    MIN_STEPS_FOR_CLASSIFICATION,
-    SMALL_MODEL_CV_THRESHOLD,
-    SignalMapping,
     classify_model_size,
     get_signal_mapping,
 )

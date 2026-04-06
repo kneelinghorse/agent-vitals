@@ -12,7 +12,11 @@ import copy
 import pytest
 
 from agent_vitals.config import VitalsConfig
-from agent_vitals.detection.loop import _proportional_window, detect_loop
+from agent_vitals.detection.loop import (
+    _proportional_window,
+    _windowed_ratio_declines,
+    detect_loop,
+)
 from agent_vitals.detection.stop_rule import derive_stop_signals
 from agent_vitals.schema import VitalsSnapshot
 
@@ -2000,3 +2004,156 @@ def test_verified_source_ratio_declining_boosts_confidence(
     assert result.confabulation_detected is True
     assert "verified_ratio_declining" in (result.confabulation_trigger or "")
     assert "verified_source_ratio_declining" in result.confabulation_signals
+
+
+# ---------------------------------------------------------------------------
+# _windowed_ratio_declines unit tests
+# ---------------------------------------------------------------------------
+
+
+class TestWindowedRatioDeclines:
+    """Direct unit tests for _windowed_ratio_declines()."""
+
+    def test_empty_ratios_returns_zero(self) -> None:
+        assert _windowed_ratio_declines(ratios=[], loop_indices=[], window=5) == 0
+
+    def test_single_ratio_returns_zero(self) -> None:
+        assert _windowed_ratio_declines(ratios=[0.5], loop_indices=[1], window=5) == 0
+
+    def test_mismatched_lengths_returns_zero(self) -> None:
+        assert _windowed_ratio_declines(ratios=[0.5, 0.4], loop_indices=[1], window=5) == 0
+
+    def test_consecutive_declines_counted(self) -> None:
+        """Three consecutive declines should all be counted."""
+        ratios = [0.8, 0.6, 0.4, 0.2]
+        indices = [1, 2, 3, 4]
+        assert _windowed_ratio_declines(ratios=ratios, loop_indices=indices, window=5) == 3
+
+    def test_non_consecutive_declines_still_counted(self) -> None:
+        """Declines with a plateau in between should still be counted."""
+        # Step 1→2: 0.8→0.6 decline, 2→3: 0.6→0.6 plateau, 3→4: 0.6→0.3 decline
+        ratios = [0.8, 0.6, 0.6, 0.3]
+        indices = [1, 2, 3, 4]
+        assert _windowed_ratio_declines(ratios=ratios, loop_indices=indices, window=5) == 2
+
+    def test_v_shaped_recovery_counted(self) -> None:
+        """Decline, rise, decline pattern (Gemini-like) should count both declines."""
+        ratios = [0.8, 0.5, 0.7, 0.4]
+        indices = [1, 2, 3, 4]
+        assert _windowed_ratio_declines(ratios=ratios, loop_indices=indices, window=5) == 2
+
+    def test_window_limits_scope(self) -> None:
+        """Only declines within the window should be counted."""
+        # 5 declines total, but window=3 should only see the last 3 steps
+        ratios = [0.9, 0.8, 0.7, 0.6, 0.5, 0.4]
+        indices = [1, 2, 3, 4, 5, 6]
+        assert _windowed_ratio_declines(ratios=ratios, loop_indices=indices, window=3) == 2
+
+    def test_none_ratios_skipped(self) -> None:
+        """None values should be skipped, not break the count."""
+        ratios = [0.8, None, 0.6, 0.3]
+        indices = [1, 2, 3, 4]
+        # 1→2 skip (None), 2→3 skip (None), 3→4: 0.6→0.3 decline
+        assert _windowed_ratio_declines(ratios=ratios, loop_indices=indices, window=5) == 1
+
+    def test_non_progressing_loop_indices_skipped(self) -> None:
+        """Steps where loop_index doesn't advance should be skipped."""
+        ratios = [0.8, 0.6, 0.4, 0.2]
+        indices = [1, 2, 2, 3]  # index 2→2 doesn't advance
+        # 1→2: decline, 2→3: skip (no progress), 3→4: decline
+        assert _windowed_ratio_declines(ratios=ratios, loop_indices=indices, window=5) == 2
+
+    def test_all_rising_returns_zero(self) -> None:
+        ratios = [0.2, 0.4, 0.6, 0.8]
+        indices = [1, 2, 3, 4]
+        assert _windowed_ratio_declines(ratios=ratios, loop_indices=indices, window=5) == 0
+
+    def test_epsilon_tolerance(self) -> None:
+        """Ratios differing by less than epsilon should not count as decline."""
+        ratios = [0.5, 0.5 - 1e-12]
+        indices = [1, 2]
+        assert _windowed_ratio_declines(ratios=ratios, loop_indices=indices, window=5) == 0
+
+
+def test_windowed_decline_triggers_confab(vitals_snapshot_healthy: dict) -> None:
+    """Non-consecutive declines within window should trigger confab detection.
+
+    This is the key behavioral change from bench: a plateau step no longer
+    breaks the declining trajectory signal.
+    """
+    config = VitalsConfig(
+        source_finding_ratio_declining_steps=3,
+        source_finding_ratio_floor=0.3,
+        source_finding_ratio_decline_window=5,
+    )
+    # Findings grow every step (required for ratio_decline_with_growth gate).
+    # Sources bump at step 3, causing a ratio *rise* that breaks consecutive
+    # declines but not windowed declines.
+    # Ratios: 7/5=1.4, 7/10=0.7, 7/15=0.47, 9/20=0.45 (rise from sources bump),
+    #         9/25=0.36 → declines: 1→2, 2→3, 4→5 = 3 in window of 5
+    history = [
+        _make_snapshot(
+            vitals_snapshot_healthy,
+            loop_index=1,
+            findings_count=5,
+            sources_count=7,
+            coverage_score=0.3,
+            total_tokens=1000,
+            query_count=1,
+            unique_domains=3,
+            dm_coverage=0.3,
+            cv_coverage=0.3,
+        ),
+        _make_snapshot(
+            vitals_snapshot_healthy,
+            loop_index=2,
+            findings_count=10,
+            sources_count=7,
+            coverage_score=0.35,
+            total_tokens=2000,
+            query_count=2,
+            unique_domains=4,
+            dm_coverage=0.3,
+            cv_coverage=0.3,
+        ),
+        _make_snapshot(
+            vitals_snapshot_healthy,
+            loop_index=3,
+            findings_count=15,
+            sources_count=7,
+            coverage_score=0.35,
+            total_tokens=3000,
+            query_count=3,
+            unique_domains=4,
+            dm_coverage=0.3,
+            cv_coverage=0.3,
+        ),
+        _make_snapshot(
+            vitals_snapshot_healthy,
+            loop_index=4,
+            findings_count=20,
+            sources_count=9,  # sources bump — ratio rises 0.47→0.45, breaks consecutive
+            coverage_score=0.4,
+            total_tokens=4000,
+            query_count=4,
+            unique_domains=5,
+            dm_coverage=0.3,
+            cv_coverage=0.3,
+        ),
+    ]
+    current = _make_snapshot(
+        vitals_snapshot_healthy,
+        loop_index=5,
+        findings_count=25,
+        sources_count=9,
+        coverage_score=0.45,
+        total_tokens=5000,
+        query_count=5,
+        unique_domains=6,
+        dm_coverage=0.3,
+        cv_coverage=0.3,
+    )
+
+    result = detect_loop(current, history, config=config)
+    assert result.confabulation_detected is True
+    assert "source_finding_ratio_declining" in (result.confabulation_trigger or "")

@@ -134,7 +134,7 @@ def _coefficient_of_variation(values: Sequence[float]) -> float:
     if avg <= 0.0:
         return 0.0
     variance = sum((v - avg) ** 2 for v in values) / len(values)
-    return (variance**0.5) / avg
+    return float((variance**0.5) / avg)
 
 
 __all__ = [

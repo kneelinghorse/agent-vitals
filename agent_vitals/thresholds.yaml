@@ -27,8 +27,15 @@ min_evidence_steps: 3
 # ratio < floor indicates likely findings inflation / confabulation risk.
 source_finding_ratio_floor: 0.3
 
-# Consecutive declining ratio steps required for trajectory-based confab signal.
+# Declining ratio steps required for trajectory-based confab signal.
+# Within the decline_window, at least this many step-over-step declines
+# must occur (they need not be consecutive).
 source_finding_ratio_declining_steps: 3
+
+# Sliding window size for counting ratio declines.
+# The detector counts step-over-step declines in the last N steps.
+# Default 5 tolerates 2 non-declining steps in the window.
+source_finding_ratio_decline_window: 5
 
 # Legacy absolute threshold retained for backward compatibility only.
 loop_consecutive_count: 3

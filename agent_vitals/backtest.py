@@ -483,6 +483,7 @@ def run_backtest(
         "min_evidence_steps": cfg.min_evidence_steps,
         "source_finding_ratio_floor": cfg.source_finding_ratio_floor,
         "source_finding_ratio_declining_steps": cfg.source_finding_ratio_declining_steps,
+        "source_finding_ratio_decline_window": cfg.source_finding_ratio_decline_window,
         "loop_consecutive_count": cfg.loop_consecutive_count,
         "loop_similarity_threshold": cfg.loop_similarity_threshold,
         "stuck_dm_threshold": cfg.stuck_dm_threshold,

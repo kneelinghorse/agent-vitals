@@ -128,6 +128,7 @@ class _DetectionContext:
     # Config-derived
     ratio_floor: float
     ratio_declining_required: int
+    ratio_decline_window: int
     sim_threshold: float
 
 
@@ -203,6 +204,10 @@ def _prepare_context(
     )
     ratio_floor = max(0.0, float(cfg.source_finding_ratio_floor))
     ratio_declining_required = max(1, int(cfg.source_finding_ratio_declining_steps))
+    ratio_decline_window = max(
+        ratio_declining_required + 1,
+        int(getattr(cfg, "source_finding_ratio_decline_window", 5)),
+    )
     ratio_series: list[Optional[float]] = []
     for item in series:
         snapshot_ratio = getattr(item, "source_finding_ratio", None)
@@ -212,9 +217,10 @@ def _prepare_context(
                 findings_count=int(item.signals.findings_count),
             )
         ratio_series.append(snapshot_ratio)
-    ratio_declining_steps = _consecutive_ratio_declines(
+    ratio_declining_steps = _windowed_ratio_declines(
         ratios=ratio_series,
         loop_indices=loop_indices,
+        window=ratio_decline_window,
     )
     source_productive = (
         sources_count >= SOURCE_PRODUCTIVITY_MIN_SOURCES
@@ -302,6 +308,7 @@ def _prepare_context(
         verified_source_ratio=verified_source_ratio,
         verified_source_ratio_series=verified_source_ratio_series,
         ratio_declining_required=ratio_declining_required,
+        ratio_decline_window=ratio_decline_window,
         sim_threshold=sim_threshold,
     )
 
@@ -507,11 +514,13 @@ def _detect_confabulation_candidates(
         trigger_parts = ["verified_source_ratio_low"]
         signal_parts = ["verified_source_ratio"]
 
-        # Boost if the ratio has been declining across steps.
-        valid_ratios = [r for r in ctx.verified_source_ratio_series if r is not None]
-        if len(valid_ratios) >= 2 and all(
-            valid_ratios[i] >= valid_ratios[i + 1] for i in range(len(valid_ratios) - 1)
-        ):
+        # Boost if the verified ratio shows windowed decline pattern.
+        verified_declines = _windowed_ratio_declines(
+            ratios=ctx.verified_source_ratio_series,
+            loop_indices=ctx.loop_indices,
+            window=ctx.ratio_decline_window,
+        )
+        if verified_declines >= ctx.ratio_declining_required:
             confab_confidence += 0.10
             trigger_parts.append("verified_ratio_declining")
             signal_parts.append("verified_source_ratio_declining")
@@ -1106,6 +1115,39 @@ def _consecutive_ratio_declines(
             continue
         break
     return steps
+
+
+def _windowed_ratio_declines(
+    *,
+    ratios: Sequence[Optional[float]],
+    loop_indices: Sequence[int],
+    window: int = 5,
+) -> int:
+    """Count step-over-step ratio declines in the last *window* steps.
+
+    Unlike ``_consecutive_ratio_declines`` this tolerates non-declining
+    steps inside the window — it counts the *total* declining steps rather
+    than requiring them to be consecutive.  This catches V-shaped recovery
+    patterns (Gemini), late-onset confabulation, and threshold-boundary
+    bouncing that break the consecutive requirement.
+    """
+
+    if len(ratios) < 2 or len(loop_indices) != len(ratios):
+        return 0
+
+    start = max(0, len(ratios) - window)
+    declines = 0
+    epsilon = 1e-9
+    for idx in range(start + 1, len(ratios)):
+        current_ratio = ratios[idx]
+        previous_ratio = ratios[idx - 1]
+        if current_ratio is None or previous_ratio is None:
+            continue
+        if int(loop_indices[idx]) <= int(loop_indices[idx - 1]):
+            continue
+        if float(current_ratio) < (float(previous_ratio) - epsilon):
+            declines += 1
+    return declines
 
 
 def _adaptive_alarm_from_series(

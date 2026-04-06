@@ -41,6 +41,7 @@ VITALS_FINDINGS_PLATEAU_PCT_ENV = "VITALS_FINDINGS_PLATEAU_PCT"
 VITALS_MIN_EVIDENCE_STEPS_ENV = "VITALS_MIN_EVIDENCE_STEPS"
 VITALS_SOURCE_FINDING_RATIO_FLOOR_ENV = "VITALS_SOURCE_FINDING_RATIO_FLOOR"
 VITALS_SOURCE_FINDING_RATIO_DECLINING_STEPS_ENV = "VITALS_SOURCE_FINDING_RATIO_DECLINING_STEPS"
+VITALS_SOURCE_FINDING_RATIO_DECLINE_WINDOW_ENV = "VITALS_SOURCE_FINDING_RATIO_DECLINE_WINDOW"
 VITALS_STUCK_DM_THRESHOLD_ENV = "VITALS_STUCK_DM_THRESHOLD"
 VITALS_STUCK_CV_THRESHOLD_ENV = "VITALS_STUCK_CV_THRESHOLD"
 VITALS_BURN_RATE_MULTIPLIER_ENV = "VITALS_BURN_RATE_MULTIPLIER"
@@ -83,6 +84,7 @@ DEFAULT_FINDINGS_PLATEAU_PCT = 0.4
 DEFAULT_MIN_EVIDENCE_STEPS = 3
 DEFAULT_SOURCE_FINDING_RATIO_FLOOR = 0.3
 DEFAULT_SOURCE_FINDING_RATIO_DECLINING_STEPS = 3
+DEFAULT_SOURCE_FINDING_RATIO_DECLINE_WINDOW = 5
 # Backwards-compatible legacy absolute threshold (deprecated).
 DEFAULT_LOOP_CONSECUTIVE_COUNT = 3
 DEFAULT_STUCK_DM_THRESHOLD = 0.15
@@ -134,6 +136,7 @@ _PROFILE_OVERRIDABLE_FLOAT_FIELDS = (
 _PROFILE_OVERRIDABLE_INT_FIELDS = (
     "loop_consecutive_count",
     "source_finding_ratio_declining_steps",
+    "source_finding_ratio_decline_window",
     "thrash_error_threshold",
     "spc_window_size",
     "spc_warmup_steps",
@@ -172,6 +175,7 @@ class ThresholdProfile:
     source_finding_ratio_floor: Optional[float] = None
     loop_consecutive_count: Optional[int] = None
     source_finding_ratio_declining_steps: Optional[int] = None
+    source_finding_ratio_decline_window: Optional[int] = None
     stuck_dm_threshold: Optional[float] = None
     stuck_cv_threshold: Optional[float] = None
     burn_rate_multiplier: Optional[float] = None
@@ -244,6 +248,7 @@ class VitalsConfig:
     min_evidence_steps: int = DEFAULT_MIN_EVIDENCE_STEPS
     source_finding_ratio_floor: float = DEFAULT_SOURCE_FINDING_RATIO_FLOOR
     source_finding_ratio_declining_steps: int = DEFAULT_SOURCE_FINDING_RATIO_DECLINING_STEPS
+    source_finding_ratio_decline_window: int = DEFAULT_SOURCE_FINDING_RATIO_DECLINE_WINDOW
     # Legacy absolute threshold retained for backwards compatibility.
     loop_consecutive_count: int = DEFAULT_LOOP_CONSECUTIVE_COUNT
     stuck_dm_threshold: float = DEFAULT_STUCK_DM_THRESHOLD
@@ -376,6 +381,7 @@ class VitalsConfig:
             "loop_consecutive_count",
             "min_evidence_steps",
             "source_finding_ratio_declining_steps",
+            "source_finding_ratio_decline_window",
             "thrash_error_threshold",
             "spc_window_size",
             "spc_warmup_steps",
@@ -490,6 +496,10 @@ class VitalsConfig:
                 "source_finding_ratio_declining_steps",
                 DEFAULT_SOURCE_FINDING_RATIO_DECLINING_STEPS,
             ),
+            source_finding_ratio_decline_window=_yaml_int(
+                "source_finding_ratio_decline_window",
+                DEFAULT_SOURCE_FINDING_RATIO_DECLINE_WINDOW,
+            ),
             loop_consecutive_count=_yaml_int(
                 "loop_consecutive_count", DEFAULT_LOOP_CONSECUTIVE_COUNT
             ),
@@ -584,6 +594,10 @@ class VitalsConfig:
                 (
                     "source_finding_ratio_declining_steps",
                     VITALS_SOURCE_FINDING_RATIO_DECLINING_STEPS_ENV,
+                ),
+                (
+                    "source_finding_ratio_decline_window",
+                    VITALS_SOURCE_FINDING_RATIO_DECLINE_WINDOW_ENV,
                 ),
                 ("loop_consecutive_count", VITALS_LOOP_CONSECUTIVE_COUNT_ENV),
                 ("stuck_dm_threshold", VITALS_STUCK_DM_THRESHOLD_ENV),
@@ -686,6 +700,11 @@ class VitalsConfig:
             VITALS_SOURCE_FINDING_RATIO_DECLINING_STEPS_ENV,
             default=DEFAULT_SOURCE_FINDING_RATIO_DECLINING_STEPS,
             min_value=1,
+        )
+        source_finding_ratio_decline_window = _parse_int(
+            VITALS_SOURCE_FINDING_RATIO_DECLINE_WINDOW_ENV,
+            default=DEFAULT_SOURCE_FINDING_RATIO_DECLINE_WINDOW,
+            min_value=2,
         )
         loop_consecutive_count = _parse_int(
             VITALS_LOOP_CONSECUTIVE_COUNT_ENV,
@@ -829,6 +848,7 @@ class VitalsConfig:
             min_evidence_steps=min_evidence_steps,
             source_finding_ratio_floor=source_finding_ratio_floor,
             source_finding_ratio_declining_steps=source_finding_ratio_declining_steps,
+            source_finding_ratio_decline_window=source_finding_ratio_decline_window,
             loop_consecutive_count=loop_consecutive_count,
             stuck_dm_threshold=stuck_dm_threshold,
             stuck_cv_threshold=stuck_cv_threshold,
