@@ -7,6 +7,56 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+## [1.12.0] - 2026-04-06
+
+### Added
+- **Causal confabulation detector** (`_detect_causal_confabulation`): replaces
+  the SFR-threshold confab detector with a structural detector that monitors
+  rolling partial correlation between findings and sources growth, residualized
+  against token spend. Three detection paths:
+  - **Path 1** (`causal_link_break`): healthy early baseline breaks later in the
+    trace, indicating findings/sources decoupling.
+  - **Path 2** (`persistent_low_causal_link`): coupling never established from a
+    small bootstrap.
+  - **Path 3** (`verified_source_decoupling`): verified sources persistently
+    lag total source growth — catches real LLM confabulation via DOI
+    verification (when `verified_sources_count` is populated).
+- **Windowed ratio decline helper** (`_windowed_ratio_declines`): tolerates
+  non-consecutive declining steps within a sliding window. Catches V-shaped
+  recovery patterns and threshold-boundary bouncing that broke the legacy
+  consecutive-decline requirement.
+- 13 new config parameters for causal confab tuning
+  (`causal_confab_window_size`, `baseline_floor`, `weak_link_threshold`,
+  `structural_drop_threshold`, `ratio_gate`, `low_link_threshold`,
+  `source_bootstrap_cap`, `low_link_ratio_gate`, `verified_link_floor`,
+  `verified_weak_threshold`, `verified_drop_threshold`, `verified_ratio_gate`,
+  `verified_min_sources`) plumbed through env / yaml / dict / profile paths.
+
+### Changed
+- `_detect_confabulation_candidates` integration: when the causal detector is
+  *eligible* (sufficient history + source data) it owns the verdict — the
+  legacy SFR-threshold path is suppressed entirely. The legacy path runs only
+  as a fallback for short traces or no-source-data cases.
+- Streaming-mode safeguard: Paths 1 and 2 require the latest window to confirm
+  the weak-link condition, preventing transient per-step FPs from sticking via
+  any-step trace label aggregation.
+
+### Validation (bench v1, 1494 traces)
+- Confab F1: 0.860 → 0.944 (+0.084)
+- Confab P_lb: 0.812 → 0.954 (+0.142)
+- Confab R_lb: 0.821 → 0.935 (+0.114)
+- Confab FP: 45 → 14 (-31)
+- All other detectors at parity
+- Composite gate: PASS
+
+### Known Limitations
+- Path 3 streaming-vs-one-shot semantics gap: 10 FPs remain vs the bench
+  one-shot reference because verified counts can rebound mid-trace
+  (LLM cites a real paper after fabricated ones), but the streaming detector
+  fires at the early-weak step and trace-level any-step aggregation makes
+  the FP stick. Closing this requires final-step adjudication in
+  `_replay_trace` (planned for S06).
+
 ## [1.11.0] - 2026-04-05
 
 ### Added
