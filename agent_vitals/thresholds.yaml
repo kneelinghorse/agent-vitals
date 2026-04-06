@@ -37,6 +37,18 @@ source_finding_ratio_declining_steps: 3
 # Default 5 tolerates 2 non-declining steps in the window.
 source_finding_ratio_decline_window: 5
 
+# --- Causal Confabulation Detection ---
+# Rolling partial-correlation detector that monitors the structural link
+# between findings growth and sources growth, residualized against token spend.
+causal_confab_window_size: 4
+causal_confab_baseline_floor: 0.4
+causal_confab_weak_link_threshold: 0.35
+causal_confab_structural_drop_threshold: 0.2
+causal_confab_ratio_gate: 0.4
+causal_confab_low_link_threshold: 0.2
+causal_confab_source_bootstrap_cap: 10
+causal_confab_low_link_ratio_gate: 0.3
+
 # Legacy absolute threshold retained for backward compatibility only.
 loop_consecutive_count: 3
 

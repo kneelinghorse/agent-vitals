@@ -13,6 +13,9 @@ import pytest
 
 from agent_vitals.config import VitalsConfig
 from agent_vitals.detection.loop import (
+    _causal_link_strength,
+    _causal_pearson,
+    _causal_residualize,
     _proportional_window,
     _windowed_ratio_declines,
     detect_loop,
@@ -2157,3 +2160,266 @@ def test_windowed_decline_triggers_confab(vitals_snapshot_healthy: dict) -> None
     result = detect_loop(current, history, config=config)
     assert result.confabulation_detected is True
     assert "source_finding_ratio_declining" in (result.confabulation_trigger or "")
+
+
+# ---------------------------------------------------------------------------
+# Causal confabulation detector unit tests
+# ---------------------------------------------------------------------------
+
+
+class TestCausalPearson:
+    def test_perfect_positive(self) -> None:
+        r = _causal_pearson([1.0, 2.0, 3.0], [1.0, 2.0, 3.0])
+        assert r is not None
+        assert r == pytest.approx(1.0)
+
+    def test_zero_variance_returns_none(self) -> None:
+        assert _causal_pearson([1.0, 1.0, 1.0], [1.0, 2.0, 3.0]) is None
+
+    def test_too_short_returns_none(self) -> None:
+        assert _causal_pearson([1.0], [1.0]) is None
+
+    def test_negative_correlation(self) -> None:
+        r = _causal_pearson([1.0, 2.0, 3.0], [3.0, 2.0, 1.0])
+        assert r is not None
+        assert r == pytest.approx(-1.0)
+
+
+class TestCausalResidualize:
+    def test_removes_linear_effect(self) -> None:
+        # target = 2*control + noise=0 → residuals should be ~0
+        control = [1.0, 2.0, 3.0, 4.0]
+        target = [2.0, 4.0, 6.0, 8.0]
+        resid = _causal_residualize(target, control)
+        for r in resid:
+            assert abs(r) < 1e-6
+
+    def test_zero_variance_control_mean_centers(self) -> None:
+        resid = _causal_residualize([10.0, 20.0, 30.0], [5.0, 5.0, 5.0])
+        assert resid == pytest.approx([-10.0, 0.0, 10.0])
+
+
+class TestCausalLinkStrength:
+    def test_healthy_trace_high_link(self, vitals_snapshot_healthy: dict) -> None:
+        """Trace where sources grow proportionally to findings → high link strength."""
+        snaps = [
+            _make_snapshot(
+                vitals_snapshot_healthy,
+                loop_index=i,
+                findings_count=i * 5,
+                sources_count=i * 5,
+                coverage_score=0.5,
+                total_tokens=1000 * (i + 1),
+                query_count=i + 1,
+                unique_domains=i + 1,
+                dm_coverage=0.5,
+                cv_coverage=0.5,
+            )
+            for i in range(1, 5)
+        ]
+        link, _, _ = _causal_link_strength(snaps)
+        assert link >= 0.5
+
+    def test_confab_trace_low_link(self, vitals_snapshot_healthy: dict) -> None:
+        """Trace where findings grow but sources don't → low link strength."""
+        snaps = [
+            _make_snapshot(
+                vitals_snapshot_healthy,
+                loop_index=i,
+                findings_count=i * 10,
+                sources_count=2,  # flat sources
+                coverage_score=0.5,
+                total_tokens=1000 * (i + 1),
+                query_count=i + 1,
+                unique_domains=1,
+                dm_coverage=0.5,
+                cv_coverage=0.5,
+            )
+            for i in range(1, 5)
+        ]
+        link, _, _ = _causal_link_strength(snaps)
+        assert link <= 0.2
+
+
+class TestCausalConfabIntegration:
+    def test_structural_break_fires(self, vitals_snapshot_healthy: dict) -> None:
+        """A trace that starts healthy then decouples should fire causal_link_break."""
+        config = VitalsConfig(causal_confab_window_size=4)
+        # Steps 1-4: healthy (sources grow with findings)
+        healthy = [
+            _make_snapshot(
+                vitals_snapshot_healthy,
+                loop_index=i,
+                findings_count=i * 5,
+                sources_count=i * 5,
+                coverage_score=0.5,
+                total_tokens=1000 * i,
+                query_count=i,
+                unique_domains=i,
+                dm_coverage=0.5,
+                cv_coverage=0.5,
+            )
+            for i in range(1, 5)
+        ]
+        # Steps 5-8: confab (findings grow, sources stall)
+        confab = [
+            _make_snapshot(
+                vitals_snapshot_healthy,
+                loop_index=i,
+                findings_count=i * 10,
+                sources_count=20,  # frozen
+                coverage_score=0.5,
+                total_tokens=1000 * i,
+                query_count=i,
+                unique_domains=4,
+                dm_coverage=0.5,
+                cv_coverage=0.5,
+            )
+            for i in range(5, 9)
+        ]
+        history = healthy + confab[:-1]
+        current = confab[-1]
+        result = detect_loop(current, history, config=config)
+        assert result.confabulation_detected is True
+        assert result.confabulation_trigger == "causal_link_break"
+
+    def test_persistent_low_link_fires(self, vitals_snapshot_healthy: dict) -> None:
+        """Trace that never establishes source growth should fire persistent_low."""
+        config = VitalsConfig(causal_confab_window_size=4)
+        history = [
+            _make_snapshot(
+                vitals_snapshot_healthy,
+                loop_index=i,
+                findings_count=i * 8,
+                sources_count=2,  # never grows
+                coverage_score=0.5,
+                total_tokens=1000 * i,
+                query_count=i,
+                unique_domains=1,
+                dm_coverage=0.5,
+                cv_coverage=0.5,
+            )
+            for i in range(1, 5)
+        ]
+        current = _make_snapshot(
+            vitals_snapshot_healthy,
+            loop_index=5,
+            findings_count=40,
+            sources_count=2,
+            coverage_score=0.5,
+            total_tokens=5000,
+            query_count=5,
+            unique_domains=1,
+            dm_coverage=0.5,
+            cv_coverage=0.5,
+        )
+        result = detect_loop(current, history, config=config)
+        assert result.confabulation_detected is True
+        assert result.confabulation_trigger == "persistent_low_causal_link"
+
+    def test_healthy_trace_no_confab(self, vitals_snapshot_healthy: dict) -> None:
+        """A trace with proportional source growth should not fire."""
+        config = VitalsConfig(causal_confab_window_size=4)
+        history = [
+            _make_snapshot(
+                vitals_snapshot_healthy,
+                loop_index=i,
+                findings_count=i * 5,
+                sources_count=i * 5,
+                coverage_score=0.5,
+                total_tokens=1000 * i,
+                query_count=i,
+                unique_domains=i,
+                dm_coverage=0.5,
+                cv_coverage=0.5,
+            )
+            for i in range(1, 8)
+        ]
+        current = _make_snapshot(
+            vitals_snapshot_healthy,
+            loop_index=8,
+            findings_count=40,
+            sources_count=40,
+            coverage_score=0.5,
+            total_tokens=8000,
+            query_count=8,
+            unique_domains=8,
+            dm_coverage=0.5,
+            cv_coverage=0.5,
+        )
+        result = detect_loop(current, history, config=config)
+        assert result.confabulation_detected is False
+
+    def test_short_trace_falls_back_to_sfr(self, vitals_snapshot_healthy: dict) -> None:
+        """Traces shorter than causal window should fall back to SFR detector."""
+        config = VitalsConfig(
+            causal_confab_window_size=4,
+            source_finding_ratio_floor=0.3,
+        )
+        # 3 steps — too short for causal (window=4). SFR path should still work.
+        history = [
+            _make_snapshot(
+                vitals_snapshot_healthy,
+                loop_index=i,
+                findings_count=i * 10,
+                sources_count=2,
+                coverage_score=0.5,
+                total_tokens=1000 * i,
+                query_count=i,
+                unique_domains=1,
+                dm_coverage=0.5,
+                cv_coverage=0.5,
+            )
+            for i in range(1, 3)
+        ]
+        current = _make_snapshot(
+            vitals_snapshot_healthy,
+            loop_index=3,
+            findings_count=30,
+            sources_count=2,
+            coverage_score=0.5,
+            total_tokens=3000,
+            query_count=3,
+            unique_domains=1,
+            dm_coverage=0.5,
+            cv_coverage=0.5,
+        )
+        result = detect_loop(current, history, config=config)
+        # Should still detect via SFR floor breach if ratio < 0.3
+        # (sources/findings = 2/30 = 0.067 < 0.3)
+        if result.confabulation_detected:
+            assert "causal" not in (result.confabulation_trigger or "")
+
+    def test_no_sources_no_causal_confab(self, vitals_snapshot_healthy: dict) -> None:
+        """Traces with zero sources should not trigger causal confab."""
+        config = VitalsConfig(causal_confab_window_size=4)
+        history = [
+            _make_snapshot(
+                vitals_snapshot_healthy,
+                loop_index=i,
+                findings_count=i * 5,
+                sources_count=0,
+                coverage_score=0.5,
+                total_tokens=1000 * i,
+                query_count=i,
+                unique_domains=0,
+                dm_coverage=0.5,
+                cv_coverage=0.5,
+            )
+            for i in range(1, 8)
+        ]
+        current = _make_snapshot(
+            vitals_snapshot_healthy,
+            loop_index=8,
+            findings_count=40,
+            sources_count=0,
+            coverage_score=0.5,
+            total_tokens=8000,
+            query_count=8,
+            unique_domains=0,
+            dm_coverage=0.5,
+            cv_coverage=0.5,
+        )
+        result = detect_loop(current, history, config=config)
+        if result.confabulation_detected:
+            assert "causal" not in (result.confabulation_trigger or "")

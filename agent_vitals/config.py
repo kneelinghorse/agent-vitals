@@ -42,6 +42,14 @@ VITALS_MIN_EVIDENCE_STEPS_ENV = "VITALS_MIN_EVIDENCE_STEPS"
 VITALS_SOURCE_FINDING_RATIO_FLOOR_ENV = "VITALS_SOURCE_FINDING_RATIO_FLOOR"
 VITALS_SOURCE_FINDING_RATIO_DECLINING_STEPS_ENV = "VITALS_SOURCE_FINDING_RATIO_DECLINING_STEPS"
 VITALS_SOURCE_FINDING_RATIO_DECLINE_WINDOW_ENV = "VITALS_SOURCE_FINDING_RATIO_DECLINE_WINDOW"
+VITALS_CAUSAL_CONFAB_WINDOW_SIZE_ENV = "VITALS_CAUSAL_CONFAB_WINDOW_SIZE"
+VITALS_CAUSAL_CONFAB_BASELINE_FLOOR_ENV = "VITALS_CAUSAL_CONFAB_BASELINE_FLOOR"
+VITALS_CAUSAL_CONFAB_WEAK_LINK_THRESHOLD_ENV = "VITALS_CAUSAL_CONFAB_WEAK_LINK_THRESHOLD"
+VITALS_CAUSAL_CONFAB_STRUCTURAL_DROP_THRESHOLD_ENV = "VITALS_CAUSAL_CONFAB_STRUCTURAL_DROP_THRESHOLD"
+VITALS_CAUSAL_CONFAB_RATIO_GATE_ENV = "VITALS_CAUSAL_CONFAB_RATIO_GATE"
+VITALS_CAUSAL_CONFAB_LOW_LINK_THRESHOLD_ENV = "VITALS_CAUSAL_CONFAB_LOW_LINK_THRESHOLD"
+VITALS_CAUSAL_CONFAB_SOURCE_BOOTSTRAP_CAP_ENV = "VITALS_CAUSAL_CONFAB_SOURCE_BOOTSTRAP_CAP"
+VITALS_CAUSAL_CONFAB_LOW_LINK_RATIO_GATE_ENV = "VITALS_CAUSAL_CONFAB_LOW_LINK_RATIO_GATE"
 VITALS_STUCK_DM_THRESHOLD_ENV = "VITALS_STUCK_DM_THRESHOLD"
 VITALS_STUCK_CV_THRESHOLD_ENV = "VITALS_STUCK_CV_THRESHOLD"
 VITALS_BURN_RATE_MULTIPLIER_ENV = "VITALS_BURN_RATE_MULTIPLIER"
@@ -85,6 +93,15 @@ DEFAULT_MIN_EVIDENCE_STEPS = 3
 DEFAULT_SOURCE_FINDING_RATIO_FLOOR = 0.3
 DEFAULT_SOURCE_FINDING_RATIO_DECLINING_STEPS = 3
 DEFAULT_SOURCE_FINDING_RATIO_DECLINE_WINDOW = 5
+# Causal confabulation detector parameters.
+DEFAULT_CAUSAL_CONFAB_WINDOW_SIZE = 4
+DEFAULT_CAUSAL_CONFAB_BASELINE_FLOOR = 0.4
+DEFAULT_CAUSAL_CONFAB_WEAK_LINK_THRESHOLD = 0.35
+DEFAULT_CAUSAL_CONFAB_STRUCTURAL_DROP_THRESHOLD = 0.2
+DEFAULT_CAUSAL_CONFAB_RATIO_GATE = 0.4
+DEFAULT_CAUSAL_CONFAB_LOW_LINK_THRESHOLD = 0.2
+DEFAULT_CAUSAL_CONFAB_SOURCE_BOOTSTRAP_CAP = 10
+DEFAULT_CAUSAL_CONFAB_LOW_LINK_RATIO_GATE = 0.3
 # Backwards-compatible legacy absolute threshold (deprecated).
 DEFAULT_LOOP_CONSECUTIVE_COUNT = 3
 DEFAULT_STUCK_DM_THRESHOLD = 0.15
@@ -117,6 +134,12 @@ _PROFILE_OVERRIDABLE_FLOAT_FIELDS = (
     "loop_consecutive_pct",
     "findings_plateau_pct",
     "source_finding_ratio_floor",
+    "causal_confab_baseline_floor",
+    "causal_confab_weak_link_threshold",
+    "causal_confab_structural_drop_threshold",
+    "causal_confab_ratio_gate",
+    "causal_confab_low_link_threshold",
+    "causal_confab_low_link_ratio_gate",
     "stuck_dm_threshold",
     "stuck_cv_threshold",
     "burn_rate_multiplier",
@@ -137,6 +160,8 @@ _PROFILE_OVERRIDABLE_INT_FIELDS = (
     "loop_consecutive_count",
     "source_finding_ratio_declining_steps",
     "source_finding_ratio_decline_window",
+    "causal_confab_window_size",
+    "causal_confab_source_bootstrap_cap",
     "thrash_error_threshold",
     "spc_window_size",
     "spc_warmup_steps",
@@ -176,6 +201,14 @@ class ThresholdProfile:
     loop_consecutive_count: Optional[int] = None
     source_finding_ratio_declining_steps: Optional[int] = None
     source_finding_ratio_decline_window: Optional[int] = None
+    causal_confab_window_size: Optional[int] = None
+    causal_confab_baseline_floor: Optional[float] = None
+    causal_confab_weak_link_threshold: Optional[float] = None
+    causal_confab_structural_drop_threshold: Optional[float] = None
+    causal_confab_ratio_gate: Optional[float] = None
+    causal_confab_low_link_threshold: Optional[float] = None
+    causal_confab_source_bootstrap_cap: Optional[int] = None
+    causal_confab_low_link_ratio_gate: Optional[float] = None
     stuck_dm_threshold: Optional[float] = None
     stuck_cv_threshold: Optional[float] = None
     burn_rate_multiplier: Optional[float] = None
@@ -249,6 +282,14 @@ class VitalsConfig:
     source_finding_ratio_floor: float = DEFAULT_SOURCE_FINDING_RATIO_FLOOR
     source_finding_ratio_declining_steps: int = DEFAULT_SOURCE_FINDING_RATIO_DECLINING_STEPS
     source_finding_ratio_decline_window: int = DEFAULT_SOURCE_FINDING_RATIO_DECLINE_WINDOW
+    causal_confab_window_size: int = DEFAULT_CAUSAL_CONFAB_WINDOW_SIZE
+    causal_confab_baseline_floor: float = DEFAULT_CAUSAL_CONFAB_BASELINE_FLOOR
+    causal_confab_weak_link_threshold: float = DEFAULT_CAUSAL_CONFAB_WEAK_LINK_THRESHOLD
+    causal_confab_structural_drop_threshold: float = DEFAULT_CAUSAL_CONFAB_STRUCTURAL_DROP_THRESHOLD
+    causal_confab_ratio_gate: float = DEFAULT_CAUSAL_CONFAB_RATIO_GATE
+    causal_confab_low_link_threshold: float = DEFAULT_CAUSAL_CONFAB_LOW_LINK_THRESHOLD
+    causal_confab_source_bootstrap_cap: int = DEFAULT_CAUSAL_CONFAB_SOURCE_BOOTSTRAP_CAP
+    causal_confab_low_link_ratio_gate: float = DEFAULT_CAUSAL_CONFAB_LOW_LINK_RATIO_GATE
     # Legacy absolute threshold retained for backwards compatibility.
     loop_consecutive_count: int = DEFAULT_LOOP_CONSECUTIVE_COUNT
     stuck_dm_threshold: float = DEFAULT_STUCK_DM_THRESHOLD
@@ -353,6 +394,12 @@ class VitalsConfig:
             "loop_consecutive_pct",
             "findings_plateau_pct",
             "source_finding_ratio_floor",
+            "causal_confab_baseline_floor",
+            "causal_confab_weak_link_threshold",
+            "causal_confab_structural_drop_threshold",
+            "causal_confab_ratio_gate",
+            "causal_confab_low_link_threshold",
+            "causal_confab_low_link_ratio_gate",
             "stuck_dm_threshold",
             "stuck_cv_threshold",
             "burn_rate_multiplier",
@@ -382,6 +429,8 @@ class VitalsConfig:
             "min_evidence_steps",
             "source_finding_ratio_declining_steps",
             "source_finding_ratio_decline_window",
+            "causal_confab_window_size",
+            "causal_confab_source_bootstrap_cap",
             "thrash_error_threshold",
             "spc_window_size",
             "spc_warmup_steps",
@@ -500,6 +549,38 @@ class VitalsConfig:
                 "source_finding_ratio_decline_window",
                 DEFAULT_SOURCE_FINDING_RATIO_DECLINE_WINDOW,
             ),
+            causal_confab_window_size=_yaml_int(
+                "causal_confab_window_size",
+                DEFAULT_CAUSAL_CONFAB_WINDOW_SIZE,
+            ),
+            causal_confab_baseline_floor=_yaml_float(
+                "causal_confab_baseline_floor",
+                DEFAULT_CAUSAL_CONFAB_BASELINE_FLOOR,
+            ),
+            causal_confab_weak_link_threshold=_yaml_float(
+                "causal_confab_weak_link_threshold",
+                DEFAULT_CAUSAL_CONFAB_WEAK_LINK_THRESHOLD,
+            ),
+            causal_confab_structural_drop_threshold=_yaml_float(
+                "causal_confab_structural_drop_threshold",
+                DEFAULT_CAUSAL_CONFAB_STRUCTURAL_DROP_THRESHOLD,
+            ),
+            causal_confab_ratio_gate=_yaml_float(
+                "causal_confab_ratio_gate",
+                DEFAULT_CAUSAL_CONFAB_RATIO_GATE,
+            ),
+            causal_confab_low_link_threshold=_yaml_float(
+                "causal_confab_low_link_threshold",
+                DEFAULT_CAUSAL_CONFAB_LOW_LINK_THRESHOLD,
+            ),
+            causal_confab_source_bootstrap_cap=_yaml_int(
+                "causal_confab_source_bootstrap_cap",
+                DEFAULT_CAUSAL_CONFAB_SOURCE_BOOTSTRAP_CAP,
+            ),
+            causal_confab_low_link_ratio_gate=_yaml_float(
+                "causal_confab_low_link_ratio_gate",
+                DEFAULT_CAUSAL_CONFAB_LOW_LINK_RATIO_GATE,
+            ),
             loop_consecutive_count=_yaml_int(
                 "loop_consecutive_count", DEFAULT_LOOP_CONSECUTIVE_COUNT
             ),
@@ -598,6 +679,23 @@ class VitalsConfig:
                 (
                     "source_finding_ratio_decline_window",
                     VITALS_SOURCE_FINDING_RATIO_DECLINE_WINDOW_ENV,
+                ),
+                ("causal_confab_window_size", VITALS_CAUSAL_CONFAB_WINDOW_SIZE_ENV),
+                ("causal_confab_baseline_floor", VITALS_CAUSAL_CONFAB_BASELINE_FLOOR_ENV),
+                ("causal_confab_weak_link_threshold", VITALS_CAUSAL_CONFAB_WEAK_LINK_THRESHOLD_ENV),
+                (
+                    "causal_confab_structural_drop_threshold",
+                    VITALS_CAUSAL_CONFAB_STRUCTURAL_DROP_THRESHOLD_ENV,
+                ),
+                ("causal_confab_ratio_gate", VITALS_CAUSAL_CONFAB_RATIO_GATE_ENV),
+                ("causal_confab_low_link_threshold", VITALS_CAUSAL_CONFAB_LOW_LINK_THRESHOLD_ENV),
+                (
+                    "causal_confab_source_bootstrap_cap",
+                    VITALS_CAUSAL_CONFAB_SOURCE_BOOTSTRAP_CAP_ENV,
+                ),
+                (
+                    "causal_confab_low_link_ratio_gate",
+                    VITALS_CAUSAL_CONFAB_LOW_LINK_RATIO_GATE_ENV,
                 ),
                 ("loop_consecutive_count", VITALS_LOOP_CONSECUTIVE_COUNT_ENV),
                 ("stuck_dm_threshold", VITALS_STUCK_DM_THRESHOLD_ENV),
@@ -705,6 +803,52 @@ class VitalsConfig:
             VITALS_SOURCE_FINDING_RATIO_DECLINE_WINDOW_ENV,
             default=DEFAULT_SOURCE_FINDING_RATIO_DECLINE_WINDOW,
             min_value=2,
+        )
+        causal_confab_window_size = _parse_int(
+            VITALS_CAUSAL_CONFAB_WINDOW_SIZE_ENV,
+            default=DEFAULT_CAUSAL_CONFAB_WINDOW_SIZE,
+            min_value=3,
+        )
+        causal_confab_baseline_floor = _parse_float(
+            VITALS_CAUSAL_CONFAB_BASELINE_FLOOR_ENV,
+            default=DEFAULT_CAUSAL_CONFAB_BASELINE_FLOOR,
+            min_value=0.0,
+            max_value=1.0,
+        )
+        causal_confab_weak_link_threshold = _parse_float(
+            VITALS_CAUSAL_CONFAB_WEAK_LINK_THRESHOLD_ENV,
+            default=DEFAULT_CAUSAL_CONFAB_WEAK_LINK_THRESHOLD,
+            min_value=0.0,
+            max_value=1.0,
+        )
+        causal_confab_structural_drop_threshold = _parse_float(
+            VITALS_CAUSAL_CONFAB_STRUCTURAL_DROP_THRESHOLD_ENV,
+            default=DEFAULT_CAUSAL_CONFAB_STRUCTURAL_DROP_THRESHOLD,
+            min_value=0.0,
+            max_value=1.0,
+        )
+        causal_confab_ratio_gate = _parse_float(
+            VITALS_CAUSAL_CONFAB_RATIO_GATE_ENV,
+            default=DEFAULT_CAUSAL_CONFAB_RATIO_GATE,
+            min_value=0.0,
+            max_value=10.0,
+        )
+        causal_confab_low_link_threshold = _parse_float(
+            VITALS_CAUSAL_CONFAB_LOW_LINK_THRESHOLD_ENV,
+            default=DEFAULT_CAUSAL_CONFAB_LOW_LINK_THRESHOLD,
+            min_value=0.0,
+            max_value=1.0,
+        )
+        causal_confab_source_bootstrap_cap = _parse_int(
+            VITALS_CAUSAL_CONFAB_SOURCE_BOOTSTRAP_CAP_ENV,
+            default=DEFAULT_CAUSAL_CONFAB_SOURCE_BOOTSTRAP_CAP,
+            min_value=0,
+        )
+        causal_confab_low_link_ratio_gate = _parse_float(
+            VITALS_CAUSAL_CONFAB_LOW_LINK_RATIO_GATE_ENV,
+            default=DEFAULT_CAUSAL_CONFAB_LOW_LINK_RATIO_GATE,
+            min_value=0.0,
+            max_value=10.0,
         )
         loop_consecutive_count = _parse_int(
             VITALS_LOOP_CONSECUTIVE_COUNT_ENV,
@@ -849,6 +993,14 @@ class VitalsConfig:
             source_finding_ratio_floor=source_finding_ratio_floor,
             source_finding_ratio_declining_steps=source_finding_ratio_declining_steps,
             source_finding_ratio_decline_window=source_finding_ratio_decline_window,
+            causal_confab_window_size=causal_confab_window_size,
+            causal_confab_baseline_floor=causal_confab_baseline_floor,
+            causal_confab_weak_link_threshold=causal_confab_weak_link_threshold,
+            causal_confab_structural_drop_threshold=causal_confab_structural_drop_threshold,
+            causal_confab_ratio_gate=causal_confab_ratio_gate,
+            causal_confab_low_link_threshold=causal_confab_low_link_threshold,
+            causal_confab_source_bootstrap_cap=causal_confab_source_bootstrap_cap,
+            causal_confab_low_link_ratio_gate=causal_confab_low_link_ratio_gate,
             loop_consecutive_count=loop_consecutive_count,
             stuck_dm_threshold=stuck_dm_threshold,
             stuck_cv_threshold=stuck_cv_threshold,

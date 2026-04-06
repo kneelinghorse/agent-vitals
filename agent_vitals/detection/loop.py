@@ -125,6 +125,9 @@ class _DetectionContext:
     verified_source_ratio: Optional[float]
     verified_source_ratio_series: list[Optional[float]]
 
+    # Causal confab: the full snapshot series (history + current)
+    all_snapshots: list[VitalsSnapshot]
+
     # Config-derived
     ratio_floor: float
     ratio_declining_required: int
@@ -305,6 +308,7 @@ def _prepare_context(
         dm_coverage_series=dm_coverage_series,
         cv_coverage_series=cv_coverage_series,
         ratio_floor=ratio_floor,
+        all_snapshots=series,
         verified_source_ratio=verified_source_ratio,
         verified_source_ratio_series=verified_source_ratio_series,
         ratio_declining_required=ratio_declining_required,
@@ -398,12 +402,187 @@ def _detect_loop_candidates(ctx: _DetectionContext) -> list[tuple[float, str]]:
     return candidates
 
 
+_CAUSAL_EPSILON = 1e-12
+
+
+def _causal_pearson(
+    xs: Sequence[float], ys: Sequence[float],
+) -> Optional[float]:
+    """Pearson correlation, returning None when either series has zero variance."""
+    if len(xs) != len(ys) or len(xs) < 2:
+        return None
+    x_mean = sum(xs) / len(xs)
+    y_mean = sum(ys) / len(ys)
+    numerator = sum((x - x_mean) * (y - y_mean) for x, y in zip(xs, ys))
+    x_var = sum((x - x_mean) ** 2 for x in xs)
+    y_var = sum((y - y_mean) ** 2 for y in ys)
+    if x_var <= _CAUSAL_EPSILON or y_var <= _CAUSAL_EPSILON:
+        return None
+    return numerator / math.sqrt(x_var * y_var)
+
+
+def _causal_residualize(
+    target: Sequence[float], control: Sequence[float],
+) -> list[float]:
+    """Remove the linear effect of *control* from *target* via OLS."""
+    if len(target) != len(control) or len(target) < 2:
+        return list(target)
+    mean_t = sum(target) / len(target)
+    mean_c = sum(control) / len(control)
+    c_var = sum((v - mean_c) ** 2 for v in control)
+    if c_var <= _CAUSAL_EPSILON:
+        return [v - mean_t for v in target]
+    cov = sum((c - mean_c) * (t - mean_t) for c, t in zip(control, target))
+    slope = cov / c_var
+    intercept = mean_t - slope * mean_c
+    return [t - (intercept + slope * c) for t, c in zip(target, control)]
+
+
+def _causal_link_strength(
+    snapshots: Sequence[VitalsSnapshot],
+) -> tuple[float, Optional[float], float]:
+    """Compute causal link strength for a window of snapshots.
+
+    Returns (link_strength, partial_correlation, response_ratio).
+    """
+    findings = [s.signals.findings_count for s in snapshots]
+    sources = [s.signals.sources_count for s in snapshots]
+    tokens = [s.signals.total_tokens for s in snapshots]
+
+    f_deltas = [max(0, c - p) for p, c in zip(findings, findings[1:])]
+    s_deltas = [max(0, c - p) for p, c in zip(sources, sources[1:])]
+    t_deltas = [max(0, c - p) for p, c in zip(tokens, tokens[1:])]
+
+    response_ratio = sum(s_deltas) / max(1, sum(f_deltas))
+    f_resid = _causal_residualize(f_deltas, t_deltas)
+    s_resid = _causal_residualize(s_deltas, t_deltas)
+    partial_corr = _causal_pearson(f_resid, s_resid)
+
+    if partial_corr is None:
+        link = min(1.0, response_ratio)
+    else:
+        norm_corr = (partial_corr + 1.0) / 2.0
+        link = max(0.0, min(1.0, norm_corr * min(1.0, response_ratio)))
+
+    return link, partial_corr, response_ratio
+
+
+def _detect_causal_confabulation(
+    ctx: _DetectionContext,
+) -> Optional[tuple[float, str, tuple[str, ...]]]:
+    """Detect confabulation via rolling causal source-link degradation.
+
+    Returns a candidate tuple (confidence, trigger, signals) or None.
+    """
+    cfg = ctx.cfg
+    window_size = int(cfg.causal_confab_window_size)
+    snapshots = ctx.all_snapshots
+
+    # Guard: skip if no source evidence (sources_count always 0).
+    if ctx.sources_missing or not ctx.sources_counts or max(ctx.sources_counts) == 0:
+        return None
+
+    if len(snapshots) < window_size:
+        return None
+
+    # Score rolling windows.
+    link_scores: list[float] = []
+    for end in range(window_size, len(snapshots) + 1):
+        window = snapshots[end - window_size: end]
+        link, _, _ = _causal_link_strength(window)
+        link_scores.append(link)
+
+    if not link_scores:
+        return None
+
+    # Baseline: strongest of first 2 windows (early trace).
+    baseline_strength = max(link_scores[:2])
+    # Weakest: min of windows[1:] (post-baseline).
+    comparison = link_scores[1:] or link_scores
+    weakest_strength = min(comparison)
+    structural_drop = max(0.0, baseline_strength - weakest_strength)
+
+    # Final source-finding ratio.
+    last = snapshots[-1]
+    if last.source_finding_ratio is not None:
+        final_ratio = float(last.source_finding_ratio)
+    else:
+        findings = max(1, last.signals.findings_count)
+        final_ratio = float(last.signals.sources_count) / float(findings)
+
+    initial_sources = snapshots[0].signals.sources_count
+
+    # Path 1: Causal link break (structural break from healthy baseline).
+    structural_break = (
+        baseline_strength >= float(cfg.causal_confab_baseline_floor)
+        and weakest_strength <= float(cfg.causal_confab_weak_link_threshold)
+        and structural_drop >= float(cfg.causal_confab_structural_drop_threshold)
+        and final_ratio <= float(cfg.causal_confab_ratio_gate)
+    )
+    # Path 2: Persistent low causal link (never-established coupling).
+    persistent_low = (
+        weakest_strength <= float(cfg.causal_confab_low_link_threshold)
+        and initial_sources <= int(cfg.causal_confab_source_bootstrap_cap)
+        and final_ratio <= float(cfg.causal_confab_low_link_ratio_gate)
+    )
+
+    if structural_break:
+        trigger = "causal_link_break"
+        baseline_term = min(
+            1.0,
+            baseline_strength / max(float(cfg.causal_confab_baseline_floor), _CAUSAL_EPSILON),
+        )
+        drop_term = min(
+            1.0,
+            structural_drop / max(
+                float(cfg.causal_confab_structural_drop_threshold), _CAUSAL_EPSILON
+            ),
+        )
+        ratio_term = 1.0 - min(
+            1.0, final_ratio / max(float(cfg.causal_confab_ratio_gate), _CAUSAL_EPSILON)
+        )
+        confidence = min(1.0, 0.35 + 0.35 * baseline_term + 0.2 * drop_term + 0.1 * ratio_term)
+    elif persistent_low:
+        trigger = "persistent_low_causal_link"
+        low_link_term = 1.0 - min(
+            1.0,
+            weakest_strength / max(
+                float(cfg.causal_confab_low_link_threshold), _CAUSAL_EPSILON
+            ),
+        )
+        ratio_term = 1.0 - min(
+            1.0,
+            final_ratio / max(float(cfg.causal_confab_low_link_ratio_gate), _CAUSAL_EPSILON),
+        )
+        confidence = min(1.0, 0.4 + 0.4 * low_link_term + 0.2 * ratio_term)
+    else:
+        return None
+
+    signal_parts: list[str] = [
+        trigger,
+        f"link_strength={weakest_strength:.3f}",
+        f"structural_drop={structural_drop:.3f}",
+        f"baseline={baseline_strength:.3f}",
+    ]
+    return (confidence, trigger, tuple(signal_parts))
+
+
 def _detect_confabulation_candidates(
     ctx: _DetectionContext,
 ) -> list[tuple[float, str, tuple[str, ...]]]:
-    """Detect confabulation candidates from source-to-finding ratio and trajectory."""
+    """Detect confabulation candidates from source-to-finding ratio and trajectory.
+
+    The causal detector is tried first.  If it fires, it takes priority.  The
+    legacy SFR-threshold path runs as a fallback for short traces or when the
+    causal path does not trigger.
+    """
 
     candidates: list[tuple[float, str, tuple[str, ...]]] = []
+
+    # Primary path: causal confabulation detector.
+    causal = _detect_causal_confabulation(ctx)
+    if causal is not None:
+        candidates.append(causal)
 
     sources_stagnation = False
     unique_domains_stagnation = False
