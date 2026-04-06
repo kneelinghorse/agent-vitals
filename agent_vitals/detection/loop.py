@@ -563,6 +563,16 @@ def _detect_causal_confabulation(
     comparison = link_scores[1:] or link_scores
     weakest_strength = min(comparison)
     structural_drop = max(0.0, baseline_strength - weakest_strength)
+    # Streaming-mode safeguard: track the latest window's link strength
+    # separately. The bench reference is called once per trace at the tail;
+    # our integration calls detect_loop() per-step. Without a "latest window
+    # is weak" gate on Paths 1 and 2 we accumulate per-step FPs from transient
+    # noise (a trace that briefly decouples then recovers would fire at the
+    # transient step and the trace label sticks). Requiring the latest window
+    # to confirm the weak-link condition makes the streaming detector say
+    # "the trace is currently in a confab state" rather than "the trace was
+    # weak at some past point" — matching bench's one-shot semantics.
+    latest_link = link_scores[-1]
 
     # Final source-finding ratio: prefer the snapshot's stored ratio, fall
     # back to a fresh sources/findings calculation (matches bench reference).
@@ -576,15 +586,20 @@ def _detect_causal_confabulation(
     initial_sources = snapshots[0].signals.sources_count
 
     # Path 1: Causal link break (structural break from healthy baseline).
+    # Streaming gate: latest window must also be weak so we only fire when
+    # the trace is currently decoupled, not on transient past noise.
     structural_break = (
         baseline_strength >= float(cfg.causal_confab_baseline_floor)
         and weakest_strength <= float(cfg.causal_confab_weak_link_threshold)
+        and latest_link <= float(cfg.causal_confab_weak_link_threshold)
         and structural_drop >= float(cfg.causal_confab_structural_drop_threshold)
         and final_ratio <= float(cfg.causal_confab_ratio_gate)
     )
     # Path 2: Persistent low causal link (never-established coupling).
+    # Streaming gate: latest window must also be weak.
     persistent_low = (
         weakest_strength <= float(cfg.causal_confab_low_link_threshold)
+        and latest_link <= float(cfg.causal_confab_low_link_threshold)
         and initial_sources <= int(cfg.causal_confab_source_bootstrap_cap)
         and final_ratio <= float(cfg.causal_confab_low_link_ratio_gate)
     )
