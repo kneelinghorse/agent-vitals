@@ -2,6 +2,8 @@
 
 from pathlib import Path
 
+import pytest
+
 import agent_vitals.config as config_module
 from agent_vitals.config import VitalsConfig, get_vitals_config
 
@@ -230,7 +232,10 @@ class TestCUSUMConfig:
 
 def test_version_matches_pyproject() -> None:
     """agent_vitals.__version__ should match the version in pyproject.toml."""
-    import tomllib
+    # tomllib is stdlib only on Python 3.11+. Skip on 3.10 — that runner
+    # still exercises the rest of the test module and the version check
+    # runs on 3.11/3.12 which is sufficient drift detection.
+    tomllib = pytest.importorskip("tomllib")
 
     import agent_vitals
 
