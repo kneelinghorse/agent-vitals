@@ -15,12 +15,19 @@ Usage::
     )
 """
 
-from .config import ThresholdProfile, VitalsConfig, get_vitals_config
+from .config import ProfileFieldDiff, ThresholdProfile, VitalsConfig, get_vitals_config
 from .detection.adaptive_threshold import AdaptiveThreshold, AdaptiveThresholdUpdate
 from .detection.cusum import CUSUMTracker, CUSUMUpdate
 from .detection.loop import LoopDetectionResult, detect_loop
 from .detection.stop_rule import StopRuleSignals, derive_stop_signals
-from .exceptions import AdapterError, BacktestError, ConfigurationError, ExportError, VitalsError
+from .exceptions import (
+    AdapterError,
+    BacktestError,
+    ConfigurationError,
+    ExportError,
+    UnknownProfileError,
+    VitalsError,
+)
 from .export import JSONLExporter, OTLPExporter, VitalsExporter
 from .monitor import AgentVitals
 from .schema import (
@@ -53,10 +60,12 @@ __all__ = [
     "JSONLExporter",
     "LoopDetectionResult",
     "OTLPExporter",
+    "ProfileFieldDiff",
     "RawSignals",
     "StopRuleSignals",
     "TemporalMetricsResult",
     "ThresholdProfile",
+    "UnknownProfileError",
     "VitalsConfig",
     "VitalsError",
     "VitalsExporter",

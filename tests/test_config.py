@@ -230,6 +230,250 @@ class TestCUSUMConfig:
         assert resolved.cusum_min_sigma_findings == 0.5
 
 
+class TestProfileIntrospectionAPI:
+    """Tests for the av-s07-m01 profile introspection API.
+
+    This API exists so external verifiers (notably the bench harness)
+    can detect packaging regressions and inspect framework profile
+    divergence without poking at ``dataclasses.fields()`` internals.
+
+    The killer test in this class is
+    ``test_v1_13_0_packaging_regression_would_be_caught`` — it asserts
+    that *every* API entry point fires when the bundled thresholds.yaml
+    is missing from the install. If that test ever stops passing, the
+    API has regressed and bench's gate will silently miss the next
+    packaging bug.
+    """
+
+    # ─── thresholds_yaml_path / is_yaml_loaded ───
+
+    def test_thresholds_yaml_path_returns_absolute_path(self) -> None:
+        path = VitalsConfig.thresholds_yaml_path()
+        assert path.is_absolute()
+        assert path.name == "thresholds.yaml"
+
+    def test_is_yaml_loaded_true_for_bundled_yaml(self) -> None:
+        assert VitalsConfig.is_yaml_loaded() is True
+
+    def test_is_yaml_loaded_false_when_yaml_missing(self, tmp_path, monkeypatch) -> None:
+        missing = tmp_path / "does_not_exist.yaml"
+        monkeypatch.setattr(config_module, "THRESHOLDS_YAML_PATH", missing)
+        assert VitalsConfig.is_yaml_loaded() is False
+
+    def test_is_yaml_loaded_false_when_yaml_not_a_mapping(
+        self, tmp_path, monkeypatch
+    ) -> None:
+        bad = tmp_path / "thresholds.yaml"
+        bad.write_text("just a string", encoding="utf-8")
+        monkeypatch.setattr(config_module, "THRESHOLDS_YAML_PATH", bad)
+        assert VitalsConfig.is_yaml_loaded() is False
+
+    # ─── assert_profiles_loaded ───
+
+    def test_assert_profiles_loaded_passes_for_bundled_yaml(self) -> None:
+        # Should not raise.
+        VitalsConfig.assert_profiles_loaded()
+
+    def test_assert_profiles_loaded_raises_when_yaml_missing(
+        self, tmp_path, monkeypatch
+    ) -> None:
+        from agent_vitals.exceptions import ConfigurationError
+
+        missing = tmp_path / "does_not_exist.yaml"
+        monkeypatch.setattr(config_module, "THRESHOLDS_YAML_PATH", missing)
+        with pytest.raises(ConfigurationError, match="missing or unreadable"):
+            VitalsConfig.assert_profiles_loaded()
+
+    def test_assert_profiles_loaded_raises_when_no_profiles_defined(
+        self, tmp_path, monkeypatch
+    ) -> None:
+        from agent_vitals.exceptions import ConfigurationError
+
+        bare = tmp_path / "thresholds.yaml"
+        bare.write_text("loop_consecutive_pct: 0.5\n", encoding="utf-8")
+        monkeypatch.setattr(config_module, "THRESHOLDS_YAML_PATH", bare)
+        with pytest.raises(ConfigurationError, match="no framework profiles"):
+            VitalsConfig.assert_profiles_loaded()
+
+    # ─── list_profiles / profiles ───
+
+    def test_list_profiles_returns_sorted_tuple_of_bundled_profiles(self) -> None:
+        # The bundled thresholds.yaml ships with crewai, dspy, langgraph.
+        assert VitalsConfig.list_profiles() == ("crewai", "dspy", "langgraph")
+
+    def test_list_profiles_empty_when_yaml_missing(
+        self, tmp_path, monkeypatch
+    ) -> None:
+        missing = tmp_path / "does_not_exist.yaml"
+        monkeypatch.setattr(config_module, "THRESHOLDS_YAML_PATH", missing)
+        assert VitalsConfig.list_profiles() == ()
+
+    def test_profiles_instance_method_matches_classmethod_for_default_load(
+        self,
+    ) -> None:
+        cfg = VitalsConfig.from_yaml(allow_env_override=False)
+        assert cfg.profiles() == VitalsConfig.list_profiles()
+
+    # ─── profile_diff ───
+
+    def test_profile_diff_dspy_has_three_overrides(self) -> None:
+        cfg = VitalsConfig.from_yaml(allow_env_override=False)
+        diff = cfg.profile_diff("dspy")
+        assert set(diff.keys()) == {
+            "loop_consecutive_pct",
+            "stuck_dm_threshold",
+            "workflow_stuck_enabled",
+        }
+        assert diff["loop_consecutive_pct"].default == 0.5
+        assert diff["loop_consecutive_pct"].override == 0.7
+        assert diff["stuck_dm_threshold"].default == 0.15
+        assert diff["stuck_dm_threshold"].override == 0.1
+        assert diff["workflow_stuck_enabled"].default == "research-only"
+        assert diff["workflow_stuck_enabled"].override == "none"
+
+    def test_profile_diff_crewai_excludes_loop_consecutive_pct_when_equal_to_default(
+        self,
+    ) -> None:
+        # crewai's YAML lists loop_consecutive_pct: 0.5, which equals
+        # the dataclass default. The diff must omit it because the
+        # diff is a property of the YAML *vs the default*, not vs self.
+        cfg = VitalsConfig.from_yaml(allow_env_override=False)
+        diff = cfg.profile_diff("crewai")
+        assert "loop_consecutive_pct" not in diff
+        # The two real overrides are still present.
+        assert set(diff.keys()) == {"burn_rate_multiplier", "token_scale_factor"}
+        assert diff["burn_rate_multiplier"].default == 2.5
+        assert diff["burn_rate_multiplier"].override == 3.0
+        assert diff["token_scale_factor"].default == 1.0
+        assert diff["token_scale_factor"].override == 0.7
+
+    def test_profile_diff_returns_field_default_and_override(self) -> None:
+        from agent_vitals.config import ProfileFieldDiff
+
+        cfg = VitalsConfig.from_yaml(allow_env_override=False)
+        diff = cfg.profile_diff("langgraph")
+        assert "loop_consecutive_pct" in diff
+        entry = diff["loop_consecutive_pct"]
+        assert isinstance(entry, ProfileFieldDiff)
+        assert entry.field == "loop_consecutive_pct"
+        assert entry.default == 0.5
+        assert entry.override == 0.4
+
+    def test_profile_diff_raises_unknown_profile_error_with_known_list_in_message(
+        self,
+    ) -> None:
+        from agent_vitals.exceptions import ConfigurationError, UnknownProfileError
+
+        cfg = VitalsConfig.from_yaml(allow_env_override=False)
+        with pytest.raises(UnknownProfileError) as exc_info:
+            cfg.profile_diff("langchain")
+        # Subclass of ConfigurationError so existing handlers catch it.
+        assert isinstance(exc_info.value, ConfigurationError)
+        msg = str(exc_info.value)
+        assert "langchain" in msg
+        # All three known profiles must appear in the recovery list.
+        assert "crewai" in msg
+        assert "dspy" in msg
+        assert "langgraph" in msg
+
+    def test_profile_diff_case_insensitive(self) -> None:
+        cfg = VitalsConfig.from_yaml(allow_env_override=False)
+        # All three forms must resolve to the same diff.
+        lower = cfg.profile_diff("dspy")
+        upper = cfg.profile_diff("DSPY")
+        mixed = cfg.profile_diff("DSpy")
+        assert lower == upper == mixed
+
+    def test_profile_diff_anchor_is_pure_defaults_not_self(
+        self, tmp_path, monkeypatch
+    ) -> None:
+        # If profile_diff compared against `self`, then loading a YAML
+        # with loop_consecutive_pct=0.99 at the top level would make
+        # the dspy profile (loop_consecutive_pct=0.7) look like a
+        # *down*-override. We want it to still report dspy's 0.7
+        # against the dataclass default 0.5 — the diff is a property
+        # of the YAML profile, not of the loaded config.
+        custom = tmp_path / "thresholds.yaml"
+        custom.write_text(
+            "\n".join(
+                [
+                    "loop_consecutive_pct: 0.99",
+                    "profiles:",
+                    "  dspy:",
+                    "    loop_consecutive_pct: 0.7",
+                ]
+            ),
+            encoding="utf-8",
+        )
+        cfg = VitalsConfig.from_yaml(yaml_path=custom, allow_env_override=False)
+        # Sanity check the load worked.
+        assert cfg.loop_consecutive_pct == 0.99
+        diff = cfg.profile_diff("dspy")
+        # Anchor is pure default (0.5), not self (0.99).
+        assert diff["loop_consecutive_pct"].default == 0.5
+        assert diff["loop_consecutive_pct"].override == 0.7
+
+    def test_profile_diff_empty_when_profile_only_lists_default_values(
+        self, tmp_path, monkeypatch
+    ) -> None:
+        # Synthetic profile that redundantly sets a field to the default.
+        custom = tmp_path / "thresholds.yaml"
+        custom.write_text(
+            "\n".join(
+                [
+                    "profiles:",
+                    "  passthrough:",
+                    "    loop_consecutive_pct: 0.5",  # equals default
+                ]
+            ),
+            encoding="utf-8",
+        )
+        cfg = VitalsConfig.from_yaml(yaml_path=custom, allow_env_override=False)
+        assert cfg.profiles() == ("passthrough",)
+        diff = cfg.profile_diff("passthrough")
+        assert diff == {}
+
+    # ─── The killer test: would the API have caught the v1.13.0 bug? ───
+
+    def test_v1_13_0_packaging_regression_would_be_caught(
+        self, tmp_path, monkeypatch
+    ) -> None:
+        """Asserts every API entry point signals failure when thresholds.yaml
+        is missing from the install — exactly the v1.13.0 packaging bug.
+
+        If this test ever stops passing, the introspection API has
+        regressed and bench's external gate will silently miss the next
+        packaging regression. This test is load-bearing for the
+        contract with all external verifiers; do not relax it.
+        """
+        from agent_vitals.exceptions import ConfigurationError, UnknownProfileError
+
+        # Simulate a wheel built without thresholds.yaml.
+        missing = tmp_path / "site-packages" / "agent_vitals" / "thresholds.yaml"
+        monkeypatch.setattr(config_module, "THRESHOLDS_YAML_PATH", missing)
+
+        # 1. Boolean check fails.
+        assert VitalsConfig.is_yaml_loaded() is False
+
+        # 2. List is empty.
+        assert VitalsConfig.list_profiles() == ()
+
+        # 3. Hard gate raises.
+        with pytest.raises(ConfigurationError):
+            VitalsConfig.assert_profiles_loaded()
+
+        # 4. Loaded config has no profiles attached.
+        cfg = VitalsConfig.from_yaml(allow_env_override=False)
+        assert cfg.profiles() == ()
+
+        # 5. profile_diff for any framework name raises UnknownProfileError
+        #    instead of silently returning {} (which would have been the
+        #    quietly-broken pre-API behavior).
+        for fw in ("dspy", "crewai", "langgraph"):
+            with pytest.raises(UnknownProfileError):
+                cfg.profile_diff(fw)
+
+
 def test_version_matches_pyproject() -> None:
     """agent_vitals.__version__ should match the version in pyproject.toml."""
     # tomllib is stdlib only on Python 3.11+. Skip on 3.10 — that runner

@@ -15,6 +15,17 @@ class ConfigurationError(VitalsError):
     """Invalid configuration or threshold values."""
 
 
+class UnknownProfileError(ConfigurationError):
+    """Raised when a requested framework profile is not registered.
+
+    The exception message includes the list of known profile names so
+    callers (especially external verifiers and agent integrators) can
+    recover without reading source. Use ``VitalsConfig.list_profiles()``
+    or ``VitalsConfig().profiles()`` for a soft lookup before calling
+    ``profile_diff``.
+    """
+
+
 class AdapterError(VitalsError):
     """Signal extraction from agent state failed."""
 
@@ -36,5 +47,6 @@ __all__ = [
     "BacktestError",
     "ConfigurationError",
     "ExportError",
+    "UnknownProfileError",
     "VitalsError",
 ]

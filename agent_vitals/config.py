@@ -19,6 +19,7 @@ from typing import Any, Mapping, Optional
 
 import yaml  # type: ignore[import-untyped]
 
+from .exceptions import ConfigurationError, UnknownProfileError
 from .schema import HysteresisConfig
 
 logger = logging.getLogger(__name__)
@@ -284,6 +285,49 @@ class ThresholdProfile:
 
 
 @dataclass(frozen=True, slots=True)
+class ProfileFieldDiff:
+    """One field where a framework profile overrides the dataclass default.
+
+    Returned by :meth:`VitalsConfig.profile_diff`. Three fields, all named:
+
+    Attributes:
+        field: Name of the ``VitalsConfig`` field being overridden
+            (e.g. ``"loop_consecutive_pct"``).
+        default: The value the field would take in a freshly constructed
+            ``VitalsConfig()`` with no YAML, no env vars, no profile applied.
+        override: The value the framework profile sets for this field.
+
+    The comparison anchor is always pure dataclass defaults, so a diff is
+    a property of the YAML profile itself — reproducible across any
+    caller's environment-variable configuration.
+    """
+
+    field: str
+    default: Any
+    override: Any
+
+
+def _load_thresholds_yaml_mapping(path: Path) -> Optional[Mapping[str, Any]]:
+    """Read a thresholds YAML file and return its top-level mapping.
+
+    Returns ``None`` when the file is missing, unreadable, fails to parse,
+    or parses to anything other than a mapping. Used by the introspection
+    classmethods on :class:`VitalsConfig` to detect packaging regressions
+    without raising on the load itself — the *callers* decide whether
+    missing data is an error.
+    """
+    if not path.exists():
+        return None
+    try:
+        raw = yaml.safe_load(path.read_text(encoding="utf-8"))
+    except (OSError, yaml.YAMLError):
+        return None
+    if not isinstance(raw, Mapping):
+        return None
+    return raw
+
+
+@dataclass(frozen=True, slots=True)
 class VitalsConfig:
     """Vitals module configuration for detection thresholds and behavior."""
 
@@ -394,6 +438,161 @@ class VitalsConfig:
             kwargs[f.name] = getattr(self, f.name)
         kwargs.update(overrides)
         return VitalsConfig(**kwargs)
+
+    # ──────────────────────────────────────────────────────────────────
+    # Profile introspection API (av-s07-m01)
+    #
+    # Stable, agent-friendly surface for verifying packaging integrity
+    # and inspecting framework profile divergence. External verifiers
+    # (notably the bench harness) should use these methods instead of
+    # ``dataclasses.fields()`` introspection over VitalsConfig internals.
+    #
+    # Designed to fail loud on the v1.13.0 thresholds.yaml packaging
+    # regression: every entry point signals failure independently when
+    # the YAML is missing from the install.
+    # ──────────────────────────────────────────────────────────────────
+
+    @classmethod
+    def thresholds_yaml_path(cls) -> Path:
+        """Absolute path the loader will read for the bundled thresholds.yaml.
+
+        The returned path may or may not exist on disk — pair with
+        :meth:`is_yaml_loaded` to detect a packaging regression where the
+        wheel was built without the YAML data file.
+        """
+        return THRESHOLDS_YAML_PATH
+
+    @classmethod
+    def is_yaml_loaded(cls) -> bool:
+        """``True`` iff the bundled thresholds.yaml exists and parses as a mapping.
+
+        ``False`` is the canonical signal for a packaging regression: the
+        wheel is missing or corrupted its YAML data file. ``from_yaml``
+        graceful-degrades in that case (logs a warning and uses
+        dataclass defaults), so ``is_yaml_loaded() == False`` is the only
+        reliable run-time check that detection thresholds and framework
+        profiles are actually available to the running process.
+        """
+        return _load_thresholds_yaml_mapping(THRESHOLDS_YAML_PATH) is not None
+
+    @classmethod
+    def assert_profiles_loaded(cls) -> None:
+        """Fail-loud packaging gate. Raises when the wheel is broken.
+
+        The one-line invariant for any external verifier::
+
+            VitalsConfig.assert_profiles_loaded()
+
+        Raises:
+            ConfigurationError: when ``thresholds.yaml`` is missing from
+                the install path, fails to parse, or defines zero
+                framework profiles.
+        """
+        path = THRESHOLDS_YAML_PATH
+        data = _load_thresholds_yaml_mapping(path)
+        if data is None:
+            raise ConfigurationError(
+                f"thresholds.yaml is missing or unreadable at {path}. "
+                "This usually means the agent-vitals wheel was built "
+                "without the YAML data file in [tool.setuptools.package-data]. "
+                "Detection thresholds and framework profiles are not available."
+            )
+        profiles_data = data.get("profiles")
+        if not isinstance(profiles_data, Mapping) or not profiles_data:
+            raise ConfigurationError(
+                f"thresholds.yaml at {path} defines no framework profiles. "
+                "Expected at least one entry under the top-level 'profiles:' key."
+            )
+
+    @classmethod
+    def list_profiles(cls) -> tuple[str, ...]:
+        """Names of every framework profile defined in the bundled thresholds.yaml.
+
+        Names are lowercased and sorted alphabetically. The YAML is read
+        with ``allow_env_override=False`` semantics — environment
+        variables do not affect the result, so two callers in different
+        environments always see the same tuple.
+
+        Returns the empty tuple when the YAML is missing or defines no
+        profiles. Pair with :meth:`is_yaml_loaded` to disambiguate
+        "missing wheel data" from "wheel present but no profiles
+        configured".
+        """
+        data = _load_thresholds_yaml_mapping(THRESHOLDS_YAML_PATH)
+        if data is None:
+            return ()
+        profiles_data = data.get("profiles")
+        if not isinstance(profiles_data, Mapping):
+            return ()
+        names = sorted(str(name).strip().lower() for name in profiles_data.keys())
+        return tuple(names)
+
+    def profiles(self) -> tuple[str, ...]:
+        """Names of profiles attached to *this* config instance.
+
+        Sorted alphabetically. Useful for instances built from a custom
+        YAML path or from :meth:`from_dict`, where the bundled
+        ``thresholds.yaml`` is not the source of truth. For the default
+        loader, prefer the :meth:`list_profiles` classmethod.
+        """
+        names = sorted(p.framework for p in self.framework_profiles)
+        return tuple(names)
+
+    def profile_diff(self, framework: str) -> dict[str, ProfileFieldDiff]:
+        """Every field where the named profile differs from pure dataclass defaults.
+
+        Args:
+            framework: Profile name. Case-insensitive — ``"DSPy"``,
+                ``"dspy"``, and ``"DSPY"`` all resolve identically.
+
+        Returns:
+            Mapping of field name → :class:`ProfileFieldDiff`. The dict
+            is empty when the profile exists but every override field
+            equals the corresponding dataclass default (rare; happens
+            when a YAML profile redundantly lists a default value).
+
+        Raises:
+            UnknownProfileError: when the framework is not registered on
+                this config instance. The exception message lists the
+                known profile names so the caller can recover without
+                reading source.
+
+        Comparison semantics:
+            The anchor is **pure ``VitalsConfig()`` defaults**, not
+            ``self``. This makes the diff a property of the YAML profile
+            rather than of the loaded config — two callers with
+            different env-var settings (or YAML overrides at the
+            top level) see the same result for the same profile.
+        """
+        normalized = framework.strip().lower()
+        profile: Optional[ThresholdProfile] = None
+        for p in self.framework_profiles:
+            if p.framework == normalized:
+                profile = p
+                break
+        if profile is None:
+            known = ", ".join(self.profiles()) or "(none)"
+            raise UnknownProfileError(
+                f"unknown framework profile {framework!r}; "
+                f"known profiles: {known}"
+            )
+
+        defaults = VitalsConfig()
+        diff: dict[str, ProfileFieldDiff] = {}
+        for f in fields(profile):
+            if f.name == "framework":
+                continue
+            override_value = getattr(profile, f.name)
+            if override_value is None:
+                continue
+            default_value = getattr(defaults, f.name, None)
+            if override_value != default_value:
+                diff[f.name] = ProfileFieldDiff(
+                    field=f.name,
+                    default=default_value,
+                    override=override_value,
+                )
+        return diff
 
     @classmethod
     def from_dict(cls, data: Mapping[str, Any]) -> "VitalsConfig":
@@ -1323,6 +1522,7 @@ __all__ = [
     "DEFAULT_VITALS_JSONL_DIR",
     "DEFAULT_VITALS_JSONL_MAX_BYTES",
     "DEFAULT_VITALS_JSONL_LAYOUT",
+    "ProfileFieldDiff",
     "THRESHOLDS_YAML_PATH",
     "ThresholdProfile",
     "VITALS_JSONL_DIR_ENV",

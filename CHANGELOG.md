@@ -7,6 +7,50 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+## [1.14.0] - 2026-04-07
+
+### Added
+- **Profile introspection API on `VitalsConfig`** for external verifiers
+  and agent integrators (av-s07-m01). Stable, agent-friendly surface
+  for verifying packaging integrity and inspecting framework profile
+  divergence — designed so external gates never need to poke at
+  `dataclasses.fields()` over `VitalsConfig` internals. New surface:
+  - `VitalsConfig.thresholds_yaml_path() -> Path` — install path of the
+    bundled `thresholds.yaml`.
+  - `VitalsConfig.is_yaml_loaded() -> bool` — `True` iff the bundled
+    YAML exists and parses as a mapping. Canonical signal for the
+    v1.13.0-style packaging regression where the wheel ships without
+    its YAML data file.
+  - `VitalsConfig.assert_profiles_loaded() -> None` — fail-loud
+    one-line gate. Raises `ConfigurationError` when the YAML is
+    missing or defines no framework profiles.
+  - `VitalsConfig.list_profiles() -> tuple[str, ...]` — sorted names
+    of every profile in the bundled YAML. Empty tuple when missing.
+  - `VitalsConfig.profiles() -> tuple[str, ...]` — sorted names of
+    profiles attached to *this* config instance (for custom YAML /
+    `from_dict` callers).
+  - `VitalsConfig.profile_diff(framework) -> dict[str, ProfileFieldDiff]`
+    — every field where the named profile differs from pure
+    `VitalsConfig()` defaults. Comparison anchor is dataclass
+    defaults, **not** `self`, so the diff is reproducible across any
+    caller's environment-variable configuration. Case-insensitive
+    framework lookup. Raises `UnknownProfileError` (subclass of
+    `ConfigurationError`) with the known-profile list in the message.
+- New types `ProfileFieldDiff` (frozen dataclass: `field`, `default`,
+  `override`) and `UnknownProfileError`, both re-exported from
+  the `agent_vitals` top-level.
+
+### Changed
+- **Packaging hardening**: `[tool.setuptools.package-data]` now uses a
+  `"*.yaml"` glob in addition to the explicit `thresholds.yaml` entry,
+  so any future YAML data file is bundled by default. Defense in
+  depth alongside the new introspection API.
+
+### Fixed
+- Detector logic, framework profiles, and TDA bundled model are
+  bit-identical to v1.13.1. This release adds an API and tightens
+  packaging; it does not change any detector behavior.
+
 ## [1.13.1] - 2026-04-07
 
 ### Fixed
