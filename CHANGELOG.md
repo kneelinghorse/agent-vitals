@@ -7,6 +7,27 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+## [1.13.1] - 2026-04-07
+
+### Fixed
+- **`thresholds.yaml` missing from the v1.13.0 wheel** (packaging
+  regression). Adding `[tool.setuptools.package-data]` in v1.13.0 to
+  bundle `models/*.joblib` displaced setuptools' default data
+  discovery, which had been implicitly bundling `thresholds.yaml`.
+  Default-config users were unaffected (`VitalsConfig.from_yaml`
+  graceful-degrades to dataclass defaults), but
+  `VitalsConfig.for_framework("langgraph"|"crewai"|"dspy")` silently
+  returned the default config instead of the framework-specific
+  threshold overrides tuned across Sprints 9–14. Caught by bench
+  smoke-test of the released wheel.
+- One-line fix in `pyproject.toml`:
+  ```toml
+  [tool.setuptools.package-data]
+  agent_vitals = ["models/*.joblib", "thresholds.yaml"]
+  ```
+- No code changes; detector logic is bit-identical to v1.13.0.
+  Framework-profile users on v1.13.0 should upgrade.
+
 ## [1.13.0] - 2026-04-07
 
 ### Added

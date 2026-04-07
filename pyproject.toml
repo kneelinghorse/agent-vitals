@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "agent-vitals"
-version = "1.13.0"
+version = "1.13.1"
 description = "Standalone agent health monitor — detect loops, stuck states, thrash, and runaway costs in any AI agent workflow."
 readme = "README.md"
 license = "MIT"
@@ -75,7 +75,7 @@ Issues = "https://github.com/kneelinghorse/agent-vitals/issues"
 include = ["agent_vitals*"]
 
 [tool.setuptools.package-data]
-agent_vitals = ["models/*.joblib"]
+agent_vitals = ["models/*.joblib", "thresholds.yaml"]
 
 [tool.ruff]
 target-version = "py310"
