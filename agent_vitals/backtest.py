@@ -398,6 +398,37 @@ def _replay_trace(
     if confabulation_fired and not final_confabulation_detected:
         confabulation_fired = False
 
+    # Hybrid runaway cost: TDA adjudication (av-s06-m02).
+    # Layer 1 (handcrafted burn-rate) screens every trace with perfect
+    # recall and ~17 FPs on real-world cost patterns. When TDA is
+    # enabled and the optional backend is available, the bundled
+    # GradientBoosting classifier confirms or overrides the verdict.
+    # Override-only: when handcrafted fired but TDA says "not runaway"
+    # the trace label flips to False; per-snapshot fields are unchanged.
+    # Graceful degradation: any missing dependency, missing model, or
+    # short trace leaves the handcrafted result intact.
+    if runaway_fired and config.tda_enabled and len(snapshots) >= 5:
+        try:
+            from .detection.tda import (
+                MissingTDADependencyError,
+                TDAConfig as _TDAConfig,
+                predict_runaway_cost,
+            )
+        except ImportError:  # pragma: no cover - safety net
+            pass
+        else:
+            try:
+                tda_cfg = (
+                    _TDAConfig(model_path=config.tda_model_path)
+                    if config.tda_model_path is not None
+                    else _TDAConfig()
+                )
+                tda_prediction = predict_runaway_cost(snapshots, config=tda_cfg)
+            except (MissingTDADependencyError, FileNotFoundError):
+                tda_prediction = None
+            if tda_prediction is not None and not tda_prediction.detected:
+                runaway_fired = False
+
     # Suppress thrash on short segments — segmentation artifacts (av32-m01).
     if len(snapshots) < DEFAULT_MIN_STEPS_FOR_THRASH:
         thrash_fired = False

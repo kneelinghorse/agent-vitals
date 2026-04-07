@@ -337,6 +337,13 @@ class VitalsConfig:
     workflow_stuck_enabled: str = DEFAULT_WORKFLOW_STUCK_ENABLED
     model_size_class: str = DEFAULT_MODEL_SIZE_CLASS
 
+    # TDA adjudication for runaway cost (av-s06-m02). Default off for
+    # backwards compatibility — when True AND optional TDA deps are
+    # installed AND the trace has at least 5 snapshots, the hybrid
+    # detector confirms or overrides the handcrafted burn-rate verdict.
+    tda_enabled: bool = False
+    tda_model_path: Optional[Path] = None
+
     th_enter_warning: float = DEFAULT_TH_ENTER_WARNING
     th_exit_warning: float = DEFAULT_TH_EXIT_WARNING
     th_enter_critical: float = DEFAULT_TH_ENTER_CRITICAL
