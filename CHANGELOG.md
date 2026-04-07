@@ -7,6 +7,77 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+## [1.13.0] - 2026-04-07
+
+### Added
+- **Hybrid runaway cost TDA detector** (`agent_vitals/detection/tda.py`):
+  optional second-layer adjudicator for the handcrafted burn-rate detector.
+  When enabled and the optional TDA backend is available, runs a 663-dim
+  topological-data-analysis feature extraction (sliding-window persistent
+  homology via `giotto-tda`) and a bundled GradientBoosting classifier to
+  confirm or override the handcrafted verdict on the trace level.
+  - Override-only / minimum-blast-radius: per-snapshot
+    `runaway_cost_detected` flags are unchanged for early-warning consumers,
+    only the trace label flips. Standalone TDA F1 = 1.000 on the eligible
+    subset (1195 traces); zero wrong-direction overrides.
+- **Bundled model artifact** (`agent_vitals/models/runaway_cost.joblib`):
+  ships in the wheel via `[tool.setuptools.package-data]`, no separate
+  download required.
+- **`tda` optional dependency group** in `pyproject.toml`:
+  `giotto-tda>=0.6.0`, `scikit-learn>=1.3.0`, `joblib>=1.3.0`,
+  `numpy>=1.24.0`. Requires Python ≤ 3.12. Base install is unchanged.
+- **`VitalsConfig.tda_enabled`** (default `False`) and
+  **`VitalsConfig.tda_model_path`** (default `None` → bundled artifact).
+
+### Changed
+- **Final-step adjudication for causal confabulation** in
+  `backtest._replay_trace`: captures the last loop iteration's
+  `confabulation_detected` flag (which is the bench-equivalent one-shot
+  verdict — the call already passes `snapshots[-1]` with `snapshots[:-1]`
+  as history) and uses it to override the streaming any-step aggregation.
+  When the per-step aggregator says "fired" but the final-step verdict
+  says "no", the trace label flips to `False`. Per-snapshot fields are
+  unchanged.
+- **Removed vestigial `latest_link` / `latest_verified` gates** from
+  Paths 1, 2, and 3 of `_detect_causal_confabulation`. They were added in
+  v1.12.0 as per-step transient suppressors but became redundant once the
+  trace-level final-step adjudication landed and were costing 71 valid TPs
+  on short synthetic confabs.
+
+### Validation (bench v1, 1494 traces)
+- **Causal confabulation** (M01, c39ae64):
+  - F1: 0.944 → **0.9495** (exact bench prototype parity)
+  - P: 0.954 → **0.986**
+  - R: 0.935 → **0.9156**
+  - FP: 14 → **4** (–10)
+  - Per-trace diff against bench prototype: zero divergent traces
+- **Runaway cost** (M02, 2fd3a25, TDA enabled):
+  - F1: 0.9424 → **0.9765** (+0.034)
+  - P: 0.891 → **0.9542** (+0.063)
+  - R: **1.000** (preserved)
+  - FP: 28 → **11** (–17)
+  - Standalone TDA on eligible subset: **F1 = 1.000** (TP=199, FP=0)
+- **Other detectors** (loop, stuck, thrash): parity with v1.12.0
+- **Composite gate: PASS** in both TDA-on and TDA-off configurations
+- **Graceful degradation**: with `tda_enabled=True` but the optional TDA
+  backend not installed, the lazy loader probes correctly, the override
+  skips silently, and runaway_cost metrics fall back bit-identically to
+  the handcrafted-only baseline. Zero exceptions, zero overhead.
+
+### Architecture Notes
+- The two changes share the same minimum-blast-radius pattern: a
+  trace-level override applied after the per-step replay loop, leaving
+  per-snapshot fields untouched. `_replay_trace` owns trace-label
+  semantics; per-call detectors (`_detect_causal_confabulation`,
+  `predict_runaway_cost`) own per-call detection logic free of
+  streaming-mode workarounds.
+- TDA's full-corpus precision is bounded by where the model can speak.
+  The override-only architecture by construction never adds TPs and
+  never overrides TPs to FNs, so 11 length-6 traces remain as
+  handcrafted FPs (TDA-blind, not TDA-wrong). Effective `min_steps` for
+  `window_sizes=(3, 4, 5)` is 7, documented at the entry point in
+  `TDAConfig.min_steps`.
+
 ## [1.12.0] - 2026-04-06
 
 ### Added
