@@ -70,7 +70,15 @@ class TDAConfig:
     """
 
     window_sizes: tuple[int, ...] = (3, 4, 5)
-    min_steps: int = 5
+    # Effective floor implied by ``window_sizes``: the largest window
+    # (5) needs at least ``window + 2 = 7`` snapshots to produce a
+    # point cloud with >= 3 points (the persistence pipeline minimum).
+    # Bench validation of 4855cde caught the previous min_steps=5 as a
+    # silent short-circuit on length-6 traces (point_cloud shrank to 2
+    # at window_size=5 and ``extract_tda_features`` returned None mid-
+    # iteration). Setting the floor to 7 makes the constraint explicit
+    # at the entry point so the failure mode is self-documenting.
+    min_steps: int = 7
     homology_dimensions: tuple[int, ...] = (0, 1)
     decision_threshold: float = 0.5
     model_path: Path = field(default_factory=lambda: _DEFAULT_MODEL_PATH)

@@ -407,7 +407,7 @@ def _replay_trace(
     # the trace label flips to False; per-snapshot fields are unchanged.
     # Graceful degradation: any missing dependency, missing model, or
     # short trace leaves the handcrafted result intact.
-    if runaway_fired and config.tda_enabled and len(snapshots) >= 5:
+    if runaway_fired and config.tda_enabled and len(snapshots) >= 7:
         try:
             from .detection.tda import (
                 MissingTDADependencyError,

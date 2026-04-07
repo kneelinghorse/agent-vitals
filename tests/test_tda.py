@@ -95,11 +95,11 @@ class TestHybridReplayIntegration:
         self, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         """When tda_enabled=False the handcrafted verdict must stand."""
-        snapshots = [_snapshot(i) for i in range(6)]
-        detections = iter([LoopDetectionResult() for _ in range(6)])
+        snapshots = [_snapshot(i) for i in range(7)]
+        detections = iter([LoopDetectionResult() for _ in range(7)])
         # Final snapshot triggers handcrafted runaway via stop signals.
         stop_signals = iter(
-            [StopRuleSignals(False, False, False, False) for _ in range(5)]
+            [StopRuleSignals(False, False, False, False) for _ in range(6)]
             + [StopRuleSignals(False, False, False, True)]
         )
         monkeypatch.setattr(
@@ -119,10 +119,10 @@ class TestHybridReplayIntegration:
         self, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         """With tda_enabled=True and TDA saying 'not runaway', flip to False."""
-        snapshots = [_snapshot(i) for i in range(6)]
-        detections = iter([LoopDetectionResult() for _ in range(6)])
+        snapshots = [_snapshot(i) for i in range(7)]
+        detections = iter([LoopDetectionResult() for _ in range(7)])
         stop_signals = iter(
-            [StopRuleSignals(False, False, False, False) for _ in range(5)]
+            [StopRuleSignals(False, False, False, False) for _ in range(6)]
             + [StopRuleSignals(False, False, False, True)]
         )
         monkeypatch.setattr(
@@ -147,10 +147,10 @@ class TestHybridReplayIntegration:
         self, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         """When TDA confirms (detected=True) the runaway label stands."""
-        snapshots = [_snapshot(i) for i in range(6)]
-        detections = iter([LoopDetectionResult() for _ in range(6)])
+        snapshots = [_snapshot(i) for i in range(7)]
+        detections = iter([LoopDetectionResult() for _ in range(7)])
         stop_signals = iter(
-            [StopRuleSignals(False, False, False, False) for _ in range(5)]
+            [StopRuleSignals(False, False, False, False) for _ in range(6)]
             + [StopRuleSignals(False, False, False, True)]
         )
         monkeypatch.setattr(
@@ -173,11 +173,18 @@ class TestHybridReplayIntegration:
     def test_tda_short_trace_falls_back_to_handcrafted(
         self, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        """Traces with fewer than 5 snapshots skip the TDA layer entirely."""
-        snapshots = [_snapshot(i) for i in range(4)]
-        detections = iter([LoopDetectionResult() for _ in range(4)])
+        """Traces with fewer than 7 snapshots skip the TDA layer entirely.
+
+        7 is the effective ``min_steps`` floor for ``window_sizes=(3,4,5)``:
+        the largest window needs ``n_steps - window + 1 >= 3`` to build a
+        usable point cloud. Bench validation of 4855cde caught a length-6
+        regression where the previous floor of 5 silently passed but the
+        feature extractor short-circuited inside the window iteration.
+        """
+        snapshots = [_snapshot(i) for i in range(6)]
+        detections = iter([LoopDetectionResult() for _ in range(6)])
         stop_signals = iter(
-            [StopRuleSignals(False, False, False, False) for _ in range(3)]
+            [StopRuleSignals(False, False, False, False) for _ in range(5)]
             + [StopRuleSignals(False, False, False, True)]
         )
         monkeypatch.setattr(
@@ -204,10 +211,10 @@ class TestHybridReplayIntegration:
     ) -> None:
         """When the TDA backend raises MissingTDADependencyError the
         handcrafted verdict stands and no exception escapes."""
-        snapshots = [_snapshot(i) for i in range(6)]
-        detections = iter([LoopDetectionResult() for _ in range(6)])
+        snapshots = [_snapshot(i) for i in range(7)]
+        detections = iter([LoopDetectionResult() for _ in range(7)])
         stop_signals = iter(
-            [StopRuleSignals(False, False, False, False) for _ in range(5)]
+            [StopRuleSignals(False, False, False, False) for _ in range(6)]
             + [StopRuleSignals(False, False, False, True)]
         )
         monkeypatch.setattr(
@@ -233,10 +240,10 @@ class TestHybridReplayIntegration:
     def test_missing_model_artifact_falls_back_gracefully(
         self, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        snapshots = [_snapshot(i) for i in range(6)]
-        detections = iter([LoopDetectionResult() for _ in range(6)])
+        snapshots = [_snapshot(i) for i in range(7)]
+        detections = iter([LoopDetectionResult() for _ in range(7)])
         stop_signals = iter(
-            [StopRuleSignals(False, False, False, False) for _ in range(5)]
+            [StopRuleSignals(False, False, False, False) for _ in range(6)]
             + [StopRuleSignals(False, False, False, True)]
         )
         monkeypatch.setattr(
