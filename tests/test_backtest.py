@@ -537,25 +537,25 @@ class TestReplayTraceOverlap:
         assert fired["thrash"] is True
         assert fired["stuck"] is True
 
-    def test_burn_rate_anomaly_trigger_does_not_fire_stuck(
+    def test_burn_rate_runaway_does_not_fire_stuck(
         self, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        """Regression guard for v1.14.1 burn-rate/stuck interaction.
+        """Regression guard for the AV-S08-M04 explicit refactor.
 
-        ``_collect_stuck_candidates`` in loop.py appends ``burn_rate_anomaly``
-        as a stuck candidate with confidence 1.0 whenever the burn-rate
-        gate passes. The replay layer filters out stuck whose winning
-        trigger is ``burn_rate_anomaly`` because burn_rate_anomaly is
-        really a runaway_cost signal. That filter doubles as an IMPLICIT
-        stuck-suppression side-channel on short runaway-positive traces:
-        because confidence 1.0 beats every other stuck candidate in
-        arbitration, burn_rate_anomaly wins, then gets masked here, so
-        stuck stays False.
+        Pre-v1.14.2 (AV-S08-M04), burn_rate_anomaly was carried as a
+        stuck-candidate sentinel string and filtered out at the replay
+        layer via ``stuck_trigger != "burn_rate_anomaly"``. The refactor
+        replaced that with an explicit ``runaway_cost_detected`` field on
+        ``LoopDetectionResult``: when burn-rate fires, the loop detector
+        sets ``stuck_detected=False``, ``stuck_trigger=None``, and
+        ``runaway_cost_detected=True`` directly. The replay layer no
+        longer needs to know the magic-string protocol.
 
-        This test pins the filter. If it's ever weakened or removed, the
+        This test pins the new contract: a runaway-cost-only detection
+        does not fire stuck. If the loop detector ever regresses to
+        emitting ``stuck_detected=True`` for a burn-rate hit, the
         crewai cross-framework gate regresses (pre-v1.14.1 crewai stuck
-        FP=35, P_lb=0.7022, NO-GO). See thresholds.yaml crewai profile
-        comment and backtest.py stuck_trigger filter for the full chain.
+        FP=35, P_lb=0.7022, NO-GO).
         """
         snapshots = [_snapshot("t1", i) for i in range(3)]
         detections = iter(
@@ -563,14 +563,18 @@ class TestReplayTraceOverlap:
                 LoopDetectionResult(),
                 LoopDetectionResult(),
                 LoopDetectionResult(
-                    stuck_detected=True,
-                    stuck_confidence=1.0,
-                    stuck_trigger="burn_rate_anomaly",
+                    runaway_cost_detected=True,
+                    runaway_cost_confidence=1.0,
+                    detector_priority="runaway_cost",
                 ),
             ]
         )
         stop_signals = iter(
-            [StopRuleSignals(False, False, False, False) for _ in range(3)]
+            [
+                StopRuleSignals(False, False, False, False),
+                StopRuleSignals(False, False, False, False),
+                StopRuleSignals(False, False, False, True),
+            ]
         )
         monkeypatch.setattr(
             "agent_vitals.backtest.detect_loop",
@@ -585,8 +589,9 @@ class TestReplayTraceOverlap:
             config=VitalsConfig(),
             workflow_type="research",
         )
-        # stuck must NOT fire when its winning trigger is burn_rate_anomaly.
+        # stuck must NOT fire when only runaway_cost_detected is set.
         assert fired["stuck"] is False
+        assert fired["runaway_cost"] is True
 
     def test_final_step_adjudication_overrides_transient_confab(
         self, monkeypatch: pytest.MonkeyPatch

@@ -7,6 +7,77 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+## [1.14.2] - 2026-04-08
+
+### Changed
+- **Replace implicit `burn_rate_anomaly → stuck` suppression with
+  explicit logic** (av-s08-m04). The pre-v1.14.2 detection chain used
+  the `stuck_trigger="burn_rate_anomaly"` string as a sentinel
+  protocol: `loop._collect_stuck_candidates` appended burn-rate as a
+  stuck candidate with confidence 1.0, it won arbitration via that
+  sentinel, and downstream consumers (`stop_rule.derive_stop_signals`,
+  `backtest._replay_trace`) filtered/converted on the magic string.
+  This implicit chain made per-profile `burn_rate_multiplier` overrides
+  a footgun (the v1.14.1 crewai regression).
+
+  The refactor:
+  - Adds `runaway_cost_detected: bool` and `runaway_cost_confidence:
+    float` as explicit fields on `LoopDetectionResult` and
+    `VitalsSnapshot`.
+  - Removes the `burn_rate_anomaly` append from
+    `_detect_stuck_candidates`. Burn-rate runaway is now computed
+    independently in `_compute_burn_rate_runaway` and carried as the
+    explicit field.
+  - Replaces the implicit "conf=1.0 wins arbitration" suppressor with
+    an explicit `stuck_candidates = []` clear in `_resolve_detections`,
+    gated on the same conditions the old code's filters effectively
+    gated it on (no error_count, no high-confidence loop+content_sim).
+  - `_handle_stuck_disabled` now sets `runaway_cost_detected=True,
+    stuck_detected=False, stuck_trigger=None` instead of the
+    `stuck_detected=True, stuck_trigger="burn_rate_anomaly"` sentinel.
+  - `backtest._replay_trace` reads `detection.stuck_detected` directly
+    and passes `runaway_cost_detected` through to
+    `derive_stop_signals` — the magic-string filter is gone.
+  - `derive_stop_signals` keeps a legacy fallback for snapshots that
+    still emit the old sentinel (external producers, older callers),
+    documented inline for eventual removal.
+
+  ### Public API surface
+  - **New on `LoopDetectionResult` (`agent_vitals.detection.loop`)**:
+    `runaway_cost_detected: bool`, `runaway_cost_confidence: float`.
+  - **New on `VitalsSnapshot` (`agent_vitals.schema`)**:
+    `runaway_cost_detected: bool`, `runaway_cost_confidence: float`.
+  - **Behavior change on `LoopDetectionResult`**: when burn-rate
+    runaway fires, `stuck_trigger` is now `None` instead of the
+    `"burn_rate_anomaly"` sentinel. Consumers that read
+    `stuck_trigger == "burn_rate_anomaly"` should switch to
+    `runaway_cost_detected`. The legacy sentinel path in
+    `derive_stop_signals` remains for back-compat.
+
+  ### Bundled-corpus impact (`scripts/ci_backtest.py`)
+  - loop / confabulation / stuck / thrash: bit-identical to v1.14.1.
+  - **runaway_cost: TP 12 → 17, FN 7 → 2, FP unchanged at 3**
+    (R 0.632 → 0.895, P 0.800 → 0.850, F1 0.706 → 0.872). The
+    refactor recovers 5 traces where the old code silently dropped
+    the runaway signal because the error/loop-suppression filters
+    stripped `burn_rate_anomaly` from arbitration before it could
+    win — and the magic-string protocol only kicked in when the
+    sentinel survived. Composite gate still PASSES (P=0.992 R=0.946
+    F1=0.969).
+
+### Notes for bench
+- Re-run of `eval-cross-framework-v1` is recommended. Loop / stuck /
+  confabulation / thrash cells should remain bit-identical to v1.14.1.
+  Runaway_cost cells may shift in the strictly-better direction
+  (higher recall, same or lower FPs) on traces that hit the
+  error/loop arbitration filters — this is the explicit recovery of
+  signal that was silently lost pre-v1.14.2, not a regression.
+- The crewai burn_rate_multiplier override regression test is still
+  pinned in `tests/test_threshold_profiles.py`. The arbitration
+  trade-off described in the v1.14.1 entry remains real; only the
+  *implementation* of the suppression is now explicit and traceable
+  in code without needing this CHANGELOG footnote.
+
 ## [1.14.1] - 2026-04-08
 
 ### Fixed

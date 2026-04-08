@@ -5,7 +5,7 @@
 **Project Type**: Python Library (pip package)  
 **Primary Language**: Python 3.10+  
 **Framework**: Standalone (pydantic + pyyaml core; optional framework adapters)  
-**Version**: 1.11.0 (Production/Stable)  
+**Version**: 1.14.1 (Production/Stable)  
 **License**: MIT
 
 **Description**: Framework-agnostic health monitoring library for AI agent workflows. Detects five critical failure modes — loops, stuck states, confabulation, thrash, and runaway costs — through temporal signal analysis, content similarity, and statistical process control.
@@ -189,15 +189,9 @@ metrics_and_protocols (theory) --> agent-vitals (implementation) --> agent-vital
 
 ---
 
-## Detector Status (as of v1.11.0)
+## Detector Status
 
-| Detector | Gate Status | Precision | Recall | Notes |
-|----------|------------|-----------|--------|-------|
-| loop | HARD GATE | P=0.986 [0.960] | R=1.000 [0.982] | First promoted detector |
-| stuck | HARD GATE | P=0.919 [0.838] | R=0.838 | Suppressed when loop co-fires |
-| confabulation | SOFT | P_lb=0.790 | — | 1pp short of promotion |
-| thrash | SOFT | — | — | FP from segmentation artifacts |
-| runaway_cost | SOFT | — | — | Insufficient positives in corpus |
+Canonical per-detector and per-framework precision/recall numbers live in `agent-vitals-bench`'s `eval-cross-framework-v1` artifact set, not in this file (the bench corpus is the source of truth and updates faster than this doc). As of v1.14.1, all five detectors (loop, stuck, confabulation, runaway_cost, thrash) have shipped with hybrid handcrafted+TDA paths where applicable. The crewai × tda composite gate is 5/5 PASS after the v1.14.1 burn_rate_multiplier revert; default-config crewai stuck remains the known limitation (architectural follow-up deferred — see AV-S08-M04). Run `python scripts/ci_backtest.py` for bundled-corpus numbers, or check bench for cross-framework gates.
 
 ---
 

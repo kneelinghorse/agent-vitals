@@ -97,8 +97,15 @@ def derive_stop_signals(
 
     runaway_cost_detected = False
     if explicit_runaway is not None:
+        # Canonical path since AV-S08-M04. ``LoopDetectionResult`` carries
+        # ``runaway_cost_detected`` as an explicit field; backtest passes
+        # it through verbatim.
         runaway_cost_detected = bool(explicit_runaway)
     else:
+        # Legacy fallback for snapshots produced by external pipelines or
+        # pre-v1.14.2 callers that still use the ``stuck_trigger ==
+        # "burn_rate_anomaly"`` sentinel protocol. Safe to remove once
+        # all producers emit ``runaway_cost_detected`` directly.
         stuck_trigger = _read_optional_text(snapshot, "stuck_trigger")
         runaway_cost_detected = bool(stuck_trigger and stuck_trigger == runaway_trigger)
 

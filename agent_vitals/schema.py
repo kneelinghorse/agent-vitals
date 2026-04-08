@@ -132,6 +132,13 @@ class VitalsSnapshot(BaseModel):
     stuck_detected: bool = Field(default=False)
     stuck_confidence: float = Field(default=0.0, ge=0.0, le=1.0)
     stuck_trigger: Optional[str] = Field(default=None)
+
+    # Explicit runaway-cost signal (AV-S08-M04). Replaces the previous
+    # implicit chain where ``stuck_trigger="burn_rate_anomaly"`` doubled
+    # as the runaway-cost flag and was filtered out downstream.
+    runaway_cost_detected: bool = Field(default=False)
+    runaway_cost_confidence: float = Field(default=0.0, ge=0.0, le=1.0)
+
     detector_priority: Optional[str] = Field(default=None)
 
     cusum_alarm: bool = Field(default=False)

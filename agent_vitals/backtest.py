@@ -338,6 +338,7 @@ def _replay_trace(
                 "loop_detected": detection.loop_detected,
                 "stuck_detected": detection.stuck_detected,
                 "stuck_trigger": detection.stuck_trigger,
+                "runaway_cost_detected": detection.runaway_cost_detected,
                 "error_count": int(snapshot.signals.error_count),
             },
             thrash_error_threshold=config.thrash_error_threshold,
@@ -367,28 +368,15 @@ def _replay_trace(
         final_confabulation_detected = detection.confabulation_detected
         # Stuck-trigger arbitration filter.
         #
-        # burn_rate_anomaly is appended as a stuck candidate in
-        # loop._collect_stuck_candidates() but is really a runaway_cost
-        # signal, so we refuse to mark stuck_fired=True when it's the
-        # winning trigger. This has a side effect that matters for
-        # threshold tuning: because _burn_rate_anomaly_confidence() always
-        # returns confidence 1.0 when it fires, it beats every other
-        # stuck candidate in arbitration whenever burn_rate is above the
-        # threshold. That makes burn_rate_anomaly act as an IMPLICIT
-        # stuck suppressor — on short runaway-positive traces, it wins
-        # arbitration and then gets filtered out here, keeping stuck
-        # quiet. Raising burn_rate_multiplier in a profile disables this
-        # side channel (the anomaly stops firing, a lower-confidence
-        # non-burn_rate_anomaly candidate wins, and stuck leaks through
-        # as a FP). The crewai profile tripped this in pre-v1.14.1 with
-        # burn_rate_multiplier=3.0 and was reverted in v1.14.1. Any future
-        # per-profile burn_rate_multiplier override should verify stuck
-        # FP counts on the elicited runaway corpus before shipping.
-        if (
-            detection.stuck_detected
-            and detection.detector_priority != "confabulation"
-            and detection.stuck_trigger != "burn_rate_anomaly"
-        ):
+        # ``detection.stuck_detected`` is now the canonical signal — the
+        # burn-rate runaway-cost case is carried explicitly via
+        # ``detection.runaway_cost_detected`` (AV-S08-M04). Pre-v1.14.1
+        # this branch had to also exclude ``stuck_trigger ==
+        # "burn_rate_anomaly"`` because the loop detector used that
+        # string as a sentinel protocol. The explicit refactor removed
+        # the sentinel: when burn-rate fires, ``stuck_detected`` is
+        # False and ``stuck_trigger`` is None at the loop layer.
+        if detection.stuck_detected and detection.detector_priority != "confabulation":
             stuck_fired = True
         if stop_signals.thrash_detected:
             thrash_fired = True

@@ -261,25 +261,22 @@ class TestYAMLProfileLoading:
         assert config.for_framework("dspy").loop_consecutive_pct == 0.7
 
     def test_crewai_profile_does_not_override_burn_rate_multiplier(self) -> None:
-        """Regression guard for v1.14.1 (AV-S08).
+        """Regression guard for v1.14.1 + AV-S08-M04.
 
         The crewai profile must NOT override burn_rate_multiplier. A prior
-        tune set it to 3.0, which silently disabled a stuck-suppression
-        side-channel: ``_burn_rate_anomaly_confidence`` returns confidence
-        1.0 when it fires, which makes ``burn_rate_anomaly`` win stuck
-        candidate arbitration in ``loop._collect_stuck_candidates``; the
-        replay layer then filters out stuck whose trigger is
-        ``burn_rate_anomaly`` (see backtest.py stuck_trigger filter), which
-        produces a net "stuck=False" on short runaway-positive traces.
+        tune set it to 3.0, which produced 35 stuck FPs on the bench
+        crewai × default cell (eval-cross-framework-v1.md pre-v1.14.1:
+        P_lb=0.7022, NO-GO).
 
-        Raising burn_rate_multiplier stops burn_rate_anomaly from firing,
-        a lower-confidence non-burn-rate stuck candidate wins arbitration,
-        and the replay filter no longer masks it — producing stuck FPs on
-        elicited short runaway traces (bench eval-cross-framework-v1.md
-        pre-v1.14.1: crewai stuck FP=35, P_lb=0.7022, NO-GO).
-
-        Until the implicit suppression is replaced with explicit logic,
-        the crewai profile must inherit the default burn_rate_multiplier.
+        AV-S08-M04 replaced the implicit suppression chain with explicit
+        logic in ``_resolve_detections``: when burn-rate runaway fires
+        and the error/loop filters do NOT apply, remaining stuck
+        candidates are explicitly cleared. The arbitration trade-off is
+        still real — raising the multiplier stops burn-rate from firing
+        on short runaway-positive traces, removes the explicit
+        suppression, and lets stuck leak as FPs. Any future per-profile
+        ``burn_rate_multiplier`` override must verify stuck FP counts on
+        the elicited runaway corpus before merging.
         """
         config = VitalsConfig.from_yaml(allow_env_override=False)
         crewai_profile = next(
@@ -287,9 +284,10 @@ class TestYAMLProfileLoading:
         )
         assert crewai_profile.burn_rate_multiplier is None, (
             "crewai profile must NOT override burn_rate_multiplier — "
-            "doing so disables the burn_rate_anomaly stuck-suppression "
-            "side-channel and creates stuck FPs on short runaway traces. "
-            "See v1.14.1 CHANGELOG and backtest.py stuck_trigger filter."
+            "doing so disables the explicit burn-rate runaway suppression "
+            "of stuck and creates FPs on short runaway traces. See "
+            "v1.14.1 CHANGELOG and AV-S08-M04 inline docs in "
+            "agent_vitals/detection/loop.py::_resolve_detections."
         )
         # Effective config inherits the default 2.5.
         effective = config.for_framework("crewai")

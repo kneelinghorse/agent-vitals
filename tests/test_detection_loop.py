@@ -1173,7 +1173,8 @@ def test_burn_rate_triggers_with_token_spike(vitals_snapshot_healthy: dict) -> N
 
     result = detect_loop(current, history, config=config)
     assert result.stuck_detected is False
-    assert result.stuck_trigger == "burn_rate_anomaly"
+    assert result.stuck_trigger is None
+    assert result.runaway_cost_detected is True
     assert result.detector_priority == "runaway_cost"
 
     stop_signals = derive_stop_signals(
@@ -1181,6 +1182,7 @@ def test_burn_rate_triggers_with_token_spike(vitals_snapshot_healthy: dict) -> N
             "loop_detected": result.loop_detected,
             "stuck_detected": result.stuck_detected,
             "stuck_trigger": result.stuck_trigger,
+            "runaway_cost_detected": result.runaway_cost_detected,
             "signals": {"error_count": 0},
         }
     )
@@ -1260,7 +1262,8 @@ def test_burn_rate_fires_at_low_coverage(vitals_snapshot_healthy: dict) -> None:
     config = VitalsConfig(loop_consecutive_pct=1.0, model_size_class="large")
     result = detect_loop(trace[-1], trace[:-1], config=config)
     assert result.stuck_detected is False
-    assert result.stuck_trigger == "burn_rate_anomaly"
+    assert result.stuck_trigger is None
+    assert result.runaway_cost_detected is True
     assert result.detector_priority == "runaway_cost"
 
 
@@ -1269,8 +1272,7 @@ def test_burn_rate_suppressed_at_high_coverage(vitals_snapshot_healthy: dict) ->
     trace = _build_burn_rate_trace(vitals_snapshot_healthy, coverage=1.0)
     config = VitalsConfig(loop_consecutive_pct=1.0)
     result = detect_loop(trace[-1], trace[:-1], config=config)
-    if result.stuck_detected:
-        assert result.stuck_trigger != "burn_rate_anomaly"
+    assert result.runaway_cost_detected is False
 
 
 def test_burn_rate_fires_on_small_model_stuck_disabled(vitals_snapshot_healthy: dict) -> None:
@@ -1846,8 +1848,41 @@ def test_stuck_disabled_runaway_fires_with_healthy_dm_cv(
         cv_coverage=0.4,
     )
     result = detect_loop(current, history, config=config)
-    assert result.stuck_trigger == "burn_rate_anomaly", (
-        "Genuine runaway with healthy dm/cv should still fire burn_rate_anomaly"
+    assert result.runaway_cost_detected is True, (
+        "Genuine runaway with healthy dm/cv should still fire burn_rate runaway"
+    )
+    assert result.stuck_detected is False
+    assert result.detector_priority == "runaway_cost"
+
+
+def test_burn_rate_runaway_explicitly_suppresses_stuck(
+    vitals_snapshot_healthy: dict,
+) -> None:
+    """AV-S08-M04 contract test: explicit suppression of stuck by runaway.
+
+    Pre-refactor, ``burn_rate_anomaly`` was appended to stuck candidates
+    with confidence 1.0 and won arbitration via that sentinel. The
+    refactor removed the sentinel and replaced it with explicit
+    suppression in ``_resolve_detections``: when the burn-rate runaway
+    fires AND no error/loop filter applies, remaining stuck candidates
+    are explicitly cleared and the result carries
+    ``runaway_cost_detected=True`` with ``stuck_detected=False``.
+
+    This test pins the new contract: a trace that fires burn-rate
+    runaway must report ``runaway_cost_detected`` directly — no stuck
+    leak, no sentinel string in ``stuck_trigger``.
+    """
+
+    trace = _build_burn_rate_trace(vitals_snapshot_healthy, coverage=0.5)
+    config = VitalsConfig(loop_consecutive_pct=1.0, model_size_class="large")
+    result = detect_loop(trace[-1], trace[:-1], config=config)
+
+    assert result.runaway_cost_detected is True
+    assert result.runaway_cost_confidence > 0.0
+    assert result.stuck_detected is False
+    assert result.stuck_trigger is None, (
+        "AV-S08-M04: stuck_trigger must NOT carry the 'burn_rate_anomaly' "
+        "sentinel string after the explicit refactor"
     )
     assert result.detector_priority == "runaway_cost"
 

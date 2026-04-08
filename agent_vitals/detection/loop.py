@@ -49,6 +49,15 @@ class LoopDetectionResult:
     stuck_detected: bool = False
     stuck_confidence: float = 0.0
     stuck_trigger: Optional[str] = None
+
+    # Explicit runaway-cost signal carried alongside stuck. Set when the
+    # burn-rate anomaly check fires; replaces the v1.14.1 implicit chain
+    # where ``stuck_trigger="burn_rate_anomaly"`` was used as a sentinel
+    # string protocol that downstream consumers (stop_rule, backtest)
+    # had to know to interpret. AV-S08-M04.
+    runaway_cost_detected: bool = False
+    runaway_cost_confidence: float = 0.0
+
     detector_priority: Optional[str] = None
 
     def as_snapshot_update(self) -> dict[str, object]:
@@ -65,6 +74,8 @@ class LoopDetectionResult:
             "stuck_detected": bool(self.stuck_detected),
             "stuck_confidence": float(_clip01(self.stuck_confidence)),
             "stuck_trigger": self.stuck_trigger,
+            "runaway_cost_detected": bool(self.runaway_cost_detected),
+            "runaway_cost_confidence": float(_clip01(self.runaway_cost_confidence)),
             "detector_priority": self.detector_priority,
         }
 
@@ -990,24 +1001,15 @@ def _detect_stuck_candidates(ctx: _DetectionContext) -> list[tuple[float, str]]:
             ):
                 candidates.append((0.7, "late_onset_stagnation"))
 
-    # Burn-rate anomaly — apply burn_rate_multiplier_scale in the stuck-enabled
-    # path to prevent FPs on medium/small models (e.g. LangGraph traces).
-    # The scale is NOT applied in _handle_stuck_disabled where it caused FNs.
-    burn_cfg = cfg
-    if ctx.signal_map.burn_rate_multiplier_scale != 1.0:
-        burn_cfg = _dc_replace(
-            cfg,
-            burn_rate_multiplier=cfg.burn_rate_multiplier
-            * ctx.signal_map.burn_rate_multiplier_scale,
-        )
-    build_runaway_confidence = _burn_rate_anomaly_confidence(
-        token_deltas=ctx.token_deltas,
-        findings_deltas=ctx.findings_deltas,
-        coverage_scores=ctx.coverage_scores,
-        cfg=burn_cfg,
-    )
-    if build_runaway_confidence is not None:
-        candidates.append((build_runaway_confidence, "burn_rate_anomaly"))
+    # NOTE (AV-S08-M04): burn_rate_anomaly used to be appended here as a
+    # stuck candidate with confidence 1.0, then immediately filtered out
+    # downstream as "really a runaway_cost signal". The conf-1.0 sentinel
+    # acted as an implicit suppressor of other stuck candidates, which
+    # made per-profile burn_rate_multiplier overrides a footgun (raising
+    # the multiplier silently leaked stuck FPs). The runaway-cost signal
+    # is now computed explicitly in `_compute_burn_rate_runaway` and
+    # carried as `LoopDetectionResult.runaway_cost_detected`; the stuck
+    # suppression is applied explicitly in `_resolve_detections`.
 
     # Token usage variance flat
     if (
@@ -1031,14 +1033,15 @@ def _handle_stuck_disabled(
     # Use min-baseline mode so that once a burn-rate spike enters the
     # baseline, subsequent steps still detect the anomaly relative to the
     # pre-spike minimum rather than the contaminated mean.
-    build_runaway_confidence = _burn_rate_anomaly_confidence(
-        token_deltas=ctx.token_deltas,
-        findings_deltas=ctx.findings_deltas,
-        coverage_scores=ctx.coverage_scores,
-        cfg=ctx.cfg,
-        baseline_mode="min",
+    # ``apply_signal_scale=False`` preserves the historical stuck-disabled
+    # behavior (the model-size scale was NOT applied here because it
+    # caused FNs on small-model traces).
+    build_runaway_detected, build_runaway_confidence_value = _compute_burn_rate_runaway(
+        ctx, baseline_mode="min", apply_signal_scale=False
     )
-    build_runaway_detected = build_runaway_confidence is not None
+    build_runaway_confidence: float | None = (
+        build_runaway_confidence_value if build_runaway_detected else None
+    )
 
     # Gate burn_rate_anomaly on short traces: baseline from < 3 deltas is
     # unreliable, producing FPs on healthy traces with normal token variance.
@@ -1149,9 +1152,11 @@ def _handle_stuck_disabled(
         confabulation_confidence=_clip01(confabulation_confidence),
         confabulation_trigger=confabulation_trigger,
         confabulation_signals=confabulation_signals,
-        stuck_detected=build_runaway_detected,
-        stuck_confidence=_clip01(build_runaway_confidence or 0.0),
-        stuck_trigger="burn_rate_anomaly" if build_runaway_detected else None,
+        stuck_detected=False,
+        stuck_confidence=0.0,
+        stuck_trigger=None,
+        runaway_cost_detected=build_runaway_detected,
+        runaway_cost_confidence=_clip01(build_runaway_confidence or 0.0),
         detector_priority=detector_priority,
     )
 
@@ -1186,6 +1191,16 @@ def _resolve_detections(
             confabulation_signals,
         ) = max(confab_candidates, key=lambda item: item[0])
         confabulation_detected = True
+
+    # Burn-rate anomaly: explicit runaway-cost signal (AV-S08-M04).
+    # Computed as a separate flag rather than appended to stuck_candidates
+    # so it cannot accidentally suppress stuck via arbitration sentinels.
+    # The explicit suppression is applied below, gated on the same
+    # conditions that the previous implicit "conf=1.0 wins arbitration"
+    # behavior was effectively gated on (see the error/loop filters).
+    runaway_cost_detected, runaway_cost_confidence = _compute_burn_rate_runaway(
+        ctx, baseline_mode="mean", apply_signal_scale=True
+    )
 
     # Loop signal hint suppresses stagnation-style stuck triggers.
     loop_signal_hint = _has_loop_signal_hint(
@@ -1233,12 +1248,14 @@ def _resolve_detections(
     if ctx.coverage_scores and float(ctx.coverage_scores[-1]) < 0.2:
         _INDEPENDENT_STUCK_TRIGGERS.add("coverage_stagnation")
     _INDEPENDENT_STUCK_TRIGGERS.add("short_run_zero_coverage")
+    error_or_loop_filter_active = False
     if stuck_candidates and ctx.error_count > 0:
         stuck_candidates = [
             (conf, trigger)
             for conf, trigger in stuck_candidates
             if trigger in _INDEPENDENT_STUCK_TRIGGERS
         ]
+        error_or_loop_filter_active = True
     elif stuck_candidates and loop_candidate_confidence >= 0.5:
         has_content_similarity = any(trig == "content_similarity" for _, trig in loop_candidates)
         if has_content_similarity:
@@ -1247,6 +1264,27 @@ def _resolve_detections(
                 for conf, trigger in stuck_candidates
                 if trigger in _INDEPENDENT_STUCK_TRIGGERS
             ]
+            error_or_loop_filter_active = True
+
+    # Explicit burn-rate runaway suppression of stuck (AV-S08-M04).
+    #
+    # Pre-v1.14.1, burn_rate_anomaly was appended to stuck_candidates with
+    # confidence 1.0; it would win arbitration whenever it fired and any
+    # other stuck candidate was suppressed by being out-arbitrated. The
+    # implicit "1.0 wins" behavior had the effect that:
+    #   - When burn_rate fires AND error_count == 0 AND no high-conf
+    #     loop+content_similarity, burn_rate wins → stuck suppressed.
+    #   - When errors or loop+content_sim apply, the INDEPENDENT-trigger
+    #     filter strips burn_rate from candidates first → no suppression,
+    #     stuck can leak through normally.
+    # This block reproduces that exact gating explicitly: when burn-rate
+    # runaway fires and the error/loop filters are NOT active, clear
+    # remaining stuck candidates because the runaway-cost signal is the
+    # right label for this snapshot. Any future per-profile
+    # burn_rate_multiplier override now sees a single explicit knob
+    # instead of a side-channel buried in arbitration sentinels.
+    if runaway_cost_detected and not error_or_loop_filter_active:
+        stuck_candidates = []
 
     # Confabulation overlap handling
     if confabulation_detected and confabulation_confidence >= 0.85:
@@ -1264,12 +1302,6 @@ def _resolve_detections(
     if stuck_candidates:
         stuck_confidence, stuck_trigger = max(stuck_candidates, key=lambda item: item[0])
         stuck_detected = True
-
-    # Burn-rate anomaly is an exclusive runaway-cost signal.
-    runaway_cost_from_stuck = bool(stuck_detected and stuck_trigger == "burn_rate_anomaly")
-    if runaway_cost_from_stuck:
-        stuck_detected = False
-        stuck_confidence = 0.0
 
     # Co-occurrence priority resolution (av32-m02)
     detector_priority = None
@@ -1305,7 +1337,7 @@ def _resolve_detections(
         detector_priority = "loop"
     elif stuck_detected:
         detector_priority = "stuck"
-    elif runaway_cost_from_stuck:
+    elif runaway_cost_detected:
         detector_priority = "runaway_cost"
 
     return LoopDetectionResult(
@@ -1319,6 +1351,8 @@ def _resolve_detections(
         stuck_detected=stuck_detected,
         stuck_confidence=_clip01(stuck_confidence),
         stuck_trigger=stuck_trigger,
+        runaway_cost_detected=runaway_cost_detected,
+        runaway_cost_confidence=_clip01(runaway_cost_confidence),
         detector_priority=detector_priority,
     )
 
@@ -1535,6 +1569,43 @@ def _proportional_window(
     if math.isfinite(percentage) and percentage > 0.0:
         return max(floor_min, int(math.floor(length * percentage)))
     return floor_fallback
+
+
+def _compute_burn_rate_runaway(
+    ctx: _DetectionContext,
+    *,
+    baseline_mode: str = "mean",
+    apply_signal_scale: bool = True,
+) -> tuple[bool, float]:
+    """Compute the explicit burn-rate runaway-cost signal.
+
+    Replaces the v1.14.1 implicit chain (AV-S08-M04). Returns
+    ``(fired, confidence)``. Centralizes the burn-rate check so both
+    ``_resolve_detections`` and ``_handle_stuck_disabled`` agree on
+    the same signal. ``apply_signal_scale=True`` applies the
+    ``burn_rate_multiplier_scale`` (model-size aware) — used in the
+    stuck-enabled path. ``apply_signal_scale=False`` skips it — the
+    stuck-disabled path historically did not apply the scale because
+    it caused FNs on small-model traces.
+    """
+
+    burn_cfg = ctx.cfg
+    if apply_signal_scale and ctx.signal_map.burn_rate_multiplier_scale != 1.0:
+        burn_cfg = _dc_replace(
+            ctx.cfg,
+            burn_rate_multiplier=ctx.cfg.burn_rate_multiplier
+            * ctx.signal_map.burn_rate_multiplier_scale,
+        )
+    confidence = _burn_rate_anomaly_confidence(
+        token_deltas=ctx.token_deltas,
+        findings_deltas=ctx.findings_deltas,
+        coverage_scores=ctx.coverage_scores,
+        cfg=burn_cfg,
+        baseline_mode=baseline_mode,
+    )
+    if confidence is None:
+        return False, 0.0
+    return True, float(confidence)
 
 
 def _burn_rate_anomaly_confidence(
