@@ -119,9 +119,21 @@ profiles:
 
   # CrewAI: multi-agent orchestration, higher token counts, longer runs.
   # More lenient loop detection — agent handoffs look like repetition.
+  #
+  # NOTE (v1.14.1): burn_rate_multiplier is intentionally NOT overridden.
+  # A prior tune bumped it to 3.0 based on runaway_cost numbers, but that
+  # silently disabled a stuck-suppression side-channel: burn_rate_anomaly
+  # is appended as a stuck candidate in loop.py and filtered out in
+  # backtest.py — when the threshold is low enough for burn_rate_anomaly
+  # to fire with confidence 1.0, it wins stuck-candidate arbitration and
+  # then gets masked by the replay filter, suppressing stuck on short
+  # runaway-positive traces. Raising burn_rate_multiplier stops that
+  # suppression and causes stuck FPs on short elicited runaway traces.
+  # See backtest.py stuck_trigger filter for the interaction surface.
+  # Inherit the default 2.5 until the implicit suppression is replaced
+  # with explicit logic.
   crewai:
     loop_consecutive_pct: 0.5
-    burn_rate_multiplier: 3.0
     token_scale_factor: 0.7
 
   # DSPy: optimization loops are naturally repetitive. Very lenient loop

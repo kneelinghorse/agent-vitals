@@ -537,6 +537,57 @@ class TestReplayTraceOverlap:
         assert fired["thrash"] is True
         assert fired["stuck"] is True
 
+    def test_burn_rate_anomaly_trigger_does_not_fire_stuck(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Regression guard for v1.14.1 burn-rate/stuck interaction.
+
+        ``_collect_stuck_candidates`` in loop.py appends ``burn_rate_anomaly``
+        as a stuck candidate with confidence 1.0 whenever the burn-rate
+        gate passes. The replay layer filters out stuck whose winning
+        trigger is ``burn_rate_anomaly`` because burn_rate_anomaly is
+        really a runaway_cost signal. That filter doubles as an IMPLICIT
+        stuck-suppression side-channel on short runaway-positive traces:
+        because confidence 1.0 beats every other stuck candidate in
+        arbitration, burn_rate_anomaly wins, then gets masked here, so
+        stuck stays False.
+
+        This test pins the filter. If it's ever weakened or removed, the
+        crewai cross-framework gate regresses (pre-v1.14.1 crewai stuck
+        FP=35, P_lb=0.7022, NO-GO). See thresholds.yaml crewai profile
+        comment and backtest.py stuck_trigger filter for the full chain.
+        """
+        snapshots = [_snapshot("t1", i) for i in range(3)]
+        detections = iter(
+            [
+                LoopDetectionResult(),
+                LoopDetectionResult(),
+                LoopDetectionResult(
+                    stuck_detected=True,
+                    stuck_confidence=1.0,
+                    stuck_trigger="burn_rate_anomaly",
+                ),
+            ]
+        )
+        stop_signals = iter(
+            [StopRuleSignals(False, False, False, False) for _ in range(3)]
+        )
+        monkeypatch.setattr(
+            "agent_vitals.backtest.detect_loop",
+            lambda *_args, **_kwargs: next(detections),
+        )
+        monkeypatch.setattr(
+            "agent_vitals.backtest.derive_stop_signals",
+            lambda *_args, **_kwargs: next(stop_signals),
+        )
+        fired = _replay_trace(
+            snapshots,
+            config=VitalsConfig(),
+            workflow_type="research",
+        )
+        # stuck must NOT fire when its winning trigger is burn_rate_anomaly.
+        assert fired["stuck"] is False
+
     def test_final_step_adjudication_overrides_transient_confab(
         self, monkeypatch: pytest.MonkeyPatch
     ) -> None:

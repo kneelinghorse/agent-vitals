@@ -7,6 +7,62 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+## [1.14.1] - 2026-04-08
+
+### Fixed
+- **Crewai profile: remove `burn_rate_multiplier: 3.0` override**
+  (av-s08-m01). A prior tune bumped the crewai threshold to 3.0
+  targeting runaway_cost numbers, but the change silently disabled a
+  stuck-suppression side-channel and produced **34 stuck FPs** on short
+  elicited runaway-positive traces in bench's corpus
+  (`eval-cross-framework-v1.md`: crewai stuck P_lb=0.7022, NO-GO).
+  The crewai profile now inherits the default `burn_rate_multiplier=2.5`.
+
+  **Mechanism.** `loop._collect_stuck_candidates()` appends
+  `burn_rate_anomaly` as a stuck candidate with confidence 1.0 whenever
+  the burn-rate gate passes. `backtest._replay_trace` filters out stuck
+  whose winning trigger is `burn_rate_anomaly` (it's really a
+  runaway_cost signal). Because confidence 1.0 beats every other stuck
+  candidate in arbitration, `burn_rate_anomaly` wins, then gets masked
+  by the replay filter — this double-ness acts as an **implicit
+  stuck suppressor** on short runaway-positive traces. Raising
+  `burn_rate_multiplier` above what the corpus's burn-rate spikes can
+  clear stops the anomaly from firing, lets a lower-confidence
+  non-burn_rate_anomaly stuck candidate win arbitration, and the replay
+  filter no longer masks it — producing stuck FPs.
+
+  **Impact on bench cross-framework gate (eval-cross-framework-v1):**
+  - `crewai × tda` composite: **4/5 NO-GO → 5/5 PASS** ✓
+  - `crewai stuck`: FP 35 → 1, P_lb 0.7022 → 0.9547 (clears 0.80 gate)
+  - `crewai runaway_cost × tda`: FP 5 → 11, P_lb 0.9455 → 0.9111 (still
+    clears; TDA adjudicator absorbs the extra FPs from the lower
+    threshold). Under non-TDA mode, runaway_cost regresses to NO-GO —
+    this is a documented trade-off that makes TDA load-bearing for
+    crewai's paper-publishable composite PASS.
+  - All other seven `(profile × mode)` cells bit-identical to v1.14.0.
+
+### Added
+- Regression guards pinning the fix:
+  - `tests/test_threshold_profiles.py::test_crewai_profile_does_not_override_burn_rate_multiplier`
+    — config-level pin on the shipped YAML so any re-addition of the
+    override trips a test.
+  - `tests/test_backtest.py::test_burn_rate_anomaly_trigger_does_not_fire_stuck`
+    — replay-layer filter pin documenting the `burn_rate_anomaly`
+    stuck-suppression side-channel so the filter cannot be weakened
+    without an explicit review.
+- Inline documentation of the trap in `agent_vitals/backtest.py`
+  adjacent to the stuck_trigger filter and in
+  `agent_vitals/thresholds.yaml` adjacent to the crewai profile block,
+  so the next person to tune a profile threshold knows what to verify.
+
+### Known Issues
+- The implicit `burn_rate_anomaly → stuck` suppression side-channel is
+  a latent architectural anti-pattern: any future per-profile
+  `burn_rate_multiplier` override can unknowingly re-trip it. Replacing
+  the implicit suppression with explicit logic is queued for a future
+  sprint — not urgent, but worth doing before adding new per-profile
+  burn-rate tuning.
+
 ## [1.14.0] - 2026-04-07
 
 ### Added

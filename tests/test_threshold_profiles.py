@@ -260,6 +260,41 @@ class TestYAMLProfileLoading:
         assert config.for_framework("crewai").loop_consecutive_pct == 0.5
         assert config.for_framework("dspy").loop_consecutive_pct == 0.7
 
+    def test_crewai_profile_does_not_override_burn_rate_multiplier(self) -> None:
+        """Regression guard for v1.14.1 (AV-S08).
+
+        The crewai profile must NOT override burn_rate_multiplier. A prior
+        tune set it to 3.0, which silently disabled a stuck-suppression
+        side-channel: ``_burn_rate_anomaly_confidence`` returns confidence
+        1.0 when it fires, which makes ``burn_rate_anomaly`` win stuck
+        candidate arbitration in ``loop._collect_stuck_candidates``; the
+        replay layer then filters out stuck whose trigger is
+        ``burn_rate_anomaly`` (see backtest.py stuck_trigger filter), which
+        produces a net "stuck=False" on short runaway-positive traces.
+
+        Raising burn_rate_multiplier stops burn_rate_anomaly from firing,
+        a lower-confidence non-burn-rate stuck candidate wins arbitration,
+        and the replay filter no longer masks it — producing stuck FPs on
+        elicited short runaway traces (bench eval-cross-framework-v1.md
+        pre-v1.14.1: crewai stuck FP=35, P_lb=0.7022, NO-GO).
+
+        Until the implicit suppression is replaced with explicit logic,
+        the crewai profile must inherit the default burn_rate_multiplier.
+        """
+        config = VitalsConfig.from_yaml(allow_env_override=False)
+        crewai_profile = next(
+            p for p in config.framework_profiles if p.framework == "crewai"
+        )
+        assert crewai_profile.burn_rate_multiplier is None, (
+            "crewai profile must NOT override burn_rate_multiplier — "
+            "doing so disables the burn_rate_anomaly stuck-suppression "
+            "side-channel and creates stuck FPs on short runaway traces. "
+            "See v1.14.1 CHANGELOG and backtest.py stuck_trigger filter."
+        )
+        # Effective config inherits the default 2.5.
+        effective = config.for_framework("crewai")
+        assert effective.burn_rate_multiplier == config.burn_rate_multiplier
+
 
 # ---------------------------------------------------------------------------
 # Auto-detection from adapter type

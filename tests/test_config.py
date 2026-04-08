@@ -337,13 +337,16 @@ class TestProfileIntrospectionAPI:
         # crewai's YAML lists loop_consecutive_pct: 0.5, which equals
         # the dataclass default. The diff must omit it because the
         # diff is a property of the YAML *vs the default*, not vs self.
+        #
+        # v1.14.1: burn_rate_multiplier override removed — see
+        # test_threshold_profiles.TestYAMLProfileLoading.
+        # test_crewai_profile_does_not_override_burn_rate_multiplier for
+        # the mechanism. The only remaining override is token_scale_factor.
         cfg = VitalsConfig.from_yaml(allow_env_override=False)
         diff = cfg.profile_diff("crewai")
         assert "loop_consecutive_pct" not in diff
-        # The two real overrides are still present.
-        assert set(diff.keys()) == {"burn_rate_multiplier", "token_scale_factor"}
-        assert diff["burn_rate_multiplier"].default == 2.5
-        assert diff["burn_rate_multiplier"].override == 3.0
+        assert "burn_rate_multiplier" not in diff
+        assert set(diff.keys()) == {"token_scale_factor"}
         assert diff["token_scale_factor"].default == 1.0
         assert diff["token_scale_factor"].override == 0.7
 
