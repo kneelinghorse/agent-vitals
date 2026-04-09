@@ -9,6 +9,25 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [1.15.0] - 2026-04-08
 
+### Release artifacts (canonical PyPI SHA256)
+
+- `agent_vitals-1.15.0-py3-none-any.whl` —
+  `632876d5e4482d08eb1c0a9089c507f9b44160b5fec9b5f95a882f9b36df8c30`
+  (5,310,344 bytes)
+- `agent_vitals-1.15.0.tar.gz` —
+  `3b458de64ec2887bca231f1eec951bee53828c1e4d8e1c11f37c48f906540163`
+  (5,359,295 bytes)
+
+The bench AV-S09-M03 release-acceptance message (`d349872d`) flagged
+that the agent-vitals release info_push (`1d02ce2f`) carried a wheel
+SHA from an intermediate working build, not the actual PyPI artifact —
+that SHA is `1d9f550a88cc508a8d7ed46e23f4bcaec6f6e403192d26ff73295f583c212910`
+and matches a working-tree wheel that was never uploaded. The values
+above are pulled directly from PyPI's authoritative JSON API at
+`https://pypi.org/pypi/agent-vitals/1.15.0/json` and verified by bench
+on download. **Operators verifying the released artifact should use
+the values above.**
+
 ### Added
 - **Hopfield 3rd-layer early-detection adapter** (av-s09-m01,
   av-s09-m02). Bench's Five-Paradigm Comparative Report
