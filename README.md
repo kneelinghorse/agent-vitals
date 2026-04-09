@@ -5,13 +5,30 @@
 [![Python](https://img.shields.io/pypi/pyversions/agent-vitals)](https://pypi.org/project/agent-vitals/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-**Standalone agent health monitor** — detect loops, stuck states, thrash, and runaway costs in any AI agent workflow.
+**The direct-integration health monitor for production AI agents** — detect loops, stuck states, confabulation, thrash, and runaway costs with four numbers per step.
 
-Agent Vitals watches your LLM agent's vital signs in real time. Feed it four numbers per step and it tells you when your agent is looping, stuck, thrashing, or burning tokens for nothing.
+Agent Vitals is the easy-onboarding option for teams that want loop / stuck / runaway detection inside their agent workflow without standing up a separate observability service. **Four fields per step, zero configuration to start, ~5 MB base install.** Optional ML detectors (TDA, Hopfield early-screen) live behind explicit extras so the base install stays light.
+
+```python
+from agent_vitals import AgentVitals
+
+monitor = AgentVitals(mission_id="my-task")
+snapshot = monitor.step(
+    findings_count=5,
+    coverage_score=0.6,
+    total_tokens=12000,
+    error_count=0,
+)
+if snapshot.any_failure:
+    handle_failure(snapshot)
+```
+
+That's the whole onboarding surface. Adapters for LangChain, LangGraph, CrewAI, AutoGen/AG2, DSPy, Haystack, Langfuse, and LangSmith ship in the base install — no framework dependencies required.
 
 ## Install
 
 ```bash
+# Base install — handcrafted detectors only, no ML deps
 pip install agent-vitals
 ```
 
@@ -21,14 +38,26 @@ pip install "agent-vitals[langchain,langgraph]"
 ```
 
 ```bash
-# Optional observability export (OTLP)
+# Optional observability export (OTLP → Datadog / Grafana / any OTLP backend)
 pip install "agent-vitals[otlp]"
+```
+
+```bash
+# Optional TDA override layer (giotto-tda + sklearn, ~150 MB)
+pip install "agent-vitals[tda]"
+```
+
+```bash
+# Optional Hopfield early-screen layer (onnxruntime + numpy, ~50 MB)
+pip install "agent-vitals[hopfield]"
 ```
 
 ```bash
 # Development and CI tooling (tests, coverage, lint/type checks)
 pip install "agent-vitals[dev]"
 ```
+
+The base install ships only `pydantic` + `pyyaml`. ML-heavy detector stacks are explicitly opt-in and never imported unless the matching extra is installed.
 
 ## Quick Start
 
@@ -65,17 +94,43 @@ for step in range(max_steps):
 - **OTLP export**: Send metrics to Datadog, Grafana Cloud, or any OTLP backend
 - **Backtest harness**: Offline evaluation of recorded trajectories with P/R/F1 metrics
 - **Context manager**: `with AgentVitals(...) as monitor:` for clean resource management
+- **Optional ML detector layers**: TDA override (`agent-vitals[tda]`) and Hopfield early-screen (`agent-vitals[hopfield]`) — base install stays light, ML stacks are explicitly opt-in
 
 ## Detection Modes
 
+Agent Vitals ships five detectors. The composite `vitals.any` signal is what enforcement hooks fire on; per-detector flags are available for targeted handling.
+
 | Detector | What it catches | Signal |
 |---|---|---|
-| **Loop** | Agent repeating actions without progress | Findings plateau over N steps |
+| **Loop** | Agent repeating actions without progress | Findings plateau over N steps + content similarity |
 | **Stuck** | Coverage stagnation despite continued work | Low DM + low CV on coverage |
+| **Confabulation** | Plausible-but-unsupported output | Coverage / similarity divergence |
 | **Thrash** | Excessive errors indicating instability | Error count above threshold |
-| **Runaway Cost** | Token burn with no output | Token spike with flat findings |
+| **Runaway Cost** | Token burn with no output | Token spike with flat findings (CUSUM-tracked) |
 
-### Content-Based Loop Detection (v1.5.0)
+## Detector Layers
+
+Detectors are organized into three layers, each independently opt-in:
+
+```
+Layer 1 — Handcrafted (always on, base install)
+    loop · stuck · confabulation · thrash · runaway_cost
+            │
+            ▼
+Layer 2 — TDA override (optional, agent-vitals[tda])
+    runaway_cost adjudication via persistent-homology features
+            │
+            ▼
+Layer 3 — Hopfield early-screen (optional, agent-vitals[hopfield])
+    early-window detection at step prefixes 3–5, where handcrafted
+    signals lack evidence (informational marker; never overrides)
+```
+
+- **Layer 1 — Handcrafted** is the default and the source of truth. All five detectors run on the four-field input and produce immediate per-step verdicts. This is what `pip install agent-vitals` gets you.
+- **Layer 2 — TDA override** plugs into `runaway_cost` adjudication for trajectories where the handcrafted heuristics produce ambiguous evidence. Installed via `agent-vitals[tda]`. See `docs/vitals/tda-detector-design.md` for the design.
+- **Layer 3 — Hopfield early-screen** runs a small ONNX model trained on early-window prefixes (cutoffs 3 and 5) to surface failures before the handcrafted stack accumulates enough evidence. It propagates as an informational `hopfield_override_active` marker on the snapshot — it never mutates per-detector flags, so adding `[hopfield]` is bit-identical to baseline on existing detector cells. Trained and validated by [`agent-vitals-bench`](https://github.com/kneelinghorse/agent-vitals-bench) on a 1494-trace corpus (macro-F1 0.901 at p3 vs handcrafted 0.466 — Hopfield is the only paradigm with meaningful early-prefix signal).
+
+### Content-Based Loop Detection
 
 When you pass `output_text` to `monitor.step()`, Agent Vitals computes content-level
 similarity to distinguish loops from stuck states:
@@ -460,7 +515,7 @@ monitor = AgentVitals()  # auto-reads VITALS_LOOP_CONSECUTIVE_COUNT, etc.
 | `stuck_cv_threshold` | 0.5 | CV below this → low variation |
 | `burn_rate_multiplier` | 2.0 | Token spike ratio for burn rate anomaly |
 
-### Framework-Specific Threshold Profiles (v1.5.0)
+### Framework-Specific Threshold Profiles
 
 Different agent frameworks have different normal operating patterns. Framework profiles
 automatically tune detection thresholds when you use a built-in adapter:
@@ -547,36 +602,20 @@ monitor.reset()  # Clear history for next run (also flushes exporters)
 
 ## Detection Precision
 
-Agent Vitals has been validated against a 70-trace combined corpus spanning
-DeepSearch (LangGraph/Ollama) and cross-agent (LangChain, raw OpenAI, CrewAI, AutoGen,
-DSPy, Haystack — with GPT-4o-mini, DeepSeek-chat, Gemini, Llama, Mixtral, Claude, and
-local OSS models) trajectories.
+Bundled-corpus numbers (v1.15.0, default config) from `python scripts/ci_backtest.py` over the three bundled corpora — 370 traces / 1898 snapshots spanning synthetic, real, and AV-31-reviewed trajectories:
 
-### Cross-Agent Corpus (40 traces, 7 frameworks, 7 models)
+| Detector | Precision | Recall | F1 | Gate status |
+|---|---|---|---|---|
+| **vitals.any** (composite) | **0.992** | **0.946** | **0.969** | composite gate PASS |
+| loop | 0.977 | 1.000 | 0.988 | **HARD GATE PASS** |
+| stuck | 0.916 | 0.813 | 0.861 | informational |
+| confabulation | 1.000 | 0.682 | 0.811 | informational |
+| thrash | 1.000 | 1.000 | 1.000 | informational |
+| runaway_cost | 0.850 | 0.895 | 0.872 | informational |
 
-| Detector | Precision | Recall | F1 |
-|---|---|---|---|
-| **vitals.any** | **1.000** | **1.000** | **1.000** |
-| loop | 0.875 | 1.000 | 0.933 |
-| stuck | 1.000 | 0.800 | 0.889 |
-| thrash | 1.000 | 1.000 | 1.000 |
+The composite `vitals.any` signal — what enforcement hooks fire on — clears the CI gate at P≥0.90 / R≥0.85. Loop is promoted to **hard gate** status (Wilson lower bounds P_lb=0.947 / R_lb=0.982 over 213 positives). Run `python scripts/ci_backtest.py` for the live numbers; the script also emits `backtest-results.json` for artifact upload.
 
-### Combined Corpus (70 traces)
-
-| Detector | Precision | Recall | F1 |
-|---|---|---|---|
-| **vitals.any** | **1.000** | **0.982** | **0.991** |
-| loop | 0.909 | 0.870 | 0.889 |
-| stuck | 0.824 | 0.737 | 0.778 |
-| thrash | 1.000 | 1.000 | 1.000 |
-
-The composite `vitals.any` signal — used for enforcement decisions — maintains perfect
-precision across both corpora. Per-detector metrics are informational; the system
-correctly identifies failures even in the 2 edge cases where loop and stuck signals
-overlap. Content-based similarity (v1.5.0) addresses these edge cases for new traces
-that provide `output_text`.
-
-See `docs/vitals/av25-backtest-report.md` for the latest backtest analysis.
+For cross-framework precision/recall over a much larger labeled corpus (1494 traces, 7 frameworks, 7 models), see [`agent-vitals-bench`](https://github.com/kneelinghorse/agent-vitals-bench) and its `eval-cross-framework-v1` artifact set. The bench corpus is the source of truth for cross-framework gates and updates faster than this README.
 
 ## License
 
