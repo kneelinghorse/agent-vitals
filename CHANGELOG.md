@@ -7,6 +7,156 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+## [1.15.0] - 2026-04-08
+
+### Added
+- **Hopfield 3rd-layer early-detection adapter** (av-s09-m01,
+  av-s09-m02). Bench's Five-Paradigm Comparative Report
+  (intel_alert `b7416ceb-2eba-4475-b119-10346beb077b`) showed Hopfield
+  is the only paradigm with meaningful signal at trace prefixes 3-5
+  (macro-F1 0.901 at p3 vs handcrafted 0.466). v1.15.0 ships the
+  adapter as an optional layer that early-warning consumers can
+  consult inside the early-detection window where the existing
+  handcrafted+TDA stack has no view.
+
+  - **New module `agent_vitals.detection.hopfield`** —
+    `HopfieldEarlyDetector` facade plus the functional `predict()` and
+    `hopfield_override_fires()` entry points. Mirrors the
+    `agent_vitals.detection.tda` pattern: import-guarded
+    `onnxruntime`, lazy artifact load via `lru_cache`, runtime prefix
+    selector (`len <= 4 → p3` else `p5`), graceful degradation when
+    the optional extras are missing.
+  - **10 bundled ONNX prefix-models** under
+    `agent_vitals/models/hopfield/` (5 detectors × {p3, p5}, ~5.6 MB
+    total) plus per-model JSON sidecars carrying the canonical
+    17-feature `mean`/`std`/`feature_order`/`max_steps`/`prefix_len`
+    contract from the bench inference spec. Sidecar `feature_order`
+    is asserted at load time so any future bench retrain that drifts
+    the schema fails loudly instead of silently scoring garbage.
+  - **New `agent-vitals[hopfield]` install extra** —
+    `onnxruntime>=1.17` + `numpy>=1.24.0`. Compare to torch CPU
+    (~200 MB) or torch CUDA (~750 MB+): the ONNX route saves
+    150-700 MB per install and keeps the base footprint lightweight
+    per the direct-integration positioning.
+  - **Bundled artifacts ship via the wheel package-data glob**
+    (`models/hopfield/*.onnx`, `models/hopfield/*.json`) — defense in
+    depth against the v1.13.0 thresholds.yaml regression and the
+    v1.14.0 package-data hardening pattern.
+
+- **Hopfield wired into `_resolve_detections` as an informational
+  marker** (av-s09-m02). Apply when (a) `cfg.hopfield_enabled=True`,
+  (b) `onnxruntime` backend importable, (c) trace length ∈ [3, 6],
+  (d) any per-detector probability ≥
+  `DEFAULT_OVERRIDE_THRESHOLDS[detector]`. The thresholds are
+  calibrated against the bench v1 corpus per AV-S09-M03 acceptance
+  (intel response `0f771492`): `{loop: 0.80, stuck: 0.90,
+  confabulation: 0.80, thrash: 0.70, runaway_cost: 0.90}`. The
+  data-driven optimum maximizes early-window recall without dropping
+  marker precision below 0.91 on any detector at any cutoff. The
+  marker propagates from `LoopDetectionResult` through `monitor.py`
+  into the constructed `VitalsSnapshot` so early-warning consumers
+  (interventions, dashboards) can read it as provenance for early
+  Hopfield evidence.
+
+  - **Marker is purely informational** — it never mutates the
+    per-detector `*_detected` flags. The handcrafted+TDA stack
+    remains authoritative for trace-level detection decisions, so
+    full-trace `vitals.any` numbers stay bit-identical against the
+    v1.14.2 baseline on every bundled corpus regardless of whether
+    `hopfield_enabled` is True or False. This is the structural M02
+    contract that lets the override layer ship without altering
+    composite cells.
+  - **Why marker, not flag-flip**: under `_replay_trace`'s any-step
+    trace-level semantics, an upgrade-only flag-flipping override at
+    per-step would inevitably introduce new trace-level TPs/FPs in
+    cells where handcrafted+TDA later doesn't catch the trace,
+    breaking the bit-identical full-trace constraint at any threshold
+    short of "never fires". Routing the signal into a separate
+    channel preserves both halves of the spec — the override is
+    observable and the existing detector cells are unchanged.
+    Flag-flipping behavior remains an explicit followup decision
+    pending bench validation evidence.
+
+  ### Public API surface
+  - **New on `LoopDetectionResult` (`agent_vitals.detection.loop`)**:
+    `hopfield_override_active: bool` (additive, default `False`).
+  - **New on `VitalsSnapshot` (`agent_vitals.schema`)**:
+    `hopfield_override_active: bool` (additive, default `False`).
+  - **New on `VitalsConfig` (`agent_vitals.config`)**:
+    `hopfield_enabled: bool = False` and
+    `hopfield_model_dir: Optional[Path] = None`. Default `False`
+    mirrors `tda_enabled` so opting in is explicit.
+  - **New module `agent_vitals.detection.hopfield`** exporting:
+    `HOPFIELD_DETECTORS`, `HopfieldConfig`, `HopfieldPrediction`,
+    `HopfieldEarlyDetector`, `MissingHopfieldDependencyError`,
+    `N_FEATURES`, `DEFAULT_OVERRIDE_THRESHOLDS`,
+    `is_hopfield_available`, `predict`, `select_prefix_variant`,
+    `hopfield_override_fires`.
+  - **New install extra `agent-vitals[hopfield]`**.
+  - **Behavior**: with `hopfield_enabled=False` (the default),
+    enabling no extras, or installing the wheel without the extras,
+    the public API surface is additive only — every existing call
+    site continues to behave bit-identically.
+
+  ### Bundled-corpus impact (`scripts/ci_backtest.py`)
+  - **Composite, loop, confabulation, stuck, thrash, runaway_cost:
+    bit-identical to v1.14.2** (P=0.992 R=0.946 F1=0.969 composite;
+    loop F1=0.988, confab F1=0.811, stuck F1=0.861, thrash F1=1.000,
+    runaway_cost F1=0.872). The default config does not enable
+    Hopfield consultation, so the wiring is dead code on the gate
+    path.
+  - Standalone bench-style replay against
+    `checkpoints/vitals_corpus/av31_reviewed` (289 traces, 1091
+    snapshots) with `hopfield_enabled=True` vs `hopfield_enabled=False`:
+    every detector cell bit-identical (composite (203,2,12,72) →
+    (203,2,12,72) on both sides). Strongest possible empirical proof
+    of the M02 non-mutation contract.
+
+### Bench validation cycle (AV-S09-M03)
+- **Intel response `0f771492` — ALL FOUR GATING ASKS PASS** on the
+  full bench v1 corpus (1494 traces, min_confidence ≥ 0.8). Bench
+  re-ran `eval-hopfield-cross-framework-v1` against the v1.15.0rc
+  wheel (SHA256 `abe987fbed1c40dbf9be0a464263496843ff03dcf6969b6ac23869207c045dc8`,
+  matched bench-side to the byte) under three modes:
+
+  1. **Pass A — `hopfield_enabled=False` × all 8 cells (40 cell × detector pairs)**:
+     **40/40 bit-identical to v1.14.2 baseline.** Confirms the new
+     code path is fully gated when the config knob is off.
+  2. **Pass B — `hopfield_enabled=True` × 4 default-mode cells (20 pairs)**:
+     **20/20 bit-identical to v1.14.2 baseline** with the Hopfield
+     marker actively firing on traces in the [3,6] window. This is
+     the structural M02 contract verified empirically at scale on
+     the canonical bench corpus, not just the bundled av31_reviewed
+     checkpoint (which agent-vitals had already verified upstream).
+  3. **Marker firing reproduction** vs bench's prior p3/p5 PyTorch
+     reference grid: max delta **0.0005 F1** (thrash @ cutoff=3),
+     max relative **0.05%** — three cells exactly identical to four
+     decimals. Consistent with the **6.2e-6** ONNX/PyTorch parity
+     from the M01 export. Confirms zero integration drift between
+     the bench prototype and the agent-vitals public adapter API.
+
+  The one quadrant bench did NOT run was
+  `hopfield_enabled=True × tda_enabled=True` (their main venv lacks
+  the TDA backend; cross-repo discipline rule blocked an ad-hoc
+  install). The structural argument for why it must hold (the marker
+  and TDA override live on independent fields and cannot interfere)
+  combined with agent-vitals' av31_reviewed verification of the
+  AND-of-both case was accepted as sufficient.
+
+- **Per-detector override thresholds**: agent-vitals adopted bench's
+  data-driven recommendation (`{loop: 0.80, stuck: 0.90, confab: 0.80,
+  thrash: 0.70, runaway_cost: 0.90}`) over the rc's uniform 0.90
+  starting point in this release commit. Stuck and runaway_cost are
+  pinned at 0.90 because both have a precision cliff between 0.70
+  and 0.80 in the bench PR curves; the other three detectors buy
+  meaningful early-window recall at acceptable precision floors when
+  lowered. Full PR curves at cutoffs 3 and 5 for thresholds {0.5,
+  0.6, 0.7, 0.8, 0.9, 0.95} live in the bench acceptance message.
+
+- p7 prefix variant deferred to a future S10+ mission per
+  `project_hopfield_p7_retrain_backlog.md` (training-procedure
+  artifact diagnosed by bench, 10-line fix offered for retrain).
+
 ## [1.14.2] - 2026-04-08
 
 ### Changed

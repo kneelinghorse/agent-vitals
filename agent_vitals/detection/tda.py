@@ -117,7 +117,7 @@ def _load_tda_backend() -> Mapping[str, Any]:
     """
 
     try:
-        import joblib  # type: ignore[import-not-found,unused-ignore]
+        import joblib  # type: ignore[import-not-found,import-untyped,unused-ignore]
         import numpy as np  # type: ignore[import-not-found,unused-ignore]
         from gtda.diagrams import (  # type: ignore[import-not-found,unused-ignore]
             Amplitude,

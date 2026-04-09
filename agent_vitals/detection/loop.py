@@ -58,6 +58,16 @@ class LoopDetectionResult:
     runaway_cost_detected: bool = False
     runaway_cost_confidence: float = 0.0
 
+    # Hopfield 3rd-layer early-detection marker (AV-S09-M02). Set when
+    # the optional Hopfield prefix-model adapter scored any detector
+    # above its per-detector override threshold while the trace was in
+    # the early-detection window (length 3-6). Purely informational —
+    # never mutates the per-detector ``*_detected`` flags above, so the
+    # handcrafted+TDA stack remains authoritative and full-trace
+    # detection numbers stay bit-identical against the v1.14.2 baseline
+    # under the default ``hopfield_enabled=False`` config.
+    hopfield_override_active: bool = False
+
     detector_priority: Optional[str] = None
 
     def as_snapshot_update(self) -> dict[str, object]:
@@ -76,6 +86,7 @@ class LoopDetectionResult:
             "stuck_trigger": self.stuck_trigger,
             "runaway_cost_detected": bool(self.runaway_cost_detected),
             "runaway_cost_confidence": float(_clip01(self.runaway_cost_confidence)),
+            "hopfield_override_active": bool(self.hopfield_override_active),
             "detector_priority": self.detector_priority,
         }
 
@@ -1157,6 +1168,7 @@ def _handle_stuck_disabled(
         stuck_trigger=None,
         runaway_cost_detected=build_runaway_detected,
         runaway_cost_confidence=_clip01(build_runaway_confidence or 0.0),
+        hopfield_override_active=_consult_hopfield_override(ctx),
         detector_priority=detector_priority,
     )
 
@@ -1353,6 +1365,7 @@ def _resolve_detections(
         stuck_trigger=stuck_trigger,
         runaway_cost_detected=runaway_cost_detected,
         runaway_cost_confidence=_clip01(runaway_cost_confidence),
+        hopfield_override_active=_consult_hopfield_override(ctx),
         detector_priority=detector_priority,
     )
 
@@ -1394,6 +1407,46 @@ def detect_loop(
 
 # Backwards-compatible alias
 detect_agent_loop = detect_loop
+
+
+def _consult_hopfield_override(ctx: _DetectionContext) -> bool:
+    """Hopfield 3rd-layer early-detection consultation (AV-S09-M02).
+
+    Returns the value to write to ``LoopDetectionResult.hopfield_override_active``
+    for the current snapshot. Lazy-imports the optional Hopfield adapter so the
+    base ``agent_vitals`` install pays no cost when ``cfg.hopfield_enabled`` is
+    False (the default) or when the ``agent-vitals[hopfield]`` extras are not
+    installed.
+
+    Gating layers:
+
+    1. ``cfg.hopfield_enabled`` must be True (default False — preserves
+       v1.14.2 behavior bit-identically when callers do not opt in).
+    2. The optional ``onnxruntime`` backend must be importable; otherwise
+       :func:`hopfield_override_fires` returns False without raising.
+    3. The current trace length (history + current snapshot, exposed as
+       ``ctx.series``) must fall inside the early-detection window
+       ``[3, 6]`` enforced by :func:`hopfield_override_fires`. At length
+       ≥7 the existing handcrafted+TDA stack is authoritative per bench's
+       Five-Paradigm Comparative Report (intel_alert b7416ceb).
+
+    The returned value never mutates the per-detector ``*_detected`` flags
+    on :class:`LoopDetectionResult`; it propagates only as the explicit
+    ``hopfield_override_active`` provenance marker so trace-level
+    ``vitals.any`` numbers stay bit-identical against the v1.14.2 baseline
+    on the bundled corpus.
+    """
+
+    if not getattr(ctx.cfg, "hopfield_enabled", False):
+        return False
+    try:
+        from .hopfield import hopfield_override_fires
+    except ImportError:  # pragma: no cover - safety net
+        return False
+    return hopfield_override_fires(
+        ctx.series,
+        model_dir=getattr(ctx.cfg, "hopfield_model_dir", None),
+    )
 
 
 def _deltas(values: Sequence[float]) -> list[float]:

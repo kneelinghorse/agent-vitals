@@ -483,6 +483,7 @@ class AgentVitals:
             stuck_detected=detection.stuck_detected,
             stuck_confidence=detection.stuck_confidence,
             stuck_trigger=detection.stuck_trigger,
+            hopfield_override_active=detection.hopfield_override_active,
             detector_priority=detection.detector_priority,
         )
 

@@ -388,6 +388,22 @@ class VitalsConfig:
     tda_enabled: bool = False
     tda_model_path: Optional[Path] = None
 
+    # Hopfield 3rd-layer early-detection override (av-s09-m02). Default
+    # off for backwards compatibility — when True AND the optional
+    # ``agent-vitals[hopfield]`` extras are installed AND the trace
+    # length is in the early-detection window (3-6 snapshots), the
+    # bundled Hopfield prefix-model adapter is consulted. When any
+    # per-detector Hopfield score exceeds its override threshold the
+    # adapter sets ``LoopDetectionResult.hopfield_override_active`` and
+    # the corresponding ``VitalsSnapshot.hopfield_override_active``
+    # marker. The marker is purely informational — it never mutates the
+    # per-detector ``*_detected`` flags, so enabling Hopfield does NOT
+    # change full-trace ``vitals.any`` numbers vs the v1.14.2 baseline
+    # on the bundled corpus. Wiring an actual flag-flipping policy
+    # remains a separate decision (M02 followup or AV-S09-M03+).
+    hopfield_enabled: bool = False
+    hopfield_model_dir: Optional[Path] = None
+
     th_enter_warning: float = DEFAULT_TH_ENTER_WARNING
     th_exit_warning: float = DEFAULT_TH_EXIT_WARNING
     th_enter_critical: float = DEFAULT_TH_ENTER_CRITICAL

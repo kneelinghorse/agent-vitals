@@ -139,6 +139,16 @@ class VitalsSnapshot(BaseModel):
     runaway_cost_detected: bool = Field(default=False)
     runaway_cost_confidence: float = Field(default=0.0, ge=0.0, le=1.0)
 
+    # Hopfield 3rd-layer early-detection override marker (AV-S09-M02).
+    # Set when the optional Hopfield prefix-model adapter scored any
+    # detector above its per-detector override threshold inside the
+    # early-detection window (trace length 3-6). The marker is purely
+    # informational — it never modifies the per-detector ``*_detected``
+    # fields above, which remain authoritative for the v1.14.2
+    # handcrafted+TDA stack. Consumers (interventions, dashboards) can
+    # treat the marker as an early-warning provenance flag.
+    hopfield_override_active: bool = Field(default=False)
+
     detector_priority: Optional[str] = Field(default=None)
 
     cusum_alarm: bool = Field(default=False)
