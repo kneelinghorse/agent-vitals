@@ -7,6 +7,35 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+## [1.17.0] - 2026-04-10
+
+### Changed
+- **Per-step co-occurrence suppression for runaway_cost** (av-s11-m02).
+  Suppress `runaway_cost_detected` when stuck fired at the previous step
+  AND stuck candidates are present at the current step (cross-detector
+  leakage pattern, window=1).  Eliminates 24 of 30 remaining
+  default-mode runaway_cost false positives on the bench v1 corpus
+  (runaway_cost P_lb lifts from 0.832 to 0.945 on default profile).
+  6 confab→runaway FPs remain (no stuck involvement, out of scope).
+  Zero TP regressions (229 → 229).  Zero stuck FP waterbed.
+
+  The suppression uses a deferred-application pattern: the flag is
+  computed before the burn-rate→stuck clearing block but applied after
+  it, preventing the waterbed effect where early suppression would
+  disable a downstream clearing step.  The `stuck_candidates` guard
+  distinguishes cross-leakage (stuck signals present at runaway step)
+  from temporal coincidence (genuine runaway following a stuck step).
+
+  New `prior_stuck_detected` keyword-only parameter on `detect_loop()`
+  (default `False`, backward compatible).  Wired automatically in
+  `_replay_trace()` / `replay_trace()` and `AgentVitals.record()`.
+
+  Bench validated on full v1 corpus (commit 6707d80):
+  - default: runaway FP 30→6, TP 229→229, P_lb=0.945
+  - langgraph: P_lb=0.939
+  - crewai: P_lb=0.939
+  - dspy: P_lb=0.820 (stuck excluded, suppression not applicable)
+
 ## [1.16.0] - 2026-04-10
 
 ### Added

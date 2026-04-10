@@ -5,7 +5,7 @@
 **Project Type**: Python Library (pip package)  
 **Primary Language**: Python 3.10+  
 **Framework**: Standalone (pydantic + pyyaml core; optional framework adapters)  
-**Version**: 1.15.0 (Production/Stable)  
+**Version**: 1.17.0 (Production/Stable)  
 **License**: MIT
 
 **Description**: Framework-agnostic health monitoring library for AI agent workflows. Detects five critical failure modes — loops, stuck states, confabulation, thrash, and runaway costs — through temporal signal analysis, content similarity, and statistical process control.
