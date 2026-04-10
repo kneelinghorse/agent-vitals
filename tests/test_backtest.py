@@ -18,6 +18,7 @@ from agent_vitals.backtest import (
     _replay_trace,
     load_dataset,
     load_labels,
+    replay_trace,
     resolve_workflow_type,
     run_backtest,
 )
@@ -677,3 +678,73 @@ class TestReplayTraceOverlap:
             workflow_type="research",
         )
         assert fired["confabulation"] is True
+
+
+# ---------------------------------------------------------------------------
+# Public replay_trace() API (AV-S10-M02)
+# ---------------------------------------------------------------------------
+
+
+class TestPublicReplayTrace:
+    """Tests for the public replay_trace() function.
+
+    Validates the stable contract: 5-key return, no 'any', default config,
+    and equivalence with the internal _replay_trace.
+    """
+
+    def test_returns_exactly_five_keys(self) -> None:
+        snapshots = [_snapshot(loop_index=i) for i in range(5)]
+        result = replay_trace(snapshots)
+        assert set(result.keys()) == {
+            "loop", "stuck", "confabulation", "thrash", "runaway_cost",
+        }
+
+    def test_no_any_key(self) -> None:
+        snapshots = [_snapshot(loop_index=i) for i in range(5)]
+        result = replay_trace(snapshots)
+        assert "any" not in result
+
+    def test_all_values_are_bool(self) -> None:
+        snapshots = [_snapshot(loop_index=i) for i in range(5)]
+        result = replay_trace(snapshots)
+        for key, value in result.items():
+            assert isinstance(value, bool), f"{key} is {type(value)}, expected bool"
+
+    def test_default_config_is_vitals_config(self) -> None:
+        """Calling with config=None should behave identically to VitalsConfig()."""
+        snapshots = [_snapshot(loop_index=i) for i in range(5)]
+        result_default = replay_trace(snapshots)
+        result_explicit = replay_trace(snapshots, config=VitalsConfig())
+        assert result_default == result_explicit
+
+    def test_default_workflow_type_is_unknown(self) -> None:
+        """Calling without workflow_type should use 'unknown'."""
+        snapshots = [_snapshot(loop_index=i) for i in range(5)]
+        result_default = replay_trace(snapshots)
+        result_explicit = replay_trace(snapshots, workflow_type="unknown")
+        assert result_default == result_explicit
+
+    def test_matches_internal_minus_any(self) -> None:
+        """Public API result must equal internal result minus 'any'."""
+        snapshots = [_snapshot(loop_index=i) for i in range(5)]
+        cfg = VitalsConfig()
+        internal = _replay_trace(snapshots, config=cfg, workflow_type="unknown")
+        public = replay_trace(snapshots, config=cfg, workflow_type="unknown")
+        expected = {k: v for k, v in internal.items() if k != "any"}
+        assert public == expected
+
+    def test_custom_config_passed_through(self) -> None:
+        """A custom VitalsConfig should be forwarded to the internal function."""
+        snapshots = [_snapshot(loop_index=i) for i in range(5)]
+        cfg = VitalsConfig()
+        result_positional = replay_trace(snapshots, cfg, "unknown")
+        result_keyword = replay_trace(snapshots, config=cfg, workflow_type="unknown")
+        assert result_positional == result_keyword
+
+    def test_empty_trace(self) -> None:
+        """Empty input should return all-False without raising."""
+        result = replay_trace([])
+        assert all(v is False for v in result.values())
+        assert set(result.keys()) == {
+            "loop", "stuck", "confabulation", "thrash", "runaway_cost",
+        }

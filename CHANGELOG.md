@@ -7,6 +7,41 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+## [1.16.0] - 2026-04-10
+
+### Added
+- **Public `replay_trace()` API** (av-s10-m02). Stable public function
+  on the `backtest` module for external consumers (e.g. agent-vitals-bench).
+  Replays a trace through the full detector pipeline and returns
+  `{"loop": bool, "stuck": bool, "confabulation": bool, "thrash": bool,
+  "runaway_cost": bool}` — the canonical five detectors, no `any`
+  composite.  Signature:
+  `replay_trace(snapshots, config=None, workflow_type="unknown")`.
+  Bench can replace `from agent_vitals.backtest import _replay_trace`
+  with `from agent_vitals.backtest import replay_trace` and drop the
+  `any`-field normalization in `evaluator/runner.py`.
+
+### Changed
+- **`burn_rate_multiplier` raised from 2.5 to 3.0** (av-s10-m01).
+  Eliminates 20 of 52 default-mode runaway_cost false positives on the
+  bench v1 corpus (1,494 traces) without losing any true positives.
+  Default-mode runaway_cost precision lifts from P_lb=0.765 to
+  P_lb=0.832, clearing the 0.80 hard-gate threshold on all four
+  framework profiles without requiring TDA.  Updated in:
+  `DEFAULT_BURN_RATE_MULTIPLIER` (config.py), `thresholds.yaml`
+  (default + langgraph profile).
+
+  Bench validated: 0/229 TPs lost at multiplier 3.0.  Multiplier 3.5
+  was explicitly ruled out (would lose 40/229 TPs, 17.5% recall drop).
+  32 FPs remain (24 stuck-synthetic cross-leakage, 6 confab
+  cross-leakage, 2 other) — addressable via per-step co-occurrence
+  arbitration in a future release.
+
+### Public API surface
+- `agent_vitals.backtest.replay_trace` — new stable function (v1.16.0+)
+- `agent_vitals.backtest._replay_trace` — retained for internal use,
+  not part of the public API contract
+
 ## [1.15.0] - 2026-04-08
 
 ### Release artifacts (canonical PyPI SHA256)

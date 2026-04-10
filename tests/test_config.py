@@ -21,7 +21,7 @@ class TestVitalsConfig:
         assert cfg.loop_consecutive_count == 3
         assert cfg.stuck_dm_threshold == 0.15
         assert cfg.stuck_cv_threshold == 0.3
-        assert cfg.burn_rate_multiplier == 2.5
+        assert cfg.burn_rate_multiplier == 3.0
         assert cfg.thrash_error_threshold == 1
         assert cfg.token_scale_factor == 1.0
         assert cfg.spc_k_sigma == 3.0

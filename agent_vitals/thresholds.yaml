@@ -63,7 +63,7 @@ loop_consecutive_count: 3
 # --- Stuck Detection ---
 stuck_dm_threshold: 0.15
 stuck_cv_threshold: 0.3
-burn_rate_multiplier: 2.5
+burn_rate_multiplier: 3.0
 
 # Error-count threshold for thrash detection via stop rule.
 # When error_count >= this value, thrash is flagged. Set 0 to disable.
@@ -115,7 +115,7 @@ profiles:
   # LangGraph: stateful graph execution with relatively short traces.
   langgraph:
     loop_consecutive_pct: 0.4
-    burn_rate_multiplier: 2.5
+    burn_rate_multiplier: 3.0
 
   # CrewAI: multi-agent orchestration, higher token counts, longer runs.
   # More lenient loop detection — agent handoffs look like repetition.

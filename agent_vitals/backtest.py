@@ -462,6 +462,38 @@ def _replay_trace(
     }
 
 
+def replay_trace(
+    snapshots: Sequence[VitalsSnapshot],
+    config: Optional[VitalsConfig] = None,
+    workflow_type: str = "unknown",
+) -> dict[str, bool]:
+    """Replay a trace through the full detector pipeline.
+
+    Public API for external consumers (e.g. agent-vitals-bench).  Returns a
+    dict mapping each of the canonical five detectors to a boolean indicating
+    whether it fired at any point during replay.  The ``any`` composite is
+    intentionally **excluded** — callers can derive it trivially from the
+    five values.
+
+    Args:
+        snapshots: Ordered list of :class:`VitalsSnapshot` for one trace.
+        config: :class:`VitalsConfig` to use.  Defaults to
+            ``VitalsConfig()`` (built-in defaults, no YAML override).
+        workflow_type: Workflow type hint passed to the detection layer.
+
+    Returns:
+        ``{"loop": bool, "stuck": bool, "confabulation": bool,
+        "thrash": bool, "runaway_cost": bool}``
+
+    .. versionadded:: 1.16.0
+    """
+    cfg = config if config is not None else VitalsConfig()
+    result = _replay_trace(snapshots, config=cfg, workflow_type=workflow_type)
+    # Strip the internal 'any' composite — public contract is five detectors.
+    result.pop("any", None)
+    return result
+
+
 def run_backtest(
     dataset: Dataset,
     labels: Labels,
