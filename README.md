@@ -510,10 +510,11 @@ monitor = AgentVitals()  # auto-reads VITALS_LOOP_CONSECUTIVE_COUNT, etc.
 
 | Parameter | Default | Description |
 |---|---|---|
-| `loop_consecutive_count` | 5 | Steps of flat findings before loop detection |
+| `loop_consecutive_pct` | 0.5 | Fraction of trace length for adaptive loop window |
+| `findings_plateau_pct` | 0.4 | Fraction of trace length for findings plateau window |
 | `stuck_dm_threshold` | 0.15 | DM below this → coverage stagnation |
-| `stuck_cv_threshold` | 0.5 | CV below this → low variation |
-| `burn_rate_multiplier` | 2.0 | Token spike ratio for burn rate anomaly |
+| `stuck_cv_threshold` | 0.3 | CV below this → low variation |
+| `burn_rate_multiplier` | 3.0 | Token spike ratio for burn rate anomaly |
 
 ### Framework-Specific Threshold Profiles
 
@@ -531,11 +532,11 @@ monitor = AgentVitals(mission_id="crew-task", adapter=CrewAIAdapter())
 
 Built-in profiles:
 
-| Framework | `loop_consecutive_count` | `burn_rate_multiplier` | Notes |
-|---|---|---|---|
-| langgraph | 5 | 2.5 | Tighter loop detection for graph-based workflows |
-| crewai | 8 | 4.0 | Higher burn rate tolerance for multi-agent crews |
-| dspy | 10 | — | Higher consecutive count for optimization loops |
+| Framework | Key overrides | Notes |
+|---|---|---|
+| langgraph | `loop_consecutive_pct: 0.4`, `burn_rate_multiplier: 3.0` | Tighter loop detection for graph-based workflows |
+| crewai | `loop_consecutive_pct: 0.5`, `token_scale_factor: 0.7` | Token scaling for multi-agent crews |
+| dspy | `loop_consecutive_pct: 0.7`, `stuck_dm_threshold: 0.1`, `workflow_stuck_enabled: none` | Lenient loop detection; stuck disabled (DSPy has its own termination) |
 
 Override auto-detection with the `framework` parameter:
 
@@ -550,14 +551,14 @@ monitor = AgentVitals(
 Define custom profiles in `thresholds.yaml`:
 
 ```yaml
-loop_consecutive_count: 6
+loop_consecutive_pct: 0.5
+burn_rate_multiplier: 3.0
 profiles:
   langgraph:
-    loop_consecutive_count: 5
-    burn_rate_multiplier: 2.5
+    loop_consecutive_pct: 0.4
+    burn_rate_multiplier: 3.0
   crewai:
-    loop_consecutive_count: 8
-    burn_rate_multiplier: 4.0
+    loop_consecutive_pct: 0.5
     token_scale_factor: 0.7
 ```
 
@@ -585,7 +586,7 @@ for name, detector in report.detectors.items():
 CI enforces coverage with `pytest-cov`:
 
 - Command: `pytest --cov=agent_vitals --cov-report=xml --cov-fail-under=85`
-- Baseline measured on 2026-02-09: **85% total coverage**
+- Current: **89% total coverage** across 630 tests
 - Coverage XML artifact is uploaded in GitHub Actions (`coverage.xml`)
 
 ## Session Summary
@@ -602,20 +603,28 @@ monitor.reset()  # Clear history for next run (also flushes exporters)
 
 ## Detection Precision
 
-Bundled-corpus numbers (v1.15.0, default config) from `python scripts/ci_backtest.py` over the three bundled corpora — 370 traces / 1898 snapshots spanning synthetic, real, and AV-31-reviewed trajectories:
+Bundled-corpus numbers (v1.18.0, default config) from `python scripts/ci_backtest.py` over the three bundled corpora — 370 traces / 1898 snapshots spanning synthetic, real, and AV-31-reviewed trajectories:
 
 | Detector | Precision | Recall | F1 | Gate status |
 |---|---|---|---|---|
-| **vitals.any** (composite) | **0.992** | **0.946** | **0.969** | composite gate PASS |
+| **vitals.any** (composite) | **1.000** | **0.946** | **0.972** | composite gate PASS |
 | loop | 0.977 | 1.000 | 0.988 | **HARD GATE PASS** |
-| stuck | 0.916 | 0.813 | 0.861 | informational |
-| confabulation | 1.000 | 0.682 | 0.811 | informational |
-| thrash | 1.000 | 1.000 | 1.000 | informational |
-| runaway_cost | 0.850 | 0.895 | 0.872 | informational |
+| stuck | 0.913 | 0.785 | 0.844 | soft gate |
+| confabulation | 1.000 | 0.682 | 0.811 | soft gate |
+| thrash | 1.000 | 1.000 | 1.000 | soft gate |
+| runaway_cost | 1.000 | 0.895 | 0.944 | soft gate |
 
 The composite `vitals.any` signal — what enforcement hooks fire on — clears the CI gate at P≥0.90 / R≥0.85. Loop is promoted to **hard gate** status (Wilson lower bounds P_lb=0.947 / R_lb=0.982 over 213 positives). Run `python scripts/ci_backtest.py` for the live numbers; the script also emits `backtest-results.json` for artifact upload.
 
-For cross-framework precision/recall over a much larger labeled corpus (1494 traces, 7 frameworks, 7 models), see [`agent-vitals-bench`](https://github.com/kneelinghorse/agent-vitals-bench) and its `eval-cross-framework-v1` artifact set. The bench corpus is the source of truth for cross-framework gates and updates faster than this README.
+**Cross-framework validation** (v1.18.0): All four framework profiles (default, langgraph, crewai, dspy) pass the composite gate across both runtime modes — handcrafted-only and handcrafted+TDA. Key bench numbers on the full 1494-trace corpus:
+
+| Detector | default P_lb | langgraph P_lb | crewai P_lb | Notes |
+|---|---|---|---|---|
+| loop | 0.947 | 0.947 | 0.947 | Hard gate, all profiles |
+| stuck | 0.974 | 0.969 | 0.969 | FP=0 after v1.18.0 suppression |
+| runaway_cost | 0.945 | 0.939 | 0.939 | After v1.17.0 co-occurrence fix |
+
+For the full cross-framework precision/recall matrix (1494 traces, 7 frameworks, 7 models), see [`agent-vitals-bench`](https://github.com/kneelinghorse/agent-vitals-bench) and its `eval-cross-framework-v1` artifact set. The bench corpus is the source of truth for cross-framework gates.
 
 ## License
 
