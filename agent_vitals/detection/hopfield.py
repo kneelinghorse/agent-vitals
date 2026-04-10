@@ -96,11 +96,10 @@ class HopfieldConfig:
     """
 
     decision_threshold: float = 0.5
-    # Selector cutoff: traces with length <= ``p3_max_len`` use the p3
-    # variant, longer traces use p5. Bench's A/B (msg 283539aa) puts the
-    # safe boundary at 4 — at length 5 the p5 model is squarely
-    # in-distribution.
+    # Selector cutoffs: traces with length <= p3_max_len use p3,
+    # <= p5_max_len use p5, longer traces use p7.
     p3_max_len: int = 4
+    p5_max_len: int = 6
     model_dir: Path = field(default_factory=lambda: _DEFAULT_MODEL_DIR)
 
 
@@ -160,15 +159,26 @@ def _snapshot_row(snapshot: VitalsSnapshot) -> list[float]:
     return row
 
 
-def select_prefix_variant(snapshots: Sequence[VitalsSnapshot], *, p3_max_len: int = 4) -> str:
+def select_prefix_variant(
+    snapshots: Sequence[VitalsSnapshot],
+    *,
+    p3_max_len: int = 4,
+    p5_max_len: int = 6,
+) -> str:
     """Pick the Hopfield prefix variant for a trace of length ``len(snapshots)``.
 
-    Returns ``"p3"`` for short traces and ``"p5"`` otherwise. The boundary
-    is fixed by bench's empirical A/B — see the prefix-selection table in
+    Returns ``"p3"`` for short traces (≤ *p3_max_len*), ``"p5"`` for medium
+    (≤ *p5_max_len*), and ``"p7"`` for longer traces.  Boundaries are fixed
+    by bench's empirical A/B — see the prefix-selection table in
     ``reference_hopfield_inference_contract.md``.
     """
 
-    return "p3" if len(snapshots) <= p3_max_len else "p5"
+    n = len(snapshots)
+    if n <= p3_max_len:
+        return "p3"
+    if n <= p5_max_len:
+        return "p5"
+    return "p7"
 
 
 @dataclass(frozen=True)
@@ -189,7 +199,7 @@ def _load_artifact(
 ) -> _LoadedArtifact:
     if detector not in HOPFIELD_DETECTORS:
         raise ValueError(f"unknown Hopfield detector: {detector!r}")
-    if prefix_variant not in ("p3", "p5"):
+    if prefix_variant not in ("p3", "p5", "p7"):
         raise ValueError(f"unknown Hopfield prefix variant: {prefix_variant!r}")
 
     backend = _load_hopfield_backend()
@@ -287,7 +297,9 @@ def predict(
     backend = _load_hopfield_backend()
     np = backend["np"]
 
-    prefix_variant = select_prefix_variant(snapshots, p3_max_len=cfg.p3_max_len)
+    prefix_variant = select_prefix_variant(
+        snapshots, p3_max_len=cfg.p3_max_len, p5_max_len=cfg.p5_max_len
+    )
     artifact = _load_artifact(detector, prefix_variant, cfg.model_dir)
 
     x, length = _build_input_tensor(snapshots, artifact)
@@ -397,6 +409,7 @@ def hopfield_override_fires(
     eval_config = HopfieldConfig(
         decision_threshold=base_config.decision_threshold,
         p3_max_len=base_config.p3_max_len,
+        p5_max_len=base_config.p5_max_len,
         model_dir=resolved_dir,
     )
 

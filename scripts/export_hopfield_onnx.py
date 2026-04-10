@@ -34,7 +34,7 @@ SOURCE_MODEL_DIR = BENCH_PROTOTYPES / "hopfield_models"
 TARGET_DIR = REPO_ROOT / "agent_vitals" / "models" / "hopfield"
 
 DETECTORS = ("loop", "stuck", "confabulation", "thrash", "runaway_cost")
-PREFIX_LENS = (3, 5)
+PREFIX_LENS = (3, 5, 7)
 
 if str(BENCH_ROOT) not in sys.path:
     sys.path.insert(0, str(BENCH_ROOT))

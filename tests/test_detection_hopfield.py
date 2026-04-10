@@ -3,7 +3,7 @@
 Covers:
 - Module imports cleanly without optional Hopfield dependencies installed
 - ``is_hopfield_available`` reflects backend presence as a bool
-- ``select_prefix_variant`` routes len<=4 → p3 and len>=5 → p5
+- ``select_prefix_variant`` routes len<=4 → p3, 5-6 → p5, >=7 → p7
 - Empty trace short-circuits to ``None``
 - Bundled artifact loads and produces a deterministic prediction
 - ``HopfieldEarlyDetector`` facade matches the functional API
@@ -93,14 +93,23 @@ class TestPrefixSelector:
         snaps = [_snapshot(i) for i in range(length)]
         assert select_prefix_variant(snaps) == "p3"
 
-    @pytest.mark.parametrize("length", [5, 7, 12, 25])
-    def test_long_traces_select_p5(self, length: int) -> None:
+    @pytest.mark.parametrize("length", [5, 6])
+    def test_medium_traces_select_p5(self, length: int) -> None:
         snaps = [_snapshot(i) for i in range(length)]
         assert select_prefix_variant(snaps) == "p5"
+
+    @pytest.mark.parametrize("length", [7, 12, 25])
+    def test_long_traces_select_p7(self, length: int) -> None:
+        snaps = [_snapshot(i) for i in range(length)]
+        assert select_prefix_variant(snaps) == "p7"
 
     def test_custom_p3_max_len(self) -> None:
         snaps = [_snapshot(i) for i in range(6)]
         assert select_prefix_variant(snaps, p3_max_len=10) == "p3"
+
+    def test_custom_p5_max_len(self) -> None:
+        snaps = [_snapshot(i) for i in range(10)]
+        assert select_prefix_variant(snaps, p5_max_len=12) == "p5"
 
 
 class TestHopfieldInferenceSkippedWhenUnavailable:
@@ -130,10 +139,17 @@ class TestHopfieldInferenceWithBackend:
 
     @pytest.mark.parametrize("detector", HOPFIELD_DETECTORS)
     def test_p5_prediction_shape(self, detector: str) -> None:
-        snaps = [_snapshot(i) for i in range(8)]
+        snaps = [_snapshot(i) for i in range(5)]
         result = predict(snaps, detector)
         assert isinstance(result, HopfieldPrediction)
         assert result.prefix_variant == "p5"
+
+    @pytest.mark.parametrize("detector", HOPFIELD_DETECTORS)
+    def test_p7_prediction_shape(self, detector: str) -> None:
+        snaps = [_snapshot(i) for i in range(8)]
+        result = predict(snaps, detector)
+        assert isinstance(result, HopfieldPrediction)
+        assert result.prefix_variant == "p7"
 
     def test_prediction_is_deterministic(self) -> None:
         snaps = [_snapshot(i) for i in range(5)]
