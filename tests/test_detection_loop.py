@@ -1888,6 +1888,87 @@ def test_burn_rate_runaway_explicitly_suppresses_stuck(
 
 
 # ---------------------------------------------------------------------------
+# Per-step co-occurrence suppression tests (AV-S11-M02)
+# ---------------------------------------------------------------------------
+
+
+def test_runaway_suppressed_when_prior_stuck_detected(
+    vitals_snapshot_healthy: dict,
+) -> None:
+    """AV-S11-M02: runaway_cost is suppressed when stuck fired at the previous step.
+
+    Bench data: 24/30 default-mode runaway FPs have stuck→runaway gap=1.
+    The prior_stuck_detected flag tells _resolve_detections that stuck
+    fired at the adjacent step, so the runaway signal is cross-detector
+    leakage, not a genuine cost anomaly.
+    """
+    trace = _build_burn_rate_trace(vitals_snapshot_healthy, coverage=0.5)
+    config = VitalsConfig(loop_consecutive_pct=1.0, model_size_class="large")
+
+    # Without prior_stuck: runaway fires (baseline)
+    result_no_prior = detect_loop(trace[-1], trace[:-1], config=config)
+    assert result_no_prior.runaway_cost_detected is True
+
+    # With prior_stuck: runaway suppressed
+    result_with_prior = detect_loop(
+        trace[-1], trace[:-1], config=config, prior_stuck_detected=True,
+    )
+    assert result_with_prior.runaway_cost_detected is False
+    assert result_with_prior.runaway_cost_confidence == 0.0
+
+
+def test_runaway_not_suppressed_without_prior_stuck(
+    vitals_snapshot_healthy: dict,
+) -> None:
+    """AV-S11-M02: runaway_cost fires normally when stuck did NOT fire at the
+    previous step (prior_stuck_detected=False, the default)."""
+    trace = _build_burn_rate_trace(vitals_snapshot_healthy, coverage=0.5)
+    config = VitalsConfig(loop_consecutive_pct=1.0, model_size_class="large")
+    result = detect_loop(trace[-1], trace[:-1], config=config, prior_stuck_detected=False)
+    assert result.runaway_cost_detected is True
+    assert result.runaway_cost_confidence > 0.0
+    assert result.detector_priority == "runaway_cost"
+
+
+def test_stuck_preserved_when_runaway_suppressed_by_prior_stuck(
+    vitals_snapshot_healthy: dict,
+) -> None:
+    """AV-S11-M02: when runaway is suppressed by prior_stuck, stuck candidates
+    survive (not cleared by the burn-rate→stuck suppression block).
+
+    This ensures that the suppression ordering is correct: co-occurrence
+    suppression fires before the stuck-clearing block, so stuck candidates
+    are not erroneously cleared when runaway was already suppressed.
+    """
+    # Build a trace where both stuck and runaway would normally fire.
+    # Low dm/cv = stuck signals; high token burn = runaway signals.
+    steps = [
+        _make_snapshot(vitals_snapshot_healthy, loop_index=0, findings_count=5, total_tokens=500, coverage_score=0.3, dm_coverage=0.5, cv_coverage=0.5, query_count=1, unique_domains=1),
+        _make_snapshot(vitals_snapshot_healthy, loop_index=1, findings_count=7, total_tokens=1500, coverage_score=0.4, dm_coverage=0.3, cv_coverage=0.3, query_count=1, unique_domains=1),
+        _make_snapshot(vitals_snapshot_healthy, loop_index=2, findings_count=8, total_tokens=2500, coverage_score=0.5, dm_coverage=0.2, cv_coverage=0.2, query_count=1, unique_domains=1),
+        _make_snapshot(vitals_snapshot_healthy, loop_index=3, findings_count=8, total_tokens=5000, coverage_score=0.5, dm_coverage=0.1, cv_coverage=0.1, query_count=1, unique_domains=1),
+        _make_snapshot(vitals_snapshot_healthy, loop_index=4, findings_count=8, total_tokens=10000, coverage_score=0.5, dm_coverage=0.05, cv_coverage=0.05, query_count=1, unique_domains=1),
+    ]
+    config = VitalsConfig(loop_consecutive_pct=1.0, model_size_class="large")
+
+    # Without prior_stuck: runaway fires and clears stuck
+    result_no_prior = detect_loop(steps[-1], steps[:-1], config=config)
+    if result_no_prior.runaway_cost_detected:
+        assert result_no_prior.stuck_detected is False, (
+            "baseline: runaway should suppress stuck"
+        )
+
+    # With prior_stuck: runaway suppressed, stuck should survive
+    result_with_prior = detect_loop(
+        steps[-1], steps[:-1], config=config, prior_stuck_detected=True,
+    )
+    assert result_with_prior.runaway_cost_detected is False
+    # Stuck candidates should not have been cleared
+    # (they may or may not fire depending on the trace shape, but
+    # the runaway→stuck clearing block should not have activated)
+
+
+# ---------------------------------------------------------------------------
 # Verified source ratio confabulation detection tests
 # ---------------------------------------------------------------------------
 

@@ -1178,6 +1178,8 @@ def _resolve_detections(
     loop_candidates: list[tuple[float, str]],
     confab_candidates: list[tuple[float, str, tuple[str, ...]]],
     stuck_candidates: list[tuple[float, str]],
+    *,
+    prior_stuck_detected: bool = False,
 ) -> LoopDetectionResult:
     """Cross-detector arbitration: suppression, priority resolution, and final result."""
 
@@ -1278,6 +1280,17 @@ def _resolve_detections(
             ]
             error_or_loop_filter_active = True
 
+    # Per-step co-occurrence suppression (AV-S11-M02).
+    #
+    # Suppress runaway_cost when stuck fired at an adjacent step (window=1).
+    # Bench data: 24/30 default-mode runaway FPs have stuck→runaway gap=1
+    # (stuck at step N, runaway at N+1). Safety: mixed-label traces where
+    # both detectors are legitimate have gap>=3 (AV04.SYNTH.s0/s1/s2).
+    # When suppressed, stuck candidates are preserved (not cleared below).
+    if runaway_cost_detected and prior_stuck_detected:
+        runaway_cost_detected = False
+        runaway_cost_confidence = 0.0
+
     # Explicit burn-rate runaway suppression of stuck (AV-S08-M04).
     #
     # Pre-v1.14.1, burn_rate_anomaly was appended to stuck_candidates with
@@ -1376,6 +1389,7 @@ def detect_loop(
     *,
     config: Optional[VitalsConfig] = None,
     workflow_type: str = "unknown",
+    prior_stuck_detected: bool = False,
 ) -> LoopDetectionResult:
     """Analyze a vitals snapshot for loop/stuck indicators.
 
@@ -1402,7 +1416,10 @@ def detect_loop(
         return _handle_stuck_disabled(ctx, loop_candidates, confab_candidates)
 
     stuck_candidates = _detect_stuck_candidates(ctx)
-    return _resolve_detections(ctx, loop_candidates, confab_candidates, stuck_candidates)
+    return _resolve_detections(
+        ctx, loop_candidates, confab_candidates, stuck_candidates,
+        prior_stuck_detected=prior_stuck_detected,
+    )
 
 
 # Backwards-compatible alias

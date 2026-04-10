@@ -447,11 +447,15 @@ class AgentVitals:
         )
 
         # Run loop/stuck detection
+        prior_stuck = (
+            self._history[-1].stuck_detected if self._history else False
+        )
         detection: LoopDetectionResult = detect_loop(
             snapshot,
             self._history,
             config=self._config,
             workflow_type=self._workflow_type,
+            prior_stuck_detected=prior_stuck,
         )
 
         # Rebuild snapshot with detection results

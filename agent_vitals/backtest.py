@@ -323,6 +323,7 @@ def _replay_trace(
     best_loop_confidence = 0.0
     has_content_similarity = False
     preserve_stuck_overlap = False
+    prev_stuck_detected = False
 
     history: list[VitalsSnapshot] = []
     for snapshot in snapshots:
@@ -331,6 +332,7 @@ def _replay_trace(
             history,
             config=config,
             workflow_type=workflow_type,
+            prior_stuck_detected=prev_stuck_detected,
         )
 
         stop_signals = derive_stop_signals(
@@ -383,6 +385,7 @@ def _replay_trace(
         if stop_signals.runaway_cost_detected:
             runaway_fired = True
 
+        prev_stuck_detected = detection.stuck_detected
         history.append(snapshot)
 
     # Final-step adjudication for causal confabulation (av-s06-m01).
