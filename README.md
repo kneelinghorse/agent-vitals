@@ -603,7 +603,7 @@ monitor.reset()  # Clear history for next run (also flushes exporters)
 
 ## Detection Precision
 
-Bundled-corpus numbers (v1.18.0, default config) from `python scripts/ci_backtest.py` over the three bundled corpora — 370 traces / 1898 snapshots spanning synthetic, real, and AV-31-reviewed trajectories:
+Bundled-corpus numbers (v1.19.0, default config) from `python scripts/ci_backtest.py` over the three bundled corpora — 370 traces / 1898 snapshots spanning synthetic, real, and AV-31-reviewed trajectories:
 
 | Detector | Precision | Recall | F1 | Gate status |
 |---|---|---|---|---|
@@ -616,12 +616,12 @@ Bundled-corpus numbers (v1.18.0, default config) from `python scripts/ci_backtes
 
 The composite `vitals.any` signal — what enforcement hooks fire on — clears the CI gate at P≥0.90 / R≥0.85. Loop is promoted to **hard gate** status (Wilson lower bounds P_lb=0.947 / R_lb=0.982 over 213 positives). Run `python scripts/ci_backtest.py` for the live numbers; the script also emits `backtest-results.json` for artifact upload.
 
-**Cross-framework validation** (v1.18.0): All four framework profiles (default, langgraph, crewai, dspy) pass the composite gate across both runtime modes — handcrafted-only and handcrafted+TDA. Key bench numbers on the full 1494-trace corpus:
+**Cross-framework validation** (v1.19.0): All four framework profiles (default, langgraph, crewai, dspy) pass the composite gate across both runtime modes — handcrafted-only and handcrafted+TDA. Key bench numbers on the full 1494-trace corpus:
 
 | Detector | default P_lb | langgraph P_lb | crewai P_lb | Notes |
 |---|---|---|---|---|
 | loop | 0.947 | 0.947 | 0.947 | Hard gate, all profiles |
-| stuck | 0.974 | 0.969 | 0.969 | FP=0 after v1.18.0 suppression |
+| stuck | 0.974 | 0.969 | 0.969 | FP=0 after v1.19.0 suppression |
 | runaway_cost | 0.945 | 0.939 | 0.939 | After v1.17.0 co-occurrence fix |
 
 For the full cross-framework precision/recall matrix (1494 traces, 7 frameworks, 7 models), see [`agent-vitals-bench`](https://github.com/kneelinghorse/agent-vitals-bench) and its `eval-cross-framework-v1` artifact set. The bench corpus is the source of truth for cross-framework gates.

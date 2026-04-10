@@ -7,6 +7,19 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+## [1.19.0] - 2026-04-10
+
+### Added
+- **Hopfield p7 prefix variant** (av-s13-m01, av-s13-m02).
+  Third prefix model tier for traces with 7+ snapshots.  Five new ONNX
+  models exported via existing `torch.onnx.export(dynamo=False)` pipeline
+  with per-artifact parity checks (max|delta| < 2e-6).  Runtime selector
+  updated: len ≤ 4 → p3, 5–6 → p5, ≥ 7 → p7.  `HopfieldConfig` gains
+  `p5_max_len` parameter (default 6).
+
+  Bench-validated on full corpus: zero regressions vs v1.18.0,
+  composite PASS on all 4 profiles (bit-identical gate results).
+
 ## [1.18.0] - 2026-04-10
 
 ### Changed
