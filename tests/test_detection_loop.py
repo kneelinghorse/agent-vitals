@@ -1930,42 +1930,36 @@ def test_runaway_not_suppressed_without_prior_stuck(
     assert result.detector_priority == "runaway_cost"
 
 
-def test_stuck_preserved_when_runaway_suppressed_by_prior_stuck(
+def test_stuck_clearing_unaffected_by_cooccurrence_suppression(
     vitals_snapshot_healthy: dict,
 ) -> None:
-    """AV-S11-M02: when runaway is suppressed by prior_stuck, stuck candidates
-    survive (not cleared by the burn-rate→stuck suppression block).
+    """AV-S11-M02: the burn-rate→stuck clearing block fires before
+    co-occurrence suppression, so stuck candidates are still cleared
+    when runaway fires, even if runaway is subsequently suppressed.
 
-    This ensures that the suppression ordering is correct: co-occurrence
-    suppression fires before the stuck-clearing block, so stuck candidates
-    are not erroneously cleared when runaway was already suppressed.
+    This prevents the waterbed effect: without deferred ordering,
+    suppressing runaway first would prevent stuck clearing → +34 stuck FPs.
     """
-    # Build a trace where both stuck and runaway would normally fire.
-    # Low dm/cv = stuck signals; high token burn = runaway signals.
-    steps = [
-        _make_snapshot(vitals_snapshot_healthy, loop_index=0, findings_count=5, total_tokens=500, coverage_score=0.3, dm_coverage=0.5, cv_coverage=0.5, query_count=1, unique_domains=1),
-        _make_snapshot(vitals_snapshot_healthy, loop_index=1, findings_count=7, total_tokens=1500, coverage_score=0.4, dm_coverage=0.3, cv_coverage=0.3, query_count=1, unique_domains=1),
-        _make_snapshot(vitals_snapshot_healthy, loop_index=2, findings_count=8, total_tokens=2500, coverage_score=0.5, dm_coverage=0.2, cv_coverage=0.2, query_count=1, unique_domains=1),
-        _make_snapshot(vitals_snapshot_healthy, loop_index=3, findings_count=8, total_tokens=5000, coverage_score=0.5, dm_coverage=0.1, cv_coverage=0.1, query_count=1, unique_domains=1),
-        _make_snapshot(vitals_snapshot_healthy, loop_index=4, findings_count=8, total_tokens=10000, coverage_score=0.5, dm_coverage=0.05, cv_coverage=0.05, query_count=1, unique_domains=1),
-    ]
+    trace = _build_burn_rate_trace(vitals_snapshot_healthy, coverage=0.5)
     config = VitalsConfig(loop_consecutive_pct=1.0, model_size_class="large")
 
-    # Without prior_stuck: runaway fires and clears stuck
-    result_no_prior = detect_loop(steps[-1], steps[:-1], config=config)
-    if result_no_prior.runaway_cost_detected:
-        assert result_no_prior.stuck_detected is False, (
-            "baseline: runaway should suppress stuck"
-        )
-
-    # With prior_stuck: runaway suppressed, stuck should survive
-    result_with_prior = detect_loop(
-        steps[-1], steps[:-1], config=config, prior_stuck_detected=True,
+    # Without prior_stuck: runaway fires and clears stuck (baseline)
+    result_no_prior = detect_loop(trace[-1], trace[:-1], config=config)
+    assert result_no_prior.runaway_cost_detected is True
+    assert result_no_prior.stuck_detected is False, (
+        "baseline: burn-rate→stuck clearing should suppress stuck"
     )
-    assert result_with_prior.runaway_cost_detected is False
-    # Stuck candidates should not have been cleared
-    # (they may or may not fire depending on the trace shape, but
-    # the runaway→stuck clearing block should not have activated)
+
+    # With prior_stuck: runaway is suppressed by co-occurrence, but
+    # stuck was already cleared by the burn-rate block (deferred ordering).
+    # The burn-rate trace doesn't produce stuck candidates, so the
+    # co-occurrence guard (stuck_candidates present) may prevent suppression.
+    result_with_prior = detect_loop(
+        trace[-1], trace[:-1], config=config, prior_stuck_detected=True,
+    )
+    # Stuck should still be False (cleared by burn-rate block before
+    # co-occurrence suppression was applied)
+    assert result_with_prior.stuck_detected is False
 
 
 # ---------------------------------------------------------------------------

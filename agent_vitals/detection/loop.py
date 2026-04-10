@@ -1280,16 +1280,23 @@ def _resolve_detections(
             ]
             error_or_loop_filter_active = True
 
-    # Per-step co-occurrence suppression (AV-S11-M02).
+    # Per-step co-occurrence suppression — deferred flag (AV-S11-M02).
     #
-    # Suppress runaway_cost when stuck fired at an adjacent step (window=1).
-    # Bench data: 24/30 default-mode runaway FPs have stuck→runaway gap=1
-    # (stuck at step N, runaway at N+1). Safety: mixed-label traces where
-    # both detectors are legitimate have gap>=3 (AV04.SYNTH.s0/s1/s2).
-    # When suppressed, stuck candidates are preserved (not cleared below).
-    if runaway_cost_detected and prior_stuck_detected:
-        runaway_cost_detected = False
-        runaway_cost_confidence = 0.0
+    # Computed BEFORE the burn-rate→stuck clearing block but APPLIED AFTER
+    # it, so the clearing block sees the original runaway_cost_detected and
+    # clears stuck candidates normally. Without this deferral, suppressing
+    # runaway first would prevent stuck clearing → +34 stuck FPs (bench
+    # v1.17.0-rc1 validation).
+    #
+    # Guard: only suppress when stuck candidates are present at the current
+    # step (cross-detector leakage pattern). When stuck candidates are
+    # absent, the prior_stuck is temporal coincidence (genuine runaway that
+    # happened after a stuck step) — suppressing would lose 6 TPs (bench).
+    _cooccurrence_suppress_runaway = (
+        runaway_cost_detected
+        and prior_stuck_detected
+        and bool(stuck_candidates)
+    )
 
     # Explicit burn-rate runaway suppression of stuck (AV-S08-M04).
     #
@@ -1310,6 +1317,11 @@ def _resolve_detections(
     # instead of a side-channel buried in arbitration sentinels.
     if runaway_cost_detected and not error_or_loop_filter_active:
         stuck_candidates = []
+
+    # Apply deferred co-occurrence suppression (AV-S11-M02).
+    if _cooccurrence_suppress_runaway:
+        runaway_cost_detected = False
+        runaway_cost_confidence = 0.0
 
     # Confabulation overlap handling
     if confabulation_detected and confabulation_confidence >= 0.85:
