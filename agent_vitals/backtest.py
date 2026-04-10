@@ -454,6 +454,16 @@ def _replay_trace(
         ):
             stuck_fired = False
 
+    # Trace-level stuck+runaway co-occurrence suppression (av-s12-m01):
+    # findings_plateau (stuck) is a natural precursor to cost runaway —
+    # the agent's output stagnates before costs escalate.  When runaway
+    # fires on the same trace, the stuck signal is a symptom, not root
+    # cause.  Suppress stuck so it doesn't block the composite gate.
+    # The 34 bench FPs (all runaway-elicited-positive traces) follow the
+    # same temporal pattern: stuck at step N, runaway at step N+1.
+    if stuck_fired and runaway_fired:
+        stuck_fired = False
+
     any_fired = loop_fired or confabulation_fired or stuck_fired or thrash_fired or runaway_fired
     return {
         "loop": loop_fired,

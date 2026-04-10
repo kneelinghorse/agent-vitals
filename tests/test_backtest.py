@@ -594,6 +594,90 @@ class TestReplayTraceOverlap:
         assert fired["stuck"] is False
         assert fired["runaway_cost"] is True
 
+    def test_stuck_suppressed_when_runaway_cofires(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Trace-level stuck+runaway co-occurrence suppresses stuck (av-s12-m01).
+
+        findings_plateau (stuck) is a natural precursor to cost runaway.
+        When both fire on the same trace, stuck is a symptom — suppress it
+        so it doesn't block the composite gate.  Covers the 34 bench FPs
+        where stuck fires at step N, runaway at step N+1.
+        """
+        snapshots = [_snapshot("t1", i) for i in range(3)]
+        detections = iter(
+            [
+                LoopDetectionResult(),
+                LoopDetectionResult(
+                    stuck_detected=True,
+                    stuck_trigger="findings_plateau",
+                    stuck_confidence=0.7,
+                ),
+                LoopDetectionResult(),
+            ]
+        )
+        stop_signals = iter(
+            [
+                StopRuleSignals(False, False, False, False),
+                StopRuleSignals(False, True, False, False),
+                StopRuleSignals(False, False, False, True),
+            ]
+        )
+        monkeypatch.setattr(
+            "agent_vitals.backtest.detect_loop",
+            lambda *_args, **_kwargs: next(detections),
+        )
+        monkeypatch.setattr(
+            "agent_vitals.backtest.derive_stop_signals",
+            lambda *_args, **_kwargs: next(stop_signals),
+        )
+        fired = _replay_trace(
+            snapshots,
+            config=VitalsConfig(),
+            workflow_type="unknown",
+        )
+        assert fired["stuck"] is False, "stuck must be suppressed when runaway co-fires"
+        assert fired["runaway_cost"] is True
+
+    def test_stuck_preserved_when_runaway_absent(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Guard: stuck survives when runaway does NOT co-fire (av-s12-m01).
+
+        Ensures the suppression rule only triggers on co-occurrence, not
+        unconditionally.  A trace with stuck but no runaway must keep stuck.
+        """
+        snapshots = [_snapshot("t1", i) for i in range(3)]
+        detections = iter(
+            [
+                LoopDetectionResult(),
+                LoopDetectionResult(
+                    stuck_detected=True,
+                    stuck_trigger="coverage_stagnation",
+                    stuck_confidence=0.8,
+                ),
+                LoopDetectionResult(),
+            ]
+        )
+        stop_signals = iter(
+            [StopRuleSignals(False, False, False, False) for _ in range(3)]
+        )
+        monkeypatch.setattr(
+            "agent_vitals.backtest.detect_loop",
+            lambda *_args, **_kwargs: next(detections),
+        )
+        monkeypatch.setattr(
+            "agent_vitals.backtest.derive_stop_signals",
+            lambda *_args, **_kwargs: next(stop_signals),
+        )
+        fired = _replay_trace(
+            snapshots,
+            config=VitalsConfig(),
+            workflow_type="unknown",
+        )
+        assert fired["stuck"] is True, "stuck must survive when runaway is absent"
+        assert fired["runaway_cost"] is False
+
     def test_final_step_adjudication_overrides_transient_confab(
         self, monkeypatch: pytest.MonkeyPatch
     ) -> None:

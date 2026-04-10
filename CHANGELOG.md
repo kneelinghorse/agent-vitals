@@ -7,6 +7,25 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+## [1.18.0] - 2026-04-10
+
+### Changed
+- **Trace-level stuck+runaway co-occurrence suppression** (av-s12-m01).
+  Suppress `stuck_detected` at trace level when `runaway_cost` co-fires
+  on the same trace.  `findings_plateau` (the dominant stuck trigger on
+  runaway-positive traces) is a natural precursor to cost runaway — the
+  agent's output stagnates before costs escalate.  The stuck signal is a
+  symptom, not root cause.
+
+  Eliminates 34 stuck false positives on the bench v1 corpus
+  (all runaway-elicited-positive traces with the same temporal pattern:
+  stuck at step N, runaway at step N+1).  Combined with 4 bench label
+  corrections, brings stuck FP from 38 to 0 on default profile.
+  Zero TP regressions.
+
+  Analogous to the existing stuck+loop content-similarity suppression
+  at the same call site in `_replay_trace()`.
+
 ## [1.17.0] - 2026-04-10
 
 ### Changed
