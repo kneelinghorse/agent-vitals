@@ -5,7 +5,9 @@
 [![Python](https://img.shields.io/pypi/pyversions/agent-vitals)](https://pypi.org/project/agent-vitals/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-**The direct-integration health monitor for production AI agents** — detect loops, stuck states, confabulation, thrash, and runaway costs with four numbers per step.
+> **Archived, 31 October 2026. Validation claims withdrawn.** This project is no longer maintained. Its published validation came from synthetic and prompt-elicited test traces, and the loop and stuck positives were generated around the detectors' own thresholds. Field tests on organic agent runs found no true positives for the loop, stuck and runaway-cost detectors, and live coding trials found no value beyond simple budget, error and test checks. Statements below about validation describe those in-corpus tests only. Correction and post-mortem: https://doi.org/10.5281/zenodo.23745098
+
+Agent Vitals computes loop, stall, grounding, retry and cost-velocity signals from four numbers per agent step.
 
 Agent Vitals is the easy-onboarding option for teams that want loop / stuck / runaway detection inside their agent workflow without standing up a separate observability service. **Four fields per step, zero configuration to start, ~5 MB base install.** Optional ML detectors (TDA, Hopfield early-screen) live behind explicit extras so the base install stays light.
 

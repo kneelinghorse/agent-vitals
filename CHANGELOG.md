@@ -7,6 +7,12 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+## [1.19.1] - 2026-10-31
+
+### Changed
+
+- Notice release with no code changes. The project is archived and its validation claims are withdrawn. Correction and post-mortem: https://doi.org/10.5281/zenodo.23745098
+
 ## [1.19.0] - 2026-04-10
 
 ### Added

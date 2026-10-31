@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "agent-vitals"
-version = "1.19.0"
-description = "Standalone agent health monitor — detect loops, stuck states, thrash, and runaway costs in any AI agent workflow."
+version = "1.19.1"
+description = "Archived research code for agent failure signals. Validation claims withdrawn; see the correction record."
 readme = "README.md"
 license = "MIT"
 license-files = ["LICENSE"]
@@ -15,7 +15,7 @@ authors = [
 ]
 keywords = ["agent", "vitals", "monitoring", "llm", "health", "loop-detection"]
 classifiers = [
-    "Development Status :: 5 - Production/Stable",
+    "Development Status :: 7 - Inactive",
     "Intended Audience :: Developers",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.10",
